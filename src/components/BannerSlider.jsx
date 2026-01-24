@@ -62,8 +62,7 @@ export default function BannerSlider() {
 
   return (
     <div 
-      className="relative w-full overflow-hidden"
-      style={{ height: '500px' }}
+      className="relative w-full overflow-hidden h-[220px] sm:h-[320px] lg:h-[500px]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -72,7 +71,9 @@ export default function BannerSlider() {
         <img
           src={currentBanner.imageUrl}
           alt={currentBanner.title}
-          className="w-full h-full object-cover transition-opacity duration-500"
+          className="w-full h-full object-contain sm:object-cover transition-opacity duration-500"
+          decoding="async"
+          fetchpriority="high"
         />
         
         {/* Overlay Gradient */}

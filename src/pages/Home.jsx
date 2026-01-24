@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
 import { Link } from "react-router-dom";
 import BannerSlider from "../components/BannerSlider";
+import { MemoReelCarousel as ReelCarousel } from "../components/ReelCarousel";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -10,49 +11,72 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [occasions, setOccasions] = useState([]);
   const [reels, setReels] = useState([]);
+  const [visibleProductsCount, setVisibleProductsCount] = useState(10);
   const scrollRef = useRef(null);
   const occasionScrollRef = useRef(null);
 
   useEffect(() => {
-    fetch(`${API}/products`)
-      .then(res => res.json())
-      .then(data => {
-        setProducts(data);
-        // Filter trending products
-        setTrendingProducts(data.filter(p => p.isTrending));
-      });
+    const ac = new AbortController();
 
-    fetch(`${API}/categories`)
-      .then(res => res.json())
-      .then(data => setCategories(data));
+    // Fetch light content immediately
+    fetch(`${API}/categories`, { signal: ac.signal })
+      .then((res) => res.json())
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => {});
 
-    fetch(`${API}/occasions`)
-      .then(res => res.json())
-      .then(data => setOccasions(data));
+    fetch(`${API}/occasions`, { signal: ac.signal })
+      .then((res) => res.json())
+      .then((data) => setOccasions(Array.isArray(data) ? data : []))
+      .catch(() => {});
 
-    fetch(`${API}/reels`)
-      .then(res => res.json())
-      .then(data => {
-        setReels(data);
-        // Process Instagram embeds after reels are loaded
-        setTimeout(() => {
-          if (window.instgrm) {
-            window.instgrm.Embeds.process();
-          } else {
-            // Load Instagram embed script if not already loaded
-            const script = document.createElement('script');
-            script.src = '//www.instagram.com/embed.js';
-            script.async = true;
-            script.onload = () => {
-              if (window.instgrm) {
-                window.instgrm.Embeds.process();
-              }
-            };
-            document.body.appendChild(script);
-          }
-        }, 100);
-      });
+    // Defer heavier work slightly (products + reels) so first paint happens fast
+    const defer = (fn) => {
+      if ("requestIdleCallback" in window) {
+        // @ts-ignore
+        return window.requestIdleCallback(fn, { timeout: 800 });
+      }
+      return window.setTimeout(fn, 250);
+    };
+
+    const idleId = defer(() => {
+      fetch(`${API}/products`, { signal: ac.signal })
+        .then((res) => res.json())
+        .then((data) => {
+          const list = Array.isArray(data) ? data : [];
+          setProducts(list);
+          setTrendingProducts(list.filter((p) => p.isTrending));
+        })
+        .catch(() => {});
+
+      fetch(`${API}/reels`, { signal: ac.signal })
+        .then((res) => res.json())
+        .then((data) => setReels(Array.isArray(data) ? data : []))
+        .catch(() => {});
+    });
+
+    return () => {
+      ac.abort();
+      if ("cancelIdleCallback" in window) {
+        // @ts-ignore
+        window.cancelIdleCallback(idleId);
+      } else {
+        clearTimeout(idleId);
+      }
+    };
   }, []);
+
+  // After initial content is visible, progressively render more product cards
+  useEffect(() => {
+    if (!products.length) return;
+    if (visibleProductsCount >= Math.min(products.length, 25)) return;
+    const t = setTimeout(() => setVisibleProductsCount((c) => Math.min(c + 5, 25)), 600);
+    return () => clearTimeout(t);
+  }, [products.length, visibleProductsCount]);
+
+  const visibleProducts = useMemo(
+    () => (Array.isArray(products) ? products.slice(0, visibleProductsCount) : []),
+    [products, visibleProductsCount]
+  );
 
   // Map category names to emojis (fallback if no emoji in category)
   const getCategoryEmoji = (categoryName) => {
@@ -135,16 +159,16 @@ export default function Home() {
             </button>
             <div
               ref={scrollRef}
-              className="flex gap-5 overflow-x-auto scrollbar-hide pb-4 px-2"
+              className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-4 px-1 sm:px-2"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               {categories.map((category) => (
                 <Link
                   key={category.id}
                   to={`/category/${category.slug}`}
-                  className="flex-shrink-0 flex flex-col items-center min-w-[140px] group"
+                  className="flex-shrink-0 flex flex-col items-center min-w-[100px] sm:min-w-[120px] group"
                 >
-                  <div className="w-32 h-32 rounded-full flex items-center justify-center text-5xl border-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300 overflow-hidden cursor-pointer"
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full flex items-center justify-center text-4xl sm:text-5xl border-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300 overflow-hidden cursor-pointer"
                     style={{ 
                       backgroundColor: 'oklch(92% .04 340)',
                       borderColor: 'oklch(92% .04 340)'
@@ -226,9 +250,15 @@ export default function Home() {
               </svg>
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {trendingProducts.map((p, index) => (
-              <div key={p.id} className="fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+          <div
+            className="flex gap-5 overflow-x-auto pb-4 px-1 snap-x snap-mandatory scrollbar-thin"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            {trendingProducts.map((p) => (
+              <div
+                key={p.id}
+                className="shrink-0 snap-start w-[48%] lg:w-[20%]"
+              >
                 <ProductCard product={p} />
               </div>
             ))}
@@ -281,9 +311,9 @@ export default function Home() {
                 <Link
                   key={occasion.id}
                   to={`/occasion/${occasion.slug}`}
-                  className="flex-shrink-0 flex flex-col items-center min-w-[140px] group"
+                  className="flex-shrink-0 flex flex-col items-center min-w-[110px] sm:min-w-[130px] group"
                 >
-                  <div className="w-32 h-32 rounded-full flex items-center justify-center text-5xl border-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300 overflow-hidden cursor-pointer"
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full flex items-center justify-center text-4xl sm:text-5xl border-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300 overflow-hidden cursor-pointer"
                     style={{ 
                       backgroundColor: 'oklch(92% .04 340)',
                       borderColor: 'oklch(92% .04 340)'
@@ -357,13 +387,9 @@ export default function Home() {
             </Link>
           )}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.length > 0 ? (
-            products.map((p, index) => (
-              <div key={p.id} className="fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                <ProductCard product={p} />
-              </div>
-            ))
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          {visibleProducts.length > 0 ? (
+            visibleProducts.map((p) => <ProductCard key={p.id} product={p} />)
           ) : (
             <div className="col-span-full text-center py-16">
               <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
@@ -381,132 +407,7 @@ export default function Home() {
           <h2 className="text-3xl font-bold mb-8 text-center" style={{ color: 'oklch(20% .02 340)' }}>
             Follow Us <span style={{ color: 'oklch(92% .04 340)' }}>@giftchoice</span>
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {reels.map((reel) => {
-              // Extract YouTube video ID from URL
-              const getYouTubeVideoId = (url) => {
-                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-                const match = url.match(regExp);
-                return match && match[2].length === 11 ? match[2] : null;
-              };
-
-              // Extract Instagram shortcode from URL
-              const getInstagramShortcode = (url) => {
-                const match = url.match(/instagram\.com\/(?:p|reel)\/([A-Za-z0-9_-]+)/);
-                return match ? match[1] : null;
-              };
-
-              if (reel.platform === "youtube") {
-                const videoId = getYouTubeVideoId(reel.url);
-                const embedUrl = videoId 
-                  ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`
-                  : reel.url.includes('embed') 
-                    ? reel.url 
-                    : reel.url;
-
-                return (
-                  <div
-                    key={reel.id}
-                    className="relative rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group"
-                    style={{ backgroundColor: 'oklch(92% .04 340)' }}
-                  >
-                    <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                      <iframe
-                        className="absolute top-0 left-0 w-full h-full rounded-lg"
-                        src={embedUrl}
-                        title={reel.title || "YouTube Reel"}
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                        loading="lazy"
-                      ></iframe>
-                    </div>
-                    {reel.title && (
-                      <div className="p-3">
-                        <p className="text-sm font-medium text-center" style={{ color: 'oklch(20% .02 340)' }}>
-                          {reel.title}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                );
-              } else {
-                // Instagram Reel - Use Instagram oEmbed API
-                const shortcode = getInstagramShortcode(reel.url);
-                
-                return (
-                  <div
-                    key={reel.id}
-                    className="relative rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group"
-                    style={{ backgroundColor: 'oklch(92% .04 340)' }}
-                  >
-                    {shortcode ? (
-                      <div className="relative w-full bg-white rounded-lg" style={{ paddingBottom: "100%", minHeight: '400px' }}>
-                        <blockquote
-                          className="instagram-media"
-                          data-instgrm-permalink={`https://www.instagram.com/reel/${shortcode}/`}
-                          data-instgrm-version="14"
-                          style={{
-                            background: '#FFF',
-                            border: 0,
-                            borderRadius: '0.5rem',
-                            margin: '1px',
-                            maxWidth: '100%',
-                            minWidth: '326px',
-                            padding: 0,
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%'
-                          }}
-                        >
-                        </blockquote>
-                      </div>
-                    ) : (
-                      <div className="relative w-full" style={{ paddingBottom: "100%" }}>
-                        {reel.thumbnail ? (
-                          <img
-                            src={reel.thumbnail}
-                            alt={reel.title || "Instagram Reel"}
-                            className="absolute top-0 left-0 w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center rounded-lg" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-                            <span className="text-6xl">🎬</span>
-                          </div>
-                        )}
-                        <a
-                          href={reel.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-all duration-300 rounded-lg"
-                        >
-                          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)' }}>
-                            <svg
-                              className="w-8 h-8 ml-1"
-                              style={{ color: 'oklch(20% .02 340)' }}
-                              fill="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </div>
-                        </a>
-                      </div>
-                    )}
-                    {reel.title && (
-                      <div className="p-3">
-                        <p className="text-sm font-medium text-center" style={{ color: 'oklch(20% .02 340)' }}>
-                          {reel.title}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-            })}
-          </div>
+          <ReelCarousel reels={reels} />
         </div>
       )}
 

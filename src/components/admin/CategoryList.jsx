@@ -1,4 +1,5 @@
 import { API } from "../../api";
+import AdminTable from "./AdminTable";
 
 export default function CategoryList({ categories, onEdit, onDelete }) {
   const handleDelete = async (categoryId) => {
@@ -34,50 +35,81 @@ export default function CategoryList({ categories, onEdit, onDelete }) {
     );
   }
 
-  return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-      <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900">All Categories ({categories.length})</h3>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-        {categories.map((category) => (
-          <div
-            key={category.id}
-            className="border-2 border-gray-200 rounded-lg p-4 hover:border-pink-300 transition overflow-hidden"
-          >
-            <div className="w-full h-32 mb-3 rounded-lg overflow-hidden bg-gradient-to-br from-pink-50 to-pink-100 flex items-center justify-center">
-              {category.imageUrl ? (
-                <img
-                  src={category.imageUrl}
-                  alt={category.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-4xl">🎁</span>
-              )}
-            </div>
-            <h4 className="font-bold text-lg text-gray-900 mb-2">{category.name}</h4>
-            <p className="text-sm text-gray-600 mb-1">Slug: {category.slug}</p>
-            <p className="text-sm text-pink-600 font-semibold mb-4">
-              {category._count?.products || 0} products
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onEdit(category)}
-                className="flex-1 px-3 py-2 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(category.id)}
-                className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
-              >
-                Delete
-              </button>
-            </div>
+  const columns = [
+    {
+      key: "image",
+      header: "Image",
+      render: (category) =>
+        category.imageUrl ? (
+          <img
+            src={category.imageUrl}
+            alt={category.name}
+            className="w-14 h-14 object-cover rounded-lg"
+          />
+        ) : (
+          <div className="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center text-xl">
+            🎁
           </div>
-        ))}
-      </div>
-    </div>
+        ),
+      searchText: () => "",
+    },
+    {
+      key: "name",
+      header: "Name",
+      render: (category) => (
+        <div>
+          <div className="font-semibold text-gray-900">{category.name}</div>
+          <div className="text-xs text-gray-500">Slug: {category.slug}</div>
+        </div>
+      ),
+      searchText: (c) => `${c.name} ${c.slug}`,
+    },
+    {
+      key: "order",
+      header: "Order",
+      render: (category) => <span className="font-semibold">{category.order ?? 0}</span>,
+      searchText: (c) => String(c.order ?? 0),
+    },
+    {
+      key: "products",
+      header: "Products",
+      render: (category) => (
+        <span className="font-semibold text-pink-600">
+          {category._count?.products || 0}
+        </span>
+      ),
+      searchText: (c) => String(c._count?.products || 0),
+    },
+  ];
+
+  return (
+    <AdminTable
+      title="All Categories"
+      items={categories}
+      columns={columns}
+      getRowId={(c) => c.id}
+      actions={(category) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(category)}
+            className="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDelete(category.id)}
+            className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+      emptyState={
+        <>
+          <div className="text-6xl mb-4">🏷️</div>
+          <p className="text-gray-600 font-medium">No categories yet. Add your first category above!</p>
+        </>
+      }
+    />
   );
 }

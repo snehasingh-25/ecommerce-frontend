@@ -1,9 +1,19 @@
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { memo, useMemo } from "react";
 
-export default function ProductCard({ product }) {
+function ProductCard({ product }) {
   const { addToCart } = useCart();
-  const images = product.images ? (Array.isArray(product.images) ? product.images : JSON.parse(product.images)) : [];
+  const images = useMemo(() => {
+    if (!product?.images) return [];
+    if (Array.isArray(product.images)) return product.images;
+    try {
+      const parsed = JSON.parse(product.images);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [product?.images]);
 
   const handleAddToCart = () => {
     if (!product.sizes || product.sizes.length === 0) {
@@ -42,6 +52,10 @@ export default function ProductCard({ product }) {
               src={images[0]}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+              decoding="async"
+              width={320}
+              height={320}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
@@ -106,4 +120,5 @@ export default function ProductCard({ product }) {
     </div>
   );
 }
-  
+
+export default memo(ProductCard);

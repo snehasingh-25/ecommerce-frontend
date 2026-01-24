@@ -1,4 +1,5 @@
 import { API } from "../../api";
+import AdminTable from "./AdminTable";
 
 export default function ReelList({ reels, onEdit, onDelete }) {
   const handleDelete = async (id) => {
@@ -36,75 +37,103 @@ export default function ReelList({ reels, onEdit, onDelete }) {
     );
   }
 
+  const columns = [
+    {
+      key: "thumb",
+      header: "Thumbnail",
+      render: (reel) =>
+        reel.thumbnail ? (
+          <img src={reel.thumbnail} alt={reel.title || "Reel"} className="w-16 h-10 object-cover rounded" />
+        ) : (
+          <div className="w-16 h-10 bg-gray-200 rounded flex items-center justify-center">🎬</div>
+        ),
+      searchText: () => "",
+    },
+    {
+      key: "title",
+      header: "Title",
+      render: (reel) => (
+        <div>
+          <div className="font-semibold text-gray-900">{reel.title || `Reel #${reel.id}`}</div>
+          <div className="text-xs text-gray-500 truncate max-w-[18rem]">{reel.videoUrl || reel.url || ""}</div>
+        </div>
+      ),
+      searchText: (r) => `${r.title || ""} ${r.videoUrl || ""} ${r.url || ""}`,
+    },
+    {
+      key: "platform",
+      header: "Platform",
+      render: (reel) => <span className="font-semibold">{reel.platform}</span>,
+      searchText: (r) => r.platform || "",
+    },
+    {
+      key: "product",
+      header: "Product",
+      render: (reel) => (
+        <span className="text-sm font-semibold">{reel.product?.name || (reel.productId ? `#${reel.productId}` : "—")}</span>
+      ),
+      searchText: (r) => `${r.product?.name || ""} ${r.productId || ""}`,
+    },
+    {
+      key: "trend",
+      header: "Trending",
+      render: (reel) =>
+        reel.isTrending ? (
+          <span className="inline-block px-2 py-1 text-xs rounded-full font-semibold bg-yellow-100 text-yellow-800">
+            Trending
+          </span>
+        ) : (
+          <span className="text-xs text-gray-400">—</span>
+        ),
+      searchText: (r) => (r.isTrending ? "trending" : ""),
+    },
+    {
+      key: "order",
+      header: "Order",
+      render: (reel) => <span className="font-semibold">{reel.order}</span>,
+      searchText: (r) => String(r.order ?? ""),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (reel) => (
+        <span
+          className={`inline-block px-2 py-1 text-xs rounded-full font-semibold ${
+            reel.isActive ? "bg-pink-100 text-pink-700" : "bg-gray-100 text-gray-700"
+          }`}
+        >
+          {reel.isActive ? "Active" : "Inactive"}
+        </span>
+      ),
+      searchText: (r) => (r.isActive ? "active" : "inactive"),
+    },
+  ];
+
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 border" style={{ borderColor: 'oklch(92% .04 340)' }}>
-      <h3 className="text-xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>All Reels</h3>
-      <div className="space-y-4">
-        {reels.map((reel) => (
-          <div
-            key={reel.id}
-            className="p-4 border rounded-lg flex items-center justify-between"
-            style={{ borderColor: 'oklch(92% .04 340)' }}
+    <AdminTable
+      title="All Reels"
+      items={reels}
+      columns={columns}
+      getRowId={(r) => r.id}
+      actions={(reel) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(reel)}
+            className="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
           >
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                {reel.thumbnail && (
-                  <img
-                    src={reel.thumbnail}
-                    alt={reel.title || "Reel thumbnail"}
-                    className="w-20 h-20 object-cover rounded"
-                  />
-                )}
-                <div>
-                  <h4 className="font-semibold" style={{ color: 'oklch(20% .02 340)' }}>
-                    {reel.title || `Reel #${reel.id}`}
-                  </h4>
-                  <p className="text-sm" style={{ color: 'oklch(60% .02 340)' }}>
-                    {reel.platform} • Order: {reel.order}
-                  </p>
-                  <p className="text-xs truncate max-w-md" style={{ color: 'oklch(60% .02 340)' }}>
-                    {reel.url}
-                  </p>
-                  <span
-                    className={`inline-block mt-1 px-2 py-0.5 text-xs rounded ${
-                      reel.isActive ? "text-white" : "text-white"
-                    }`}
-                    style={{ backgroundColor: reel.isActive ? 'oklch(92% .04 340)' : 'oklch(60% .02 340)' }}
-                  >
-                    {reel.isActive ? "Active" : "Inactive"}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onEdit(reel)}
-                className="px-4 py-2 rounded-lg font-medium transition-all duration-300"
-                style={{ 
-                  backgroundColor: 'oklch(92% .04 340)',
-                  color: 'white'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = 'oklch(88% .06 340)'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'oklch(92% .04 340)'}
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(reel.id)}
-                className="px-4 py-2 rounded-lg font-medium transition-all duration-300"
-                style={{ 
-                  backgroundColor: 'oklch(60% .02 340)',
-                  color: 'white'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = 'oklch(50% .02 340)'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'oklch(60% .02 340)'}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+            Edit
+          </button>
+          <button
+            onClick={() => handleDelete(reel.id)}
+            className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+      emptyState={
+        <p className="text-gray-600 font-medium">No reels added yet. Add your first reel above!</p>
+      }
+    />
   );
 }

@@ -11,9 +11,13 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-4xl">🎁</span>
+              <img
+                src="/logo.jpeg"
+                alt="GiftChoice"
+                className="h-12 w-auto"
+              />
               <h3 className="text-2xl font-extrabold tracking-wide" style={{ color: 'oklch(20% .02 340)' }}>
-                Gift<span style={{ color: 'oklch(92% .04 340)' }}>Choice</span>
+                Gift Choice
               </h3>
             </div>
             <p className="text-sm leading-relaxed max-w-md" style={{ color: 'oklch(20% .02 340)' }}>
@@ -52,27 +56,11 @@ export default function Footer() {
             <h4 className="font-bold mb-5" style={{ color: 'oklch(20% .02 340)' }}>Connect With Us</h4>
 
             <div className="space-y-3 text-sm" style={{ color: 'oklch(20% .02 340)' }}>
-              <p className="flex items-center gap-2">📧 info@giftchoice.com</p>
+              <p className="flex items-center gap-2">📧 yashj.6628@gmail.com</p>
               <p className="flex items-center gap-2">📱 +91 79769 48872</p>
             </div>
 
             {/* Social Icons */}
-            <div className="flex gap-4 mt-6">
-              {["📘", "📷", "▶️"].map((icon, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  className="w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center 
-                             hover:bg-white hover:scale-110 transition-all duration-300 shadow-md active:scale-95"
-                  style={{ 
-                    backgroundColor: 'oklch(96% .02 340)',
-                    border: '1px solid oklch(96% .02 340)'
-                  }}
-                >
-                  <span className="text-lg transition-transform duration-300 hover:rotate-12">{icon}</span>
-                </a>
-              ))}
-            </div>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import { Link } from "react-router-dom";
@@ -13,6 +13,7 @@ export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const categoryScrollRef = useRef(null);
 
   useEffect(() => {
     Promise.all([
@@ -41,12 +42,19 @@ export default function CategoriesPage() {
   }, [slug]);
 
   useEffect(() => {
-    if (selectedCategory && slug) {
+    if (slug && selectedCategory) {
       fetchCategoryProducts(selectedCategory.slug, occasionFilter);
-    } else {
-      setProducts([]);
-      setLoading(false);
+      return;
     }
+
+    // No slug (e.g. /categories): show all products (optionally filtered by occasion)
+    if (!slug) {
+      fetchAllProducts(occasionFilter);
+      return;
+    }
+
+    setProducts([]);
+    setLoading(false);
   }, [selectedCategory, slug, occasionFilter]);
 
   const fetchCategoryProducts = async (categorySlug, occasion = "") => {
@@ -62,6 +70,25 @@ export default function CategoriesPage() {
       setProducts(data);
     } catch (error) {
       console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllProducts = async (occasion = "") => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (occasion) {
+        params.append("occasion", occasion);
+      }
+      const qs = params.toString();
+      const res = await fetch(`${API}/products${qs ? `?${qs}` : ""}`);
+      const data = await res.json();
+      setProducts(data || []);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -108,6 +135,15 @@ export default function CategoriesPage() {
     setSearchParams(params);
   };
 
+  const scrollCategories = (direction) => {
+    if (!categoryScrollRef.current) return;
+    const scrollAmount = 320;
+    categoryScrollRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white py-16 flex items-center justify-center">
@@ -131,39 +167,65 @@ export default function CategoriesPage() {
           </p>
         </div>
 
-        {/* Categories Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-12">
-          {categories.map((category) => (
-            <Link
-              key={category.id}
-              to={`/category/${category.slug}`}
-              onClick={() => handleCategoryClick(category)}
-              className="group text-center"
-            >
-              <div
-                className="w-full aspect-square rounded-full overflow-hidden mb-3 mx-auto transition-all duration-300 group-hover:scale-125 shadow-md group-hover:shadow-lg"
-                style={{ 
-                  backgroundColor: 'oklch(92% .04 340)',
-                  maxWidth: '150px'
-                }}
+        {/* Categories (horizontal scroll like Home) */}
+        <div className="relative mb-12">
+          <button
+            onClick={() => scrollCategories("left")}
+            className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+            style={{ borderColor: "oklch(92% .04 340)" }}
+            aria-label="Scroll categories left"
+          >
+            <svg className="w-5 h-5" style={{ color: "oklch(40% .02 340)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <div
+            ref={categoryScrollRef}
+            className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-thin pb-4 px-1 sm:px-10"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            {categories.map((category) => (
+              <Link
+                key={category.id}
+                to={`/category/${category.slug}`}
+                onClick={() => handleCategoryClick(category)}
+                className="flex-shrink-0 flex flex-col items-center min-w-[100px] sm:min-w-[120px] group"
               >
-                {category.imageUrl ? (
-                  <img
-                    src={category.imageUrl}
-                    alt={category.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-5xl">{getCategoryEmoji(category.name)}</span>
-                  </div>
-                )}
-              </div>
-              <h3 className="font-semibold text-sm" style={{ color: 'oklch(20% .02 340)' }}>
-                {category.name}
-              </h3>
-            </Link>
-          ))}
+                <div
+                  className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full overflow-hidden flex items-center justify-center border-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300"
+                  style={{
+                    backgroundColor: "oklch(92% .04 340)",
+                    borderColor: "oklch(92% .04 340)",
+                  }}
+                >
+                  {category.imageUrl ? (
+                    <img
+                      src={category.imageUrl}
+                      alt={category.name}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <span className="text-4xl sm:text-5xl">{getCategoryEmoji(category.name)}</span>
+                  )}
+                </div>
+                <h3 className="font-semibold text-sm text-center mt-2" style={{ color: "oklch(20% .02 340)" }}>
+                  {category.name}
+                </h3>
+              </Link>
+            ))}
+          </div>
+
+          <button
+            onClick={() => scrollCategories("right")}
+            className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+            style={{ borderColor: "oklch(92% .04 340)" }}
+            aria-label="Scroll categories right"
+          >
+            <svg className="w-5 h-5" style={{ color: "oklch(40% .02 340)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
 
         {/* Products for Selected Category */}
@@ -229,7 +291,7 @@ export default function CategoriesPage() {
               )}
             </div>
             {products.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -241,6 +303,83 @@ export default function CategoriesPage() {
                 </div>
                 <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
                   No products available in this category yet
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* All products when no category slug is selected (e.g. /categories) */}
+        {!slug && (
+          <div className="mt-12">
+            <div className="mb-8">
+              <h3 className="text-3xl font-bold mb-2" style={{ color: 'oklch(20% .02 340)' }}>
+                All Products
+              </h3>
+
+              {/* Occasion Filter (still useful on /categories) */}
+              <div className="flex flex-wrap items-center gap-4 mb-6">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-semibold" style={{ color: 'oklch(40% .02 340)' }}>
+                    Filter by Occasion:
+                  </label>
+                  <select
+                    value={occasionFilter}
+                    onChange={handleOccasionChange}
+                    className="px-4 py-2 rounded-lg border-2 text-sm transition-all duration-300 focus:outline-none"
+                    style={{
+                      borderColor: 'oklch(92% .04 340)',
+                      backgroundColor: 'white',
+                      color: 'oklch(20% .02 340)'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = 'oklch(88% .06 340)'}
+                    onBlur={(e) => e.target.style.borderColor = 'oklch(92% .04 340)'}
+                  >
+                    <option value="">All Occasions</option>
+                    {occasions.map((occ) => (
+                      <option key={occ.id} value={occ.slug}>
+                        {occ.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {occasionFilter && (
+                  <button
+                    onClick={clearOccasionFilter}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
+                    style={{
+                      backgroundColor: 'oklch(92% .04 340)',
+                      color: 'oklch(20% .02 340)'
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = 'oklch(88% .06 340)'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = 'oklch(92% .04 340)'}
+                  >
+                    Clear Filter
+                  </button>
+                )}
+              </div>
+
+              {occasionFilter && (
+                <p className="text-sm mb-4" style={{ color: 'oklch(60% .02 340)' }}>
+                  Showing products for {occasions.find(o => o.slug === occasionFilter)?.name || occasionFilter}
+                </p>
+              )}
+            </div>
+
+            {products.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
+                  <span className="text-4xl">🎁</span>
+                </div>
+                <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
+                  No products available yet
                 </p>
               </div>
             )}

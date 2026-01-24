@@ -122,3 +122,27 @@ a, button, input, textarea, select {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Thin scrollbar (horizontal/vertical) for specific containers */
+.scrollbar-thin {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--secondary) var(--secondary-light); /* Firefox */
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--secondary-light);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-dark);
+}

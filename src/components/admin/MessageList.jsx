@@ -1,4 +1,5 @@
 import { API } from "../../api";
+import AdminTable from "./AdminTable";
 
 export default function MessageList({ messages, onUpdate }) {
   const markAsRead = async (messageId) => {
@@ -55,56 +56,92 @@ export default function MessageList({ messages, onUpdate }) {
     );
   }
 
-  return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-      <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900">Contact Messages ({messages.length})</h3>
-      </div>
-      <div className="divide-y divide-gray-200">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`p-6 ${!message.read ? "bg-pink-50" : ""}`}
-          >
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <h4 className="font-bold text-lg text-gray-900">{message.name}</h4>
-                <p className="text-sm text-gray-600">{message.email}</p>
-                {message.phone && <p className="text-sm text-gray-600">{message.phone}</p>}
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-500">
-                  {new Date(message.createdAt).toLocaleDateString()}
-                </p>
-                {!message.read && (
-                  <span className="inline-block mt-1 px-2 py-1 text-xs bg-pink-500 text-white rounded-full font-semibold">
-                    New
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <p className="text-gray-700 mb-4 whitespace-pre-wrap">{message.message}</p>
-
-            <div className="flex gap-2">
-              {!message.read && (
-                <button
-                  onClick={() => markAsRead(message.id)}
-                  className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
-                >
-                  Mark as Read
-                </button>
-              )}
-              <button
-                onClick={() => deleteMessage(message.id)}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
-              >
-                Delete
-              </button>
-            </div>
+  const columns = [
+    {
+      key: "from",
+      header: "From",
+      render: (m) => (
+        <div>
+          <div className="font-semibold text-gray-900 flex items-center gap-2">
+            {m.name}
+            {!m.read && (
+              <span className="inline-block px-2 py-0.5 text-xs bg-pink-500 text-white rounded-full font-semibold">
+                New
+              </span>
+            )}
           </div>
-        ))}
-      </div>
-    </div>
+          <div className="text-xs text-gray-500">{m.email}</div>
+          {m.phone && <div className="text-xs text-gray-500">{m.phone}</div>}
+        </div>
+      ),
+      searchText: (m) => `${m.name || ""} ${m.email || ""} ${m.phone || ""} ${m.read ? "read" : "new"}`,
+    },
+    {
+      key: "message",
+      header: "Message",
+      render: (m) => (
+        <div className="text-sm text-gray-700 line-clamp-3 max-w-[32rem]">
+          {m.message}
+        </div>
+      ),
+      searchText: (m) => m.message || "",
+    },
+    {
+      key: "date",
+      header: "Date",
+      render: (m) => (
+        <span className="text-sm text-gray-600">
+          {new Date(m.createdAt).toLocaleDateString()}
+        </span>
+      ),
+      searchText: (m) => String(m.createdAt || ""),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (m) => (
+        <span
+          className={`inline-block px-2 py-1 text-xs rounded-full font-semibold ${
+            m.read ? "bg-gray-100 text-gray-700" : "bg-pink-100 text-pink-700"
+          }`}
+        >
+          {m.read ? "Read" : "New"}
+        </span>
+      ),
+      searchText: (m) => (m.read ? "read" : "new"),
+    },
+  ];
+
+  return (
+    <AdminTable
+      title="Contact Messages"
+      items={messages}
+      columns={columns}
+      getRowId={(m) => m.id}
+      actions={(message) => (
+        <div className="flex gap-2">
+          {!message.read && (
+            <button
+              onClick={() => markAsRead(message.id)}
+              className="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
+            >
+              Mark Read
+            </button>
+          )}
+          <button
+            onClick={() => deleteMessage(message.id)}
+            className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+      emptyState={
+        <>
+          <div className="text-6xl mb-4">📩</div>
+          <p className="text-gray-600 font-medium">No messages yet.</p>
+        </>
+      }
+    />
   );
 }

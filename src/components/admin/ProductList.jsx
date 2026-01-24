@@ -1,4 +1,5 @@
 import { API } from "../../api";
+import AdminTable from "./AdminTable";
 
 export default function ProductList({ products, onEdit, onDelete }) {
   // Ensure products is always an array
@@ -37,97 +38,118 @@ export default function ProductList({ products, onEdit, onDelete }) {
     );
   }
 
+  const columns = [
+    {
+      key: "image",
+      header: "Image",
+      render: (product) => {
+        const images = product.images
+          ? Array.isArray(product.images)
+            ? product.images
+            : JSON.parse(product.images)
+          : [];
+        return images.length > 0 ? (
+          <img
+            src={images[0]}
+            alt={product.name}
+            className="w-14 h-14 object-cover rounded-lg"
+          />
+        ) : (
+          <div className="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center text-xl">
+            🎁
+          </div>
+        );
+      },
+      searchText: () => "",
+    },
+    {
+      key: "name",
+      header: "Name",
+      render: (product) => (
+        <div>
+          <div className="font-semibold text-gray-900">{product.name}</div>
+          <div className="text-xs text-gray-500 line-clamp-1">{product.description}</div>
+        </div>
+      ),
+      searchText: (p) => `${p.name} ${p.description} ${p.keywords ?? ""}`,
+    },
+    {
+      key: "category",
+      header: "Category",
+      render: (product) => product.category?.name || "N/A",
+      searchText: (p) => `${p.category?.name || ""} ${p.category?.slug || ""}`,
+    },
+    {
+      key: "badges",
+      header: "Badges",
+      render: (product) => (
+        <div className="flex flex-wrap gap-1">
+          {product.isFestival && (
+            <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
+              Festival
+            </span>
+          )}
+          {product.isNew && (
+            <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
+              New
+            </span>
+          )}
+          {product.isTrending && (
+            <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
+              Trending
+            </span>
+          )}
+          {product.badge && (
+            <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
+              {product.badge}
+            </span>
+          )}
+        </div>
+      ),
+      searchText: (p) =>
+        [
+          p.isFestival ? "festival" : "",
+          p.isNew ? "new" : "",
+          p.isTrending ? "trending" : "",
+          p.badge || "",
+        ].join(" "),
+    },
+    {
+      key: "sizes",
+      header: "Sizes",
+      render: (product) => `${product.sizes?.length || 0} sizes`,
+      searchText: (p) => String(p.sizes?.length || 0),
+    },
+  ];
+
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-      <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900">All Products ({safeProducts.length})</h3>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Image</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Badges</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Sizes</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {safeProducts.map((product) => {
-              const images = product.images ? (Array.isArray(product.images) ? product.images : JSON.parse(product.images)) : [];
-              return (
-                <tr key={product.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4">
-                    {images.length > 0 ? (
-                      <img
-                        src={images[0]}
-                        alt={product.name}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-2xl">
-                        🎁
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="font-semibold text-gray-900">{product.name}</div>
-                    <div className="text-sm text-gray-500 line-clamp-1">{product.description}</div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    {product.category?.name || "N/A"}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {product.isFestival && (
-                        <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
-                          Festival
-                        </span>
-                      )}
-                      {product.isNew && (
-                        <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
-                          New
-                        </span>
-                      )}
-                      {product.isTrending && (
-                        <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
-                          Trending
-                        </span>
-                      )}
-                      {product.badge && (
-                        <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
-                          {product.badge}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    {product.sizes?.length || 0} sizes
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onEdit(product)}
-                        className="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <AdminTable
+      title="All Products"
+      items={safeProducts}
+      columns={columns}
+      getRowId={(p) => p.id}
+      actions={(product) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(product)}
+            className="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDelete(product.id)}
+            className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+      emptyState={
+        <>
+          <div className="text-6xl mb-4">📦</div>
+          <p className="text-gray-600 font-medium">No products yet. Add your first product above!</p>
+        </>
+      }
+    />
   );
 }

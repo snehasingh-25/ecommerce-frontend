@@ -18,7 +18,7 @@ export default function NewArrivals() {
           <h2 className="text-4xl font-bold mb-4">New Arrivals</h2>
           <p className="text-gray-600 text-lg">Discover our latest and most exciting gift collections</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {products.map(p => (
             <ProductCard key={p.id} product={p} />
           ))}

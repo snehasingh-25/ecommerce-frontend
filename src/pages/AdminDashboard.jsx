@@ -45,9 +45,10 @@ export default function AdminDashboard() {
       const headers = { Authorization: `Bearer ${token}` };
 
       if (activeTab === "products") {
-        const [productsRes, occasionsRes] = await Promise.all([
+        const [productsRes, occasionsRes, categoriesRes] = await Promise.all([
           fetch(`${API}/products`, { headers }),
-          fetch(`${API}/occasions/all`, { headers })
+          fetch(`${API}/occasions/all`, { headers }),
+          fetch(`${API}/categories`, { headers }),
         ]);
         
         if (!productsRes.ok) {
@@ -63,6 +64,11 @@ export default function AdminDashboard() {
         if (occasionsRes.ok) {
           const occasionsData = await occasionsRes.json();
           setOccasions(Array.isArray(occasionsData) ? occasionsData : []);
+        }
+
+        if (categoriesRes.ok) {
+          const categoriesData = await categoriesRes.json();
+          setCategories(Array.isArray(categoriesData) ? categoriesData : []);
         }
       } else if (activeTab === "categories") {
         const res = await fetch(`${API}/categories`, { headers });
@@ -132,39 +138,20 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar (desktop) */}
+      <aside className="hidden lg:flex lg:flex-col w-72 bg-white border-r border-gray-200">
+        <div className="px-6 py-5 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <img src="/logo.jpeg" alt="GiftChoice" className="h-10 w-auto" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Admin <span className="text-pink-600">Dashboard</span>
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">Welcome, {user?.email}</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/")}
-                className="px-4 py-2 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition font-medium flex items-center gap-2 shadow-md hover:shadow-lg"
-              >
-                <span>🛍️</span>
-                View Shop
-              </button>
-              <button
-                onClick={logout}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium"
-              >
-                Logout
-              </button>
+              <div className="text-sm font-semibold text-gray-900">GiftChoice</div>
+              <div className="text-xs text-gray-600 truncate max-w-[14rem]">{user?.email}</div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="flex space-x-1 mb-6 bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+        <nav className="p-3 flex-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -176,26 +163,119 @@ export default function AdminDashboard() {
                 setEditingReel(null);
                 setEditingBanner(null);
               }}
-              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all text-left ${
                 activeTab === tab.id
                   ? "bg-pink-500 text-white shadow-md"
                   : "text-gray-700 hover:bg-gray-100"
               }`}
             >
-              <span className="mr-2">{tab.icon}</span>
-              {tab.label}
+              
+              <span>{tab.label}</span>
             </button>
           ))}
+        </nav>
+
+        <div className="p-4 border-t border-gray-200 flex flex-col gap-2">
+          <button
+            onClick={() => navigate("/")}
+            className="w-full px-4 py-2.5 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition font-medium flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+          >
+            <span>🛍️</span>
+            View Shop
+          </button>
+          <button
+            onClick={logout}
+            className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium"
+          >
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <main className="flex-1 min-w-0">
+        {/* Top bar (mobile + page header) */}
+        <div className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <img src="/logo.jpeg" alt="GiftChoice" className="h-10 w-auto" />
+                <div className="min-w-0">
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Admin <span className="text-pink-600">Dashboard</span>
+                  </h1>
+                  <p className="text-sm text-gray-600 mt-1 truncate">Welcome, {user?.email}</p>
+                </div>
+              </div>
+
+              <div className="hidden sm:flex items-center gap-3">
+                <button
+                  onClick={() => navigate("/")}
+                  className="px-4 py-2 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition font-medium flex items-center gap-2 shadow-md hover:shadow-lg"
+                >
+                  <span>🛍️</span>
+                  View Shop
+                </button>
+                <button
+                  onClick={logout}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+
+            {/* Top menu (mobile) */}
+            <div className="lg:hidden mt-4">
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setEditingProduct(null);
+                      setEditingCategory(null);
+                      setEditingOccasion(null);
+                      setEditingReel(null);
+                      setEditingBanner(null);
+                    }}
+                    className={`shrink-0 px-4 py-2.5 rounded-full font-semibold transition-all ${
+                      activeTab === tab.id
+                        ? "bg-pink-500 text-white shadow-md"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 sm:hidden mt-2">
+                <button
+                  onClick={() => navigate("/")}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg transition font-medium shadow-md"
+                >
+                  View Shop
+                </button>
+                <button
+                  onClick={logout}
+                  className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg transition font-medium"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Content */}
-        {loading ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
-          </div>
-        ) : (
-          <>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Content */}
+          {loading ? (
+            <div className="bg-white rounded-lg shadow p-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading...</p>
+            </div>
+          ) : (
+            <>
             {activeTab === "products" && (
               <div>
                 <ProductForm
@@ -203,6 +283,7 @@ export default function AdminDashboard() {
                   categories={categories}
                   occasions={occasions}
                   onSave={handleProductSave}
+                  onCancel={() => setEditingProduct(null)}
                 />
                 <ProductList
                   products={products}
@@ -217,6 +298,7 @@ export default function AdminDashboard() {
                 <CategoryForm
                   category={editingCategory}
                   onSave={handleCategorySave}
+                  onCancel={() => setEditingCategory(null)}
                 />
                 <CategoryList
                   categories={categories}
@@ -231,6 +313,7 @@ export default function AdminDashboard() {
                 <OccasionForm
                   occasion={editingOccasion}
                   onSave={handleOccasionSave}
+                  onCancel={() => setEditingOccasion(null)}
                 />
                 <OccasionList
                   occasions={occasions}
@@ -245,6 +328,7 @@ export default function AdminDashboard() {
                 <BannerForm
                   banner={editingBanner}
                   onSave={handleBannerSave}
+                  onCancel={() => setEditingBanner(null)}
                 />
                 <BannerList
                   banners={banners}
@@ -263,6 +347,7 @@ export default function AdminDashboard() {
                 <ReelForm
                   reel={editingReel}
                   onSave={handleReelSave}
+                  onCancel={() => setEditingReel(null)}
                 />
                 <ReelList
                   reels={reels}
@@ -275,9 +360,10 @@ export default function AdminDashboard() {
             {activeTab === "messages" && (
               <MessageList messages={messages} onUpdate={loadData} />
             )}
-          </>
-        )}
-      </div>
+            </>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

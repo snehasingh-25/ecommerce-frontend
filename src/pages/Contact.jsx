@@ -220,7 +220,7 @@ export default function Contact() {
                 Email Address
               </h3>
               <p className="text-lg" style={{ color: 'oklch(60% .02 340)' }}>
-                info@giftchoice.com
+                yashj.6628@gmail.com
               </p>
             </div>
 
@@ -299,7 +299,7 @@ export default function Contact() {
             </a>
 
             <a
-              href="mailto:info@giftchoice.com"
+              href="mailto:yashj.6628@gmail.com"
               className="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300 group"
             >
               <div className="text-5xl mb-4">📧</div>

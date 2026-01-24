@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
-import Fuse from "fuse.js";
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -47,13 +46,28 @@ export default function Search() {
       try {
         const res = await fetch(url);
         const data = await res.json();
-        setProducts(data);
+        const safeData = Array.isArray(data) ? data : [];
+        setProducts(safeData);
         
-        // If no results and we have a query, show all products as suggestions
-        if (data.length === 0 && query && allProducts.length > 0) {
-          // Show all products when no matches found
-          setSuggestedProducts(allProducts);
-          setShowSuggestions(true);
+        // If no results and we have a query, fall back to all products in selected category (and other active filters).
+        if (safeData.length === 0 && query) {
+          // Prefer fetching from API so it's always accurate.
+          const fallbackParams = new URLSearchParams();
+          if (categoryFilter) fallbackParams.append("category", categoryFilter);
+          if (occasionFilter) fallbackParams.append("occasion", occasionFilter);
+          const fallbackUrl = `${API}/products?${fallbackParams.toString()}`;
+
+          let fallbackProducts = [];
+          if (categoryFilter || occasionFilter) {
+            const fallbackRes = await fetch(fallbackUrl);
+            const fallbackJson = await fallbackRes.json();
+            fallbackProducts = Array.isArray(fallbackJson) ? fallbackJson : [];
+          } else {
+            fallbackProducts = Array.isArray(allProducts) ? allProducts : [];
+          }
+
+          setSuggestedProducts(fallbackProducts);
+          setShowSuggestions(fallbackProducts.length > 0);
         } else {
           setSuggestedProducts([]);
           setShowSuggestions(false);
@@ -66,7 +80,7 @@ export default function Search() {
     };
 
     performSearch();
-  }, [query, categoryFilter, occasionFilter, allProducts, occasions]);
+  }, [query, categoryFilter, occasionFilter, allProducts]);
 
   const handleCategoryChange = (e) => {
     const newCategory = e.target.value;
@@ -203,7 +217,7 @@ export default function Search() {
             </p>
           </div>
         ) : products.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -215,10 +229,10 @@ export default function Search() {
                 No exact matches found for "{query}"
               </p>
               <p className="text-sm" style={{ color: 'oklch(60% .02 340)' }}>
-                Showing all products:
+                Showing {categoryFilter ? "all products in this category" : "all products"}:
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
               {suggestedProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

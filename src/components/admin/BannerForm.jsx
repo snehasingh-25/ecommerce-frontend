@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../../api";
 
-export default function BannerForm({ banner, onSave }) {
+export default function BannerForm({ banner, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     title: "",
     subtitle: "",
@@ -15,6 +15,20 @@ export default function BannerForm({ banner, onSave }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
+  const formRef = useRef(null);
+  const isSubmittingRef = useRef(false);
+  const initialSnapshotRef = useRef("");
+
+  const snapshot = useMemo(() => {
+    return JSON.stringify({
+      formData,
+      existingImageUrl,
+      imageSelected: !!image,
+      imagePreview: !!imagePreview,
+    });
+  }, [formData, existingImageUrl, image, imagePreview]);
+
+  const isDirty = initialSnapshotRef.current !== "" && snapshot !== initialSnapshotRef.current;
 
   useEffect(() => {
     if (banner) {
@@ -28,12 +42,31 @@ export default function BannerForm({ banner, onSave }) {
       });
       setExistingImageUrl(banner.imageUrl || null);
       setImagePreview(banner.imageUrl || null);
+      setImage(null);
     } else {
       setFormData({ title: "", subtitle: "", ctaText: "", ctaLink: "", isActive: true, order: 0 });
       setExistingImageUrl(null);
       setImagePreview(null);
       setImage(null);
     }
+
+    setTimeout(() => {
+      initialSnapshotRef.current = JSON.stringify({
+        formData: banner
+          ? {
+              title: banner.title || "",
+              subtitle: banner.subtitle || "",
+              ctaText: banner.ctaText || "",
+              ctaLink: banner.ctaLink || "",
+              isActive: banner.isActive !== undefined ? banner.isActive : true,
+              order: banner.order || 0,
+            }
+          : { title: "", subtitle: "", ctaText: "", ctaLink: "", isActive: true, order: 0 },
+        existingImageUrl: banner?.imageUrl || null,
+        imageSelected: false,
+        imagePreview: !!banner?.imageUrl,
+      });
+    }, 0);
   }, [banner]);
 
   const handleImageChange = (e) => {
@@ -59,7 +92,9 @@ export default function BannerForm({ banner, onSave }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmittingRef.current) return;
     setLoading(true);
+    isSubmittingRef.current = true;
 
     try {
       const token = localStorage.getItem("adminToken");
@@ -102,6 +137,7 @@ export default function BannerForm({ banner, onSave }) {
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
+        initialSnapshotRef.current = "";
       } else {
         alert("Error: " + (data.error || data.message || "Failed to save banner"));
       }
@@ -109,15 +145,71 @@ export default function BannerForm({ banner, onSave }) {
       alert("Error: " + error.message);
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
+    }
+  };
+
+  const handleCancel = () => {
+    if (loading) return;
+    if (isDirty) {
+      const ok = window.confirm("You have unsaved changes. Are you sure you want to cancel?");
+      if (!ok) return;
+    }
+    setFormData({ title: "", subtitle: "", ctaText: "", ctaLink: "", isActive: true, order: 0 });
+    setImage(null);
+    setImagePreview(null);
+    setExistingImageUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    initialSnapshotRef.current = "";
+    onCancel?.();
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      handleCancel();
+      return;
+    }
+    if (e.key === "Enter") {
+      const tag = e.target?.tagName;
+      if (tag === "TEXTAREA") return;
+      if (loading) return;
+      e.preventDefault();
+      formRef.current?.requestSubmit?.();
     }
   };
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">
-        {banner ? "✏️ Edit Banner" : "➕ Add New Banner"}
-      </h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <h2 className="text-xl font-bold text-gray-900">
+          {banner ? "✏️ Edit Banner" : "➕ Add New Banner"}
+        </h2>
+        <div className="flex gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={loading}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-pink-500/40"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => formRef.current?.requestSubmit?.()}
+            disabled={loading}
+            className="px-4 py-2 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg font-semibold hover:from-pink-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-pink-500/40 flex items-center justify-center gap-2"
+          >
+            {loading && (
+              <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+            )}
+            {banner ? "Update" : "Save"}
+          </button>
+        </div>
+      </div>
+      <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-4">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Title *</label>
           <input
@@ -222,32 +314,25 @@ export default function BannerForm({ banner, onSave }) {
             </div>
           </div>
         </div>
-        <div className="flex gap-4">
+        <div className="sticky bottom-0 bg-white pt-4 pb-2 border-t border-gray-200 flex gap-4">
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-gradient-to-r from-pink-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-pink-600 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-gradient-to-r from-pink-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-pink-600 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? "Saving..." : banner ? "Update Banner" : "Create Banner"}
+            {loading && (
+              <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+            )}
+            {banner ? "Update" : "Save"}
           </button>
-          {banner && (
-            <button
-              type="button"
-              onClick={() => {
-                onSave();
-                setFormData({ title: "", subtitle: "", ctaText: "", ctaLink: "", isActive: true, order: 0 });
-                setImage(null);
-                setImagePreview(null);
-                setExistingImageUrl(null);
-                if (fileInputRef.current) {
-                  fileInputRef.current.value = "";
-                }
-              }}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition"
-            >
-              Cancel
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={loading}
+            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
         </div>
       </form>
     </div>

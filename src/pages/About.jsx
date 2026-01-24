@@ -169,21 +169,18 @@ export default function About() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="bg-white rounded-xl shadow-lg p-8">
-            <div className="text-5xl font-bold mb-4" style={{ color: 'oklch(92% .04 340)' }}>1</div>
             <h3 className="text-2xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Direct Factory Connections</h3>
             <p className="leading-relaxed" style={{ color: 'oklch(60% .02 340)' }}>
               We work directly with manufacturers, eliminating middlemen and ensuring authentic products at the best prices.
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-lg p-8">
-            <div className="text-5xl font-bold mb-4" style={{ color: 'oklch(92% .04 340)' }}>2</div>
             <h3 className="text-2xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Quality Guarantee</h3>
             <p className="leading-relaxed" style={{ color: 'oklch(60% .02 340)' }}>
               Every product undergoes strict quality checks and comes with authenticity guarantee from our trusted partners.
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-lg p-8">
-            <div className="text-5xl font-bold mb-4" style={{ color: 'oklch(92% .04 340)' }}>3</div>
             <h3 className="text-2xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Dedicated Support</h3>
             <p className="leading-relaxed" style={{ color: 'oklch(60% .02 340)' }}>
               Our experienced team provides personalized support to help you find the right products for every occasion.

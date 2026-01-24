@@ -1,4 +1,5 @@
 import { API } from "../../api";
+import AdminTable from "./AdminTable";
 
 export default function OccasionList({ occasions, onEdit, onDelete }) {
   const handleDelete = async (occasionId) => {
@@ -34,59 +35,94 @@ export default function OccasionList({ occasions, onEdit, onDelete }) {
     );
   }
 
-  return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-      <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900">All Occasions ({occasions.length})</h3>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-        {occasions.map((occasion) => (
-          <div
-            key={occasion.id}
-            className={`border-2 rounded-lg p-4 hover:border-pink-300 transition overflow-hidden ${
-              occasion.isActive ? "border-gray-200" : "border-gray-300 bg-gray-50 opacity-75"
-            }`}
-          >
-            <div className="w-full h-32 mb-3 rounded-lg overflow-hidden bg-gradient-to-br from-pink-50 to-pink-100 flex items-center justify-center">
-              {occasion.imageUrl ? (
-                <img
-                  src={occasion.imageUrl}
-                  alt={occasion.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-4xl">🎉</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 mb-2">
-              <h4 className="font-bold text-lg text-gray-900">{occasion.name}</h4>
-              {!occasion.isActive && (
-                <span className="px-2 py-1 bg-gray-300 text-gray-700 text-xs rounded-full font-semibold">
-                  Inactive
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-gray-600 mb-1">Slug: {occasion.slug}</p>
-            <p className="text-sm text-pink-600 font-semibold mb-4">
-              {occasion._count?.products || 0} products
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onEdit(occasion)}
-                className="flex-1 px-3 py-2 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(occasion.id)}
-                className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
-              >
-                Delete
-              </button>
-            </div>
+  const columns = [
+    {
+      key: "image",
+      header: "Image",
+      render: (occasion) =>
+        occasion.imageUrl ? (
+          <img
+            src={occasion.imageUrl}
+            alt={occasion.name}
+            className="w-14 h-14 object-cover rounded-lg"
+          />
+        ) : (
+          <div className="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center text-xl">
+            🎉
           </div>
-        ))}
-      </div>
-    </div>
+        ),
+      searchText: () => "",
+    },
+    {
+      key: "name",
+      header: "Name",
+      render: (occasion) => (
+        <div className="flex items-center gap-2">
+          <div>
+            <div className="font-semibold text-gray-900">{occasion.name}</div>
+            <div className="text-xs text-gray-500">Slug: {occasion.slug}</div>
+          </div>
+          {!occasion.isActive && (
+            <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full font-semibold">
+              Inactive
+            </span>
+          )}
+        </div>
+      ),
+      searchText: (o) => `${o.name} ${o.slug} ${o.isActive ? "active" : "inactive"}`,
+    },
+    {
+      key: "products",
+      header: "Products",
+      render: (occasion) => (
+        <span className="font-semibold text-pink-600">{occasion._count?.products || 0}</span>
+      ),
+      searchText: (o) => String(o._count?.products || 0),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (occasion) => (
+        <span
+          className={`inline-block px-2 py-1 text-xs rounded-full font-semibold ${
+            occasion.isActive ? "bg-pink-100 text-pink-700" : "bg-gray-100 text-gray-700"
+          }`}
+        >
+          {occasion.isActive ? "Active" : "Inactive"}
+        </span>
+      ),
+      searchText: (o) => (o.isActive ? "active" : "inactive"),
+    },
+  ];
+
+  return (
+    <AdminTable
+      title="All Occasions"
+      items={occasions}
+      columns={columns}
+      getRowId={(o) => o.id}
+      actions={(occasion) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(occasion)}
+            className="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDelete(occasion.id)}
+            className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+      emptyState={
+        <>
+          <div className="text-6xl mb-4">🎉</div>
+          <p className="text-gray-600 font-medium">No occasions yet. Add your first occasion above!</p>
+        </>
+      }
+    />
   );
 }
