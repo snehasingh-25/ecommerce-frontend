@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { API } from "../api";
 
 function getLowestAndHighestPrice(product) {
@@ -14,28 +14,159 @@ function formatINR(n) {
   return `₹${Math.round(n)}`;
 }
 
+// Detect video URL type and extract embed info
+function getVideoEmbedInfo(url) {
+  if (!url) return { type: "none", url: null };
+  
+  const trimmed = url.trim();
+  
+  // Instagram URL patterns
+  const instagramReelMatch = trimmed.match(/instagram\.com\/reel\/([A-Za-z0-9_-]+)/);
+  const instagramPostMatch = trimmed.match(/instagram\.com\/p\/([A-Za-z0-9_-]+)/);
+  
+  if (instagramReelMatch || instagramPostMatch) {
+    const postId = instagramReelMatch?.[1] || instagramPostMatch?.[1];
+    return {
+      type: "instagram",
+      postId,
+      embedUrl: `https://www.instagram.com/p/${postId}/embed/`,
+      originalUrl: trimmed,
+    };
+  }
+  
+  // YouTube URL patterns
+  const youtubePattern = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
+  const youtubeMatch = trimmed.match(youtubePattern);
+  if (youtubeMatch) {
+    return {
+      type: "youtube",
+      videoId: youtubeMatch[1],
+      embedUrl: `https://www.youtube.com/embed/${youtubeMatch[1]}`,
+      originalUrl: trimmed,
+    };
+  }
+  
+  // Direct video file (mp4, webm, etc.)
+  if (/\.(mp4|webm|ogg|mov|m3u8)(\?|$)/i.test(trimmed) || trimmed.startsWith("blob:") || trimmed.startsWith("data:")) {
+    return {
+      type: "direct",
+      url: trimmed,
+    };
+  }
+  
+  // Default to direct (might be a CDN URL or other video host)
+  return {
+    type: "direct",
+    url: trimmed,
+  };
+}
+
 export default function ReelCarousel({ reels }) {
   const scrollerRef = useRef(null);
   const rafRef = useRef(null);
   const cardWidthRef = useRef(0);
   const activeIndexRef = useRef(0);
+  const videoRefs = useRef(new Map()); // Map of reel.id -> video element
+  const iframeRefs = useRef(new Map()); // Map of reel.id -> iframe element
   const [activeIndex, setActiveIndex] = useState(0); // index within base reels
   const [mutedById, setMutedById] = useState(() => new Map());
   const [viewedIds, setViewedIds] = useState(() => new Set());
+  const [videoReady, setVideoReady] = useState(() => new Set());
+  const [videoError, setVideoError] = useState(() => new Set());
 
   const base = Array.isArray(reels) ? reels : [];
-  const loop = useMemo(() => {
-    if (base.length === 0) return [];
-    // 3 copies so we can "teleport" to keep infinite illusion
-    return [...base, ...base, ...base];
-  }, [base]);
-
   const baseCount = base.length;
-  const middleStart = baseCount; // start of middle copy
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
   }, [activeIndex]);
+
+  const markReady = (id) => {
+    setVideoReady((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    setVideoError((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const markError = (id) => {
+    setVideoError((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  };
+
+  // Auto-play videos when they become active (only for direct video files)
+  useEffect(() => {
+    if (baseCount === 0) return;
+    
+    const playActiveVideos = () => {
+      base.forEach((reel, idx) => {
+        const isActive = idx === activeIndex;
+        const shouldPlay =
+          baseCount <= 2 ||
+          isActive ||
+          idx === ((activeIndex + 1) % baseCount) ||
+          idx === ((activeIndex - 1 + baseCount) % baseCount);
+
+        const video = videoRefs.current.get(reel.id);
+        const videoUrl = reel.videoUrl || reel.url;
+        const embedInfo = getVideoEmbedInfo(videoUrl);
+        
+        // Only handle direct video files, not embeds
+        if (video && shouldPlay && embedInfo.type === "direct" && embedInfo.url) {
+          // Set src if not already set or different
+          if (!video.src || video.src !== embedInfo.url) {
+            video.src = embedInfo.url;
+            video.load();
+          }
+          
+          // Try to play if video is ready
+          if (video.readyState >= 2) {
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  console.log(`Reel ${reel.id} playing successfully`);
+                  markReady(reel.id);
+                })
+                .catch((err) => {
+                  console.warn(`Reel ${reel.id} autoplay blocked:`, err);
+                });
+            }
+          } else if (video.readyState >= 1) {
+            // Video is loading, wait for it
+            const tryPlay = () => {
+              video.play().catch(() => {});
+            };
+            video.addEventListener("canplay", tryPlay, { once: true });
+            video.addEventListener("loadeddata", tryPlay, { once: true });
+          }
+        } else if (video && !shouldPlay) {
+          // Pause videos that shouldn't play
+          video.pause();
+        } else if (embedInfo.type === "instagram" || embedInfo.type === "youtube") {
+          // For embeds, mark as ready when they become active (iframe handles loading)
+          if (shouldPlay) {
+            markReady(reel.id);
+          }
+        }
+      });
+    };
+
+    // Small delay to ensure DOM is updated
+    const timeoutId = setTimeout(playActiveVideos, 100);
+    return () => clearTimeout(timeoutId);
+  }, [activeIndex, baseCount, base]);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -60,19 +191,7 @@ export default function ReelCarousel({ reels }) {
     };
   }, []);
 
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el || baseCount === 0) return;
-
-    // Jump to middle copy on mount so you can scroll both directions.
-    // Use rAF so layout has measured widths.
-    requestAnimationFrame(() => {
-      const cardWidth = cardWidthRef.current || el.querySelector("[data-reel-card='1']")?.getBoundingClientRect().width || 0;
-      if (!cardWidth) return;
-      el.scrollLeft = middleStart * cardWidth;
-      setActiveIndex(0);
-    });
-  }, [baseCount, middleStart]);
+  // No need to jump to middle - just start at the beginning
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -86,20 +205,11 @@ export default function ReelCarousel({ reels }) {
         const center = el.scrollLeft + el.clientWidth / 2;
         const rawIndex = Math.round(center / cardWidth - 0.5);
 
-        // Map to base index
-        const normalized = ((rawIndex % baseCount) + baseCount) % baseCount;
+        // Clamp to valid range (no infinite loop)
+        const normalized = Math.max(0, Math.min(rawIndex, baseCount - 1));
         if (normalized !== activeIndexRef.current) {
           activeIndexRef.current = normalized;
           setActiveIndex(normalized);
-        }
-
-        // Teleport when user scrolls too close to the ends
-        const min = cardWidth * (baseCount * 0.5);
-        const max = cardWidth * (baseCount * 2.5);
-        if (el.scrollLeft < min) {
-          el.scrollLeft += cardWidth * baseCount;
-        } else if (el.scrollLeft > max) {
-          el.scrollLeft -= cardWidth * baseCount;
         }
       });
     };
@@ -144,14 +254,13 @@ export default function ReelCarousel({ reels }) {
           msOverflowStyle: "none",
         }}
       >
-        {loop.map((reel, i) => {
-          const baseIndex = ((i % baseCount) + baseCount) % baseCount;
-          const isActive = baseIndex === activeIndex;
+        {base.map((reel, i) => {
+          const isActive = i === activeIndex;
           const shouldPlay =
             baseCount <= 2 ||
             isActive ||
-            baseIndex === ((activeIndex + 1) % baseCount) ||
-            baseIndex === ((activeIndex - 1 + baseCount) % baseCount);
+            i === activeIndex + 1 ||
+            i === activeIndex - 1;
           const product = reel.product || null;
           const productImg =
             (product?.images && Array.isArray(product.images) && product.images[0]) ||
@@ -169,10 +278,20 @@ export default function ReelCarousel({ reels }) {
           const { low, high } = getLowestAndHighestPrice(product);
           const discountPct = Number.isFinite(Number(reel.discountPct)) ? Number(reel.discountPct) : null;
           const original = discountPct && low ? Math.round((low * 100) / (100 - discountPct)) : null;
+          // Get video URL - prioritize videoUrl, fallback to url
+          const videoUrl = (reel.videoUrl || reel.url)?.trim();
+          const embedInfo = getVideoEmbedInfo(videoUrl);
+          const videoIsReady = videoReady.has(reel.id);
+          const videoHasError = videoError.has(reel.id);
+          
+          // Debug logging
+          if (isActive && videoUrl) {
+            console.log(`Reel ${reel.id} video URL:`, videoUrl, `Type: ${embedInfo.type}`);
+          }
 
           return (
             <div
-              key={`${reel.id}-${i}`}
+              key={reel.id}
               data-reel-card="1"
               className={[
                 // Mobile: ~1 centered + peeking sides
@@ -185,26 +304,282 @@ export default function ReelCarousel({ reels }) {
               <div className="relative rounded-2xl overflow-hidden shadow-md bg-black">
                 {/* 9:16 */}
                 <div className="relative w-full" style={{ paddingBottom: "177.78%" }}>
-                  {reel.videoUrl || reel.url ? (
-                    <video
-                      className="absolute inset-0 w-full h-full object-cover"
-                      // Avoid downloading/playing every reel immediately on scroll:
-                      // Only the center (and adjacent) reels get a src.
-                      src={shouldPlay ? (reel.videoUrl || reel.url) : undefined}
-                      poster={productImg || undefined}
-                      playsInline
-                      loop
-                      muted={isMuted(reel.id)}
-                      autoPlay={shouldPlay}
-                      preload={shouldPlay ? "metadata" : "none"}
-                      onPlay={() => markViewed(reel.id)}
-                      onClick={() => setMutedFor(reel.id, !isMuted(reel.id))}
-                    />
+                  {videoUrl ? (
+                    <>
+                      {/* Fallback background - shows if video fails or is loading */}
+                      {(!videoIsReady || videoHasError) && embedInfo.type !== "instagram" && embedInfo.type !== "youtube" && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center">
+                          {productImg ? (
+                            <img
+                              src={productImg}
+                              alt={product?.name || reel.title || "Reel"}
+                              className="absolute inset-0 w-full h-full object-cover opacity-50"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <div className="text-center z-10">
+                              <div className="text-6xl mb-2 animate-pulse">🎬</div>
+                              <div className="text-white/70 text-xs font-semibold">Loading reel...</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Instagram Embed */}
+                      {embedInfo.type === "instagram" && (
+                        <>
+                          <div 
+                            className="absolute inset-0 cursor-pointer"
+                            onClick={(e) => {
+                              // Click through to the iframe to trigger Instagram's play
+                              const iframe = e.currentTarget.nextElementSibling;
+                              if (iframe && iframe.tagName === 'IFRAME') {
+                                // Try to click the iframe's play button area
+                                const rect = iframe.getBoundingClientRect();
+                                const clickEvent = new MouseEvent('click', {
+                                  view: window,
+                                  bubbles: true,
+                                  cancelable: true,
+                                  clientX: rect.left + rect.width / 2,
+                                  clientY: rect.top + rect.height / 2,
+                                });
+                                iframe.dispatchEvent(clickEvent);
+                                // Also try clicking the iframe directly
+                                iframe.click();
+                              }
+                            }}
+                          />
+                          <iframe
+                            src={embedInfo.embedUrl}
+                            className="absolute inset-0 w-full h-full pointer-events-auto"
+                            frameBorder="0"
+                            scrolling="no"
+                            allowtransparency="true"
+                            allow="encrypted-media"
+                            onLoad={() => {
+                              console.log(`Reel ${reel.id} Instagram embed loaded`);
+                              markReady(reel.id);
+                            }}
+                            onError={() => {
+                              console.error(`Reel ${reel.id} Instagram embed error`);
+                              markError(reel.id);
+                            }}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              border: "none",
+                              overflow: "hidden",
+                            }}
+                          />
+                          {/* Click to play overlay - only show if video hasn't started */}
+                          {!videoIsReady && (
+                            <div 
+                              className="absolute inset-0 flex items-center justify-center bg-black/20 z-10 cursor-pointer group"
+                              onClick={() => {
+                                // The iframe will handle the click
+                              }}
+                            >
+                              <div className="text-center">
+                                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center transition-all duration-200 group-hover:scale-110">
+                                  <svg className="w-8 h-8 text-gray-900 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                </div>
+                                <div className="text-white font-semibold text-sm drop-shadow-lg">Tap to play</div>
+                              </div>
+                            </div>
+                          )}
+                          {/* Mute/Unmute button overlay for Instagram */}
+                          {/* <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMutedFor(reel.id, !isMuted(reel.id));
+                            }}
+                            className="absolute top-3 right-12 z-20 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all duration-200 active:scale-95"
+                            aria-label={isMuted(reel.id) ? "Unmute" : "Mute"}
+                            title={isMuted(reel.id) ? "Click to unmute" : "Click to mute"}
+                          >
+                            {isMuted(reel.id) ? (
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                              </svg>
+                            )}
+                          </button> */}
+                        </>
+                      )}
+
+                      {/* YouTube Embed */}
+                      {embedInfo.type === "youtube" && (
+                        <>
+                          <iframe
+                            ref={(el) => {
+                              if (el) {
+                                iframeRefs.current.set(reel.id, el);
+                              } else {
+                                iframeRefs.current.delete(reel.id);
+                              }
+                            }}
+                            src={`${embedInfo.embedUrl}?autoplay=${shouldPlay ? 1 : 0}&mute=${isMuted(reel.id) ? 1 : 0}&loop=1&playlist=${embedInfo.videoId}&controls=0`}
+                            className="absolute inset-0 w-full h-full"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            onLoad={() => {
+                              console.log(`Reel ${reel.id} YouTube embed loaded`);
+                              markReady(reel.id);
+                            }}
+                            onError={() => {
+                              console.error(`Reel ${reel.id} YouTube embed error`);
+                              markError(reel.id);
+                            }}
+                          />
+                          {/* Mute/Unmute button overlay for YouTube */}
+                          <button
+                            onClick={() => {
+                              const newMuteState = !isMuted(reel.id);
+                              setMutedFor(reel.id, newMuteState);
+                              // Update iframe src to reflect mute state
+                              const iframe = iframeRefs.current.get(reel.id);
+                              if (iframe) {
+                                iframe.src = `${embedInfo.embedUrl}?autoplay=1&mute=${newMuteState ? 1 : 0}&loop=1&playlist=${embedInfo.videoId}&controls=0`;
+                              }
+                            }}
+                            className="absolute top-3 right-12 z-20 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all duration-200 active:scale-95"
+                            aria-label={isMuted(reel.id) ? "Unmute" : "Mute"}
+                            title={isMuted(reel.id) ? "Click to unmute" : "Click to mute"}
+                          >
+                            {isMuted(reel.id) ? (
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                              </svg>
+                            )}
+                          </button>
+                        </>
+                      )}
+
+                      {/* Direct Video element - for MP4, WebM, etc. */}
+                      {embedInfo.type === "direct" && (
+                        <>
+                          <video
+                            ref={(el) => {
+                              if (el) {
+                                videoRefs.current.set(reel.id, el);
+                                // Force load for active videos
+                                if (shouldPlay && embedInfo.url && el.src !== embedInfo.url) {
+                                  el.src = embedInfo.url;
+                                  el.load();
+                                }
+                              } else {
+                                videoRefs.current.delete(reel.id);
+                              }
+                            }}
+                            className={[
+                              "absolute inset-0 w-full h-full object-cover",
+                              videoIsReady && !videoHasError ? "opacity-100" : "opacity-0",
+                              "transition-opacity duration-500",
+                            ].join(" ")}
+                            src={shouldPlay && embedInfo.url ? embedInfo.url : undefined}
+                            poster={productImg || undefined}
+                            playsInline
+                            loop
+                            muted={isMuted(reel.id)}
+                            autoPlay={shouldPlay}
+                            preload={shouldPlay ? "auto" : "metadata"}
+                            onLoadedData={(e) => {
+                              const video = e.target;
+                              console.log(`Reel ${reel.id} loaded data, readyState:`, video.readyState);
+                              markReady(reel.id);
+                              if (shouldPlay) {
+                                requestAnimationFrame(() => {
+                                  video.play().catch((err) => {
+                                    console.warn(`Reel ${reel.id} autoplay blocked:`, err);
+                                  });
+                                });
+                              }
+                            }}
+                            onCanPlay={(e) => {
+                              const video = e.target;
+                              console.log(`Reel ${reel.id} can play`);
+                              markReady(reel.id);
+                              if (shouldPlay) {
+                                requestAnimationFrame(() => {
+                                  video.play().catch((err) => {
+                                    console.warn(`Reel ${reel.id} play failed:`, err);
+                                  });
+                                });
+                              }
+                            }}
+                            onLoadedMetadata={(e) => {
+                              const video = e.target;
+                              console.log(`Reel ${reel.id} metadata loaded, readyState:`, video.readyState);
+                              markReady(reel.id);
+                              if (shouldPlay && video.readyState >= 2) {
+                                requestAnimationFrame(() => {
+                                  video.play().catch((err) => {
+                                    console.warn(`Reel ${reel.id} metadata play failed:`, err);
+                                  });
+                                });
+                              }
+                            }}
+                            onPlaying={() => {
+                              console.log(`Reel ${reel.id} is playing`);
+                              markReady(reel.id);
+                            }}
+                            onError={(e) => {
+                              const video = e.target;
+                              console.error(`Video error for reel ${reel.id}:`, {
+                                url: embedInfo.url,
+                                error: video.error,
+                                code: video.error?.code,
+                                message: video.error?.message,
+                              });
+                              markError(reel.id);
+                            }}
+                            onPlay={() => markViewed(reel.id)}
+                          />
+                          {/* Mute/Unmute button overlay for direct videos */}
+                          <button
+                            onClick={() => {
+                              const video = videoRefs.current.get(reel.id);
+                              if (video) {
+                                video.muted = !isMuted(reel.id);
+                                setMutedFor(reel.id, !isMuted(reel.id));
+                              }
+                            }}
+                            className="absolute top-3 right-12 z-20 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all duration-200 active:scale-95"
+                            aria-label={isMuted(reel.id) ? "Unmute" : "Mute"}
+                            title={isMuted(reel.id) ? "Click to unmute" : "Click to mute"}
+                          >
+                            {isMuted(reel.id) ? (
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                              </svg>
+                            )}
+                          </button>
+                        </>
+                      )}
+                    </>
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-                      <div className="text-center px-6">
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-black">
+                      <div className="text-center px-6 z-10">
                         <div className="text-5xl mb-3">🎬</div>
-                        <div className="text-white/90 font-semibold">Reel video missing</div>
+                        <div className="text-white font-semibold">Reel video missing</div>
                         <div className="text-white/70 text-sm mt-1">Add a reel video URL in Admin</div>
                       </div>
                     </div>
@@ -222,11 +597,6 @@ export default function ReelCarousel({ reels }) {
                         {discountPct}% OFF
                       </span>
                     ) : null}
-                  </div>
-
-                  <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 text-white text-xs">
-                    <span aria-hidden>👁️</span>
-                    <span>{reel.viewCount ?? 0}</span>
                   </div>
 
                   {/* Bottom overlays */}
@@ -260,9 +630,16 @@ export default function ReelCarousel({ reels }) {
                             ) : null}
                           </div>
                         )}
-                        <div className="text-white/70 text-[11px] mt-1">
-                          Tap to {isMuted(reel.id) ? "unmute" : "mute"}
-                        </div>
+                        {(embedInfo.type === "direct" || embedInfo.type === "youtube") && (
+                          <div className="text-white/70 text-[11px] mt-1">
+                            Tap to {isMuted(reel.id) ? "unmute" : "mute"}
+                          </div>
+                        )}
+                        {embedInfo.type === "instagram" && (
+                          <div className="text-white/70 text-[11px] mt-1">
+                            Tap button to {isMuted(reel.id) ? "unmute" : "mute"}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

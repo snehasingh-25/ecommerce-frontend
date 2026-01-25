@@ -1,7 +1,9 @@
 import { API } from "../../api";
 import AdminTable from "./AdminTable";
+import { useToast } from "../../context/ToastContext";
 
 export default function ReelList({ reels, onEdit, onDelete }) {
+  const toast = useToast();
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this reel?")) {
       return;
@@ -17,15 +19,15 @@ export default function ReelList({ reels, onEdit, onDelete }) {
       });
 
       if (res.ok) {
-        alert("Reel deleted successfully!");
+        toast.success("Reel deleted");
         onDelete();
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to delete reel");
+        toast.error(data.error || "Failed to delete reel");
       }
     } catch (error) {
       console.error("Error deleting reel:", error);
-      alert("Error deleting reel. Please try again.");
+      toast.error("Error deleting reel. Please try again.");
     }
   };
 

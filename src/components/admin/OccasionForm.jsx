@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../../api";
+import { useToast } from "../../context/ToastContext";
 
 export default function OccasionForm({ occasion, onSave, onCancel }) {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -120,7 +122,7 @@ export default function OccasionForm({ occasion, onSave, onCancel }) {
       const data = await res.json();
 
       if (res.ok) {
-        alert(occasion ? "Occasion updated successfully!" : "Occasion created successfully!");
+        toast.success(occasion ? "Occasion updated" : "Occasion created");
         onSave();
         setFormData({ name: "", slug: "", description: "", isActive: true });
         setImage(null);
@@ -131,10 +133,10 @@ export default function OccasionForm({ occasion, onSave, onCancel }) {
         }
         initialSnapshotRef.current = "";
       } else {
-        alert("Error: " + (data.error || data.message || "Failed to save occasion"));
+        toast.error(data.error || data.message || "Failed to save occasion");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast.error(error.message || "Failed to save occasion");
     } finally {
       setLoading(false);
       isSubmittingRef.current = false;

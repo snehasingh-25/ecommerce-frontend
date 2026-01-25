@@ -73,7 +73,7 @@ export default function BannerSlider() {
           alt={currentBanner.title}
           className="w-full h-full object-contain sm:object-cover transition-opacity duration-500"
           decoding="async"
-          fetchpriority="high"
+          fetchPriority="high"
         />
         
         {/* Overlay Gradient */}
@@ -91,24 +91,22 @@ export default function BannerSlider() {
                   {currentBanner.subtitle}
                 </p>
               )}
-              {currentBanner.ctaText && currentBanner.ctaLink && (
-                <Link
-                  to={currentBanner.ctaLink}
-                  className="inline-block px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
-                  style={{ 
-                    backgroundColor: 'oklch(92% .04 340)',
-                    color: 'oklch(20% .02 340)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = 'oklch(88% .06 340)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'oklch(92% .04 340)';
-                  }}
-                >
-                  {currentBanner.ctaText}
-                </Link>
-              )}
+              <Link
+                to={currentBanner.ctaLink || "/categories"}
+                className="inline-block px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                style={{ 
+                  backgroundColor: 'oklch(92% .04 340)',
+                  color: 'oklch(20% .02 340)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = 'oklch(88% .06 340)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'oklch(92% .04 340)';
+                }}
+              >
+                {currentBanner.ctaText || "Shop Now"}
+              </Link>
             </div>
           </div>
         </div>

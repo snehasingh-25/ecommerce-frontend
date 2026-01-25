@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API } from "../api";
+import { useToast } from "../context/ToastContext";
 import ProductForm from "../components/admin/ProductForm";
 import CategoryForm from "../components/admin/CategoryForm";
 import ProductList from "../components/admin/ProductList";
@@ -18,6 +19,7 @@ import BannerList from "../components/admin/BannerList";
 export default function AdminDashboard() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState("products");
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -54,7 +56,7 @@ export default function AdminDashboard() {
         if (!productsRes.ok) {
           const errorData = await productsRes.json();
           console.error("Error fetching products:", errorData);
-          alert(`Error loading products: ${errorData.error || productsRes.statusText}`);
+          toast.error(`Error loading products: ${errorData.error || productsRes.statusText}`);
           setProducts([]);
         } else {
           const productsData = await productsRes.json();

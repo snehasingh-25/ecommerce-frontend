@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { memo, useMemo } from "react";
+import { useToast } from "../context/ToastContext";
 
 function ProductCard({ product }) {
   const { addToCart } = useCart();
+  const toast = useToast();
   const images = useMemo(() => {
     if (!product?.images) return [];
     if (Array.isArray(product.images)) return product.images;
@@ -17,16 +19,13 @@ function ProductCard({ product }) {
 
   const handleAddToCart = () => {
     if (!product.sizes || product.sizes.length === 0) {
-      alert("This product has no sizes available");
+      toast.error("This product has no sizes available");
       return;
     }
 
     // If only one size, add directly. Otherwise, navigate to product detail
     if (product.sizes.length === 1) {
-      const success = addToCart(product, product.sizes[0], 1);
-      if (success) {
-        alert("Added to cart!");
-      }
+      addToCart(product, product.sizes[0], 1);
     } else {
       // Navigate to product detail to select size
       window.location.href = `/product/${product.id}`;

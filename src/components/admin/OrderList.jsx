@@ -1,7 +1,9 @@
 import { API } from "../../api";
 import AdminTable from "./AdminTable";
+import { useToast } from "../../context/ToastContext";
 
 export default function OrderList({ orders, onUpdate }) {
+  const toast = useToast();
   const updateStatus = async (orderId, newStatus) => {
     try {
       const token = localStorage.getItem("adminToken");
@@ -15,13 +17,14 @@ export default function OrderList({ orders, onUpdate }) {
       });
 
       if (res.ok) {
+        toast.success("Order updated");
         onUpdate();
       } else {
         const data = await res.json();
-        alert("Error: " + (data.error || data.message));
+        toast.error(data.error || data.message || "Failed to update order");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast.error(error.message || "Failed to update order");
     }
   };
 

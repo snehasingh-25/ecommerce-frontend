@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../../api";
+import { useToast } from "../../context/ToastContext";
 
 export default function CategoryForm({ category, onSave, onCancel }) {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -115,7 +117,7 @@ export default function CategoryForm({ category, onSave, onCancel }) {
       const data = await res.json();
 
       if (res.ok) {
-        alert(category ? "Category updated successfully!" : "Category created successfully!");
+        toast.success(category ? "Category updated" : "Category created");
         onSave();
         setFormData({ name: "", slug: "", description: "", order: 0 });
         setImage(null);
@@ -126,10 +128,10 @@ export default function CategoryForm({ category, onSave, onCancel }) {
         }
         initialSnapshotRef.current = "";
       } else {
-        alert("Error: " + (data.error || data.message || "Failed to save category"));
+        toast.error(data.error || data.message || "Failed to save category");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast.error(error.message || "Failed to save category");
     } finally {
       setLoading(false);
       isSubmittingRef.current = false;

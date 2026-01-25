@@ -1,7 +1,9 @@
 import { API } from "../../api";
 import AdminTable from "./AdminTable";
+import { useToast } from "../../context/ToastContext";
 
 export default function ProductList({ products, onEdit, onDelete }) {
+  const toast = useToast();
   // Ensure products is always an array
   const safeProducts = Array.isArray(products) ? products : [];
 
@@ -18,14 +20,14 @@ export default function ProductList({ products, onEdit, onDelete }) {
       });
 
       if (res.ok) {
-        alert("Product deleted successfully!");
+        toast.success("Product deleted");
         onDelete();
       } else {
         const data = await res.json();
-        alert("Error: " + (data.error || data.message));
+        toast.error(data.error || data.message || "Failed to delete product");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast.error(error.message || "Failed to delete product");
     }
   };
 

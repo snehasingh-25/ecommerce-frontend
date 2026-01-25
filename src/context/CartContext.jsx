@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useToast } from "./ToastContext";
 
 const CartContext = createContext();
 const CART_STORAGE_KEY = "giftchoice_cart";
@@ -29,7 +30,8 @@ const saveCartToStorage = (cartItems) => {
     console.error("Error saving cart to localStorage:", error);
     // Handle quota exceeded error
     if (error.name === "QuotaExceededError") {
-      alert("Cart storage is full. Please clear some items.");
+      // We can't toast here (outside provider render), so just log.
+      console.warn("Cart storage is full. Please clear some items.");
     }
   }
 };
@@ -37,6 +39,7 @@ const saveCartToStorage = (cartItems) => {
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const toast = useToast();
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -54,7 +57,7 @@ export function CartProvider({ children }) {
 
   const addToCart = (product, selectedSize, quantity = 1) => {
     if (!selectedSize) {
-      alert("Please select a size");
+      toast.error("Please select a size");
       return;
     }
 
@@ -92,6 +95,7 @@ export function CartProvider({ children }) {
       }
     });
 
+    toast.success("Added to cart");
     return true;
   };
 

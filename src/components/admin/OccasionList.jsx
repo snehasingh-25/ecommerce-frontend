@@ -1,7 +1,9 @@
 import { API } from "../../api";
 import AdminTable from "./AdminTable";
+import { useToast } from "../../context/ToastContext";
 
 export default function OccasionList({ occasions, onEdit, onDelete }) {
+  const toast = useToast();
   const handleDelete = async (occasionId) => {
     if (!confirm("Are you sure you want to delete this occasion?")) return;
 
@@ -15,14 +17,14 @@ export default function OccasionList({ occasions, onEdit, onDelete }) {
       });
 
       if (res.ok) {
-        alert("Occasion deleted successfully!");
+        toast.success("Occasion deleted");
         onDelete();
       } else {
         const data = await res.json();
-        alert("Error: " + (data.error || data.message));
+        toast.error(data.error || data.message || "Failed to delete occasion");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast.error(error.message || "Failed to delete occasion");
     }
   };
 

@@ -1,7 +1,9 @@
 import { API } from "../../api";
 import AdminTable from "./AdminTable";
+import { useToast } from "../../context/ToastContext";
 
 export default function CategoryList({ categories, onEdit, onDelete }) {
+  const toast = useToast();
   const handleDelete = async (categoryId) => {
     if (!confirm("Are you sure you want to delete this category?")) return;
 
@@ -15,14 +17,14 @@ export default function CategoryList({ categories, onEdit, onDelete }) {
       });
 
       if (res.ok) {
-        alert("Category deleted successfully!");
+        toast.success("Category deleted");
         onDelete();
       } else {
         const data = await res.json();
-        alert("Error: " + (data.error || data.message));
+        toast.error(data.error || data.message || "Failed to delete category");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast.error(error.message || "Failed to delete category");
     }
   };
 

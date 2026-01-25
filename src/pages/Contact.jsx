@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { API } from "../api";
+import { useToast } from "../context/ToastContext";
 
 export default function Contact() {
+  const toast = useToast();
   const [form, setForm] = useState({ 
     name: "", 
     email: "", 
@@ -27,13 +29,13 @@ export default function Contact() {
       });
       
       if (response.ok) {
-        alert("Message sent successfully!");
+        toast.success("Message sent");
         setForm({ name: "", email: "", phone: "", company: "", message: "" });
       } else {
-        alert("Failed to send message. Please try again.");
+        toast.error("Failed to send message. Please try again.");
       }
     } catch (error) {
-      alert("Error sending message. Please try again.");
+      toast.error("Error sending message. Please try again.");
     } finally {
       setSubmitting(false);
     }

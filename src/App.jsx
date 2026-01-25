@@ -1,11 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
+import { ToastProvider } from "./context/ToastContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ChatBot from "./components/ChatBot";
 import ScrollToTop from "./components/ScrollToTop";
+import ToastViewport from "./components/ToastViewport";
 
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -46,27 +48,30 @@ function PublicLayout() {
 export default function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <Routes>
-            {/* Admin Routes (no navbar/footer) */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route
-              path="/admin/dashboard"
-              element={
-                <ProtectedRoute>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+      <ToastProvider>
+        <CartProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <ToastViewport />
+            <Routes>
+              {/* Admin Routes (no navbar/footer) */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
 
-            {/* Public Routes */}
-            <Route path="/*" element={<PublicLayout />} />
-          </Routes>
-        </BrowserRouter>
-      </CartProvider>
+              {/* Public Routes */}
+              <Route path="/*" element={<PublicLayout />} />
+            </Routes>
+          </BrowserRouter>
+        </CartProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

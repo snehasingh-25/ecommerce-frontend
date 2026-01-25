@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../../api";
 import ImageUpload from "./ImageUpload";
+import { useToast } from "../../context/ToastContext";
 
 export default function ProductForm({ product, categories, occasions = [], onSave, onCancel }) {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -155,7 +157,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       const data = await res.json();
 
       if (res.ok) {
-        alert(product ? "Product updated successfully!" : "Product created successfully!");
+        toast.success(product ? "Product updated" : "Product created");
         onSave();
         // Reset form
         setFormData({
@@ -174,10 +176,10 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         setSelectedOccasions([]);
         initialSnapshotRef.current = "";
       } else {
-        alert("Error: " + (data.error || data.message || "Failed to save product"));
+        toast.error(data.error || data.message || "Failed to save product");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast.error(error.message || "Failed to save product");
     } finally {
       setLoading(false);
       isSubmittingRef.current = false;

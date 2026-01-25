@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../../api";
+import { useToast } from "../../context/ToastContext";
 
 export default function ReelForm({ reel, onSave, onCancel }) {
+  const toast = useToast();
   const [products, setProducts] = useState([]);
   const [form, setForm] = useState({
     title: "",
@@ -108,7 +110,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
       });
 
       if (res.ok) {
-        alert(reel ? "Reel updated successfully!" : "Reel added successfully!");
+        toast.success(reel ? "Reel updated" : "Reel created");
         onSave();
         if (!reel) {
           setForm({
@@ -126,11 +128,11 @@ export default function ReelForm({ reel, onSave, onCancel }) {
         }
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to save reel");
+        toast.error(data.error || "Failed to save reel");
       }
     } catch (error) {
       console.error("Error saving reel:", error);
-      alert("Error saving reel. Please try again.");
+      toast.error("Error saving reel. Please try again.");
     } finally {
       setLoading(false);
       isSubmittingRef.current = false;

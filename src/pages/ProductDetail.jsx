@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { API } from "../api";
 import { useCart } from "../context/CartContext";
+import { useToast } from "../context/ToastContext";
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const toast = useToast();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState(null);
@@ -63,13 +65,13 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     if (!selectedSize) {
-      alert("Please select a size");
+      toast.error("Please select a size");
       return;
     }
 
     const success = addToCart(product, selectedSize, quantity);
     if (success) {
-      alert("Added to cart!");
+      toast.success("Added to cart");
       // Optionally navigate to cart
       // navigate("/cart");
     }
@@ -388,7 +390,7 @@ export default function ProductDetail() {
                     <button
                       onClick={() => {
                         if (!selectedSize) {
-                          alert("Please select a size");
+                          toast.error("Please select a size");
                           return;
                         }
                         const message = `Hi! I'm interested in:\n\nProduct: ${product.name}\nSize: ${selectedSize.label}\nQuantity: ${quantity}\nPrice: ₹${selectedSize.price}\nTotal: ₹${(Number(selectedSize.price) * quantity).toFixed(2)}`;

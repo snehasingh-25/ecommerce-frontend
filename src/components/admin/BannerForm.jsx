@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../../api";
+import { useToast } from "../../context/ToastContext";
 
 export default function BannerForm({ banner, onSave, onCancel }) {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     title: "",
     subtitle: "",
@@ -128,7 +130,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
       const data = await res.json();
 
       if (res.ok) {
-        alert(banner ? "Banner updated successfully!" : "Banner created successfully!");
+        toast.success(banner ? "Banner updated" : "Banner created");
         onSave();
         setFormData({ title: "", subtitle: "", ctaText: "", ctaLink: "", isActive: true, order: 0 });
         setImage(null);
@@ -139,10 +141,10 @@ export default function BannerForm({ banner, onSave, onCancel }) {
         }
         initialSnapshotRef.current = "";
       } else {
-        alert("Error: " + (data.error || data.message || "Failed to save banner"));
+        toast.error(data.error || data.message || "Failed to save banner");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast.error(error.message || "Failed to save banner");
     } finally {
       setLoading(false);
       isSubmittingRef.current = false;

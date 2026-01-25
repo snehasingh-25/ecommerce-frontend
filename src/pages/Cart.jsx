@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useToast } from "../context/ToastContext";
 
 export default function Cart() {
   const {
@@ -10,10 +11,11 @@ export default function Cart() {
     getCartTotal,
   } = useCart();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleCheckout = () => {
     if (cartItems.length === 0) {
-      alert("Your cart is empty");
+      toast.error("Your cart is empty");
       return;
     }
 

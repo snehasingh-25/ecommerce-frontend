@@ -1,7 +1,9 @@
 import { API } from "../../api";
 import AdminTable from "./AdminTable";
+import { useToast } from "../../context/ToastContext";
 
 export default function MessageList({ messages, onUpdate }) {
+  const toast = useToast();
   const markAsRead = async (messageId) => {
     try {
       const token = localStorage.getItem("adminToken");
@@ -13,13 +15,14 @@ export default function MessageList({ messages, onUpdate }) {
       });
 
       if (res.ok) {
+        toast.success("Marked as read");
         onUpdate();
       } else {
         const data = await res.json();
-        alert("Error: " + (data.error || data.message));
+        toast.error(data.error || data.message || "Failed to update message");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast.error(error.message || "Failed to update message");
     }
   };
 
@@ -36,14 +39,14 @@ export default function MessageList({ messages, onUpdate }) {
       });
 
       if (res.ok) {
-        alert("Message deleted successfully!");
+        toast.success("Message deleted");
         onUpdate();
       } else {
         const data = await res.json();
-        alert("Error: " + (data.error || data.message));
+        toast.error(data.error || data.message || "Failed to delete message");
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast.error(error.message || "Failed to delete message");
     }
   };
 
