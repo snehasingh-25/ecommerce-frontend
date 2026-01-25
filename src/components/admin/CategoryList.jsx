@@ -1,9 +1,10 @@
 import { API } from "../../api";
-import AdminTable from "./AdminTable";
 import { useToast } from "../../context/ToastContext";
+import OrderableList from "./OrderableList";
 
 export default function CategoryList({ categories, onEdit, onDelete }) {
   const toast = useToast();
+  
   const handleDelete = async (categoryId) => {
     if (!confirm("Are you sure you want to delete this category?")) return;
 
@@ -28,84 +29,111 @@ export default function CategoryList({ categories, onEdit, onDelete }) {
     }
   };
 
-  if (categories.length === 0) {
-    return (
-      <div className="bg-white rounded-xl shadow-md p-12 text-center border border-gray-200">
-        <img src="/logo.png" alt="Gift Choice Logo" className="w-20 h-20 mx-auto mb-4 object-contain opacity-50" />
-        <p className="text-gray-600 font-medium">No categories yet. Add your first category above!</p>
-      </div>
-    );
-  }
+  // Sort categories by order
+  const sortedCategories = [...categories].sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  const columns = [
-    {
-      key: "image",
-      header: "Image",
-      render: (category) =>
-        category.imageUrl ? (
+  const renderRow = (category, order, dragHandle, orderInput, isDragging) => (
+    <div
+      className={`flex items-center gap-4 p-4 transition-all ${
+        isDragging ? "opacity-50" : "hover:bg-gray-50"
+      }`}
+    >
+      {/* Drag Handle */}
+      <div className="flex-shrink-0">{dragHandle}</div>
+
+      {/* Order Input */}
+      <div className="flex-shrink-0 w-20">
+        {orderInput || (
+          <div className="text-center">
+            <div className="text-sm font-bold" style={{ color: 'oklch(20% .02 340)' }}>
+              {order}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Image */}
+      <div className="flex-shrink-0">
+        {category.imageUrl ? (
           <img
             src={category.imageUrl}
             alt={category.name}
             className="w-14 h-14 object-cover rounded-lg"
           />
         ) : (
-          <div className="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center text-xl">
+          <div className="w-14 h-14 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
             <img src="/logo.png" alt="Gift Choice Logo" className="w-10 h-10 object-contain opacity-50" />
           </div>
-        ),
-      searchText: () => "",
-    },
-    {
-      key: "name",
-      header: "Name",
-      render: (category) => (
-        <div>
-          <div className="font-semibold text-gray-900">{category.name}</div>
-          <div className="text-xs text-gray-500">Slug: {category.slug}</div>
+        )}
+      </div>
+
+      {/* Name & Details */}
+      <div className="flex-1 min-w-0">
+        <div className="font-semibold" style={{ color: 'oklch(20% .02 340)' }}>
+          {category.name}
         </div>
-      ),
-      searchText: (c) => `${c.name} ${c.slug}`,
-    },
-    {
-      key: "order",
-      header: "Order",
-      render: (category) => <span className="font-semibold">{category.order ?? 0}</span>,
-      searchText: (c) => String(c.order ?? 0),
-    },
-    {
-      key: "products",
-      header: "Products",
-      render: (category) => (
-        <span className="font-semibold text-pink-600">
-          {category._count?.products || 0}
-        </span>
-      ),
-      searchText: (c) => String(c._count?.products || 0),
-    },
-  ];
+        <div className="text-xs" style={{ color: 'oklch(50% .02 340)' }}>
+          Slug: {category.slug}
+        </div>
+      </div>
+
+      {/* Products Count */}
+      <div className="flex-shrink-0 text-right">
+        <div className="text-sm font-semibold" style={{ color: 'oklch(92% .04 340)' }}>
+          {category._count?.products || 0} products
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex-shrink-0 flex gap-2">
+        <button
+          onClick={() => onEdit(category)}
+          className="px-3 py-1.5 rounded-lg text-sm font-semibold transition"
+          style={{ backgroundColor: 'oklch(92% .04 340)', color: 'oklch(20% .02 340)' }}
+          onMouseEnter={(e) => !isDragging && (e.target.style.backgroundColor = 'oklch(88% .06 340)')}
+          onMouseLeave={(e) => (e.target.style.backgroundColor = 'oklch(92% .04 340)')}
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => handleDelete(category.id)}
+          className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderOrderInput = (category, currentOrder, inputValue, onChange, onBlur) => (
+    <input
+      type="number"
+      min="1"
+      max={sortedCategories.length}
+      value={inputValue}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={(e) => onBlur(e.target.value)}
+      className="w-16 px-2 py-1 text-center text-sm font-bold border-2 rounded-lg focus:outline-none focus:ring-2 transition"
+      style={{
+        borderColor: 'oklch(92% .04 340)',
+        color: 'oklch(20% .02 340)'
+      }}
+      onClick={(e) => e.stopPropagation()}
+    />
+  );
 
   return (
-    <AdminTable
+    <OrderableList
+      items={sortedCategories}
+      onReorder={() => {
+        // Refresh list after reorder
+        if (onDelete) onDelete();
+      }}
+      reorderEndpoint="/categories/reorder"
+      getItemId={(c) => c.id}
+      renderRow={renderRow}
+      renderOrderInput={renderOrderInput}
       title="All Categories"
-      items={categories}
-      columns={columns}
-      getRowId={(c) => c.id}
-      actions={(category) => (
-        <div className="flex gap-2">
-          <button
-            onClick={() => onEdit(category)}
-            className="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDelete(category.id)}
-            className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
-          >
-            Delete
-          </button>
-        </div>
-      )}
       emptyState={
         <>
           <img src="/logo.png" alt="Gift Choice Logo" className="w-20 h-20 mx-auto mb-4 object-contain opacity-50" />

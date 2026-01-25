@@ -44,13 +44,20 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const token = localStorage.getItem("adminToken");
+      
+      if (!token) {
+        toast.error("Please login to continue");
+        navigate("/admin/login");
+        return;
+      }
+      
       const headers = { Authorization: `Bearer ${token}` };
 
       if (activeTab === "products") {
         const [productsRes, occasionsRes, categoriesRes] = await Promise.all([
-          fetch(`${API}/products`, { headers }),
+          fetch(`${API}/products`), // Public endpoint, no auth needed
           fetch(`${API}/occasions/all`, { headers }),
-          fetch(`${API}/categories`, { headers }),
+          fetch(`${API}/categories`), // Public endpoint, no auth needed
         ]);
         
         if (!productsRes.ok) {
@@ -66,6 +73,9 @@ export default function AdminDashboard() {
         if (occasionsRes.ok) {
           const occasionsData = await occasionsRes.json();
           setOccasions(Array.isArray(occasionsData) ? occasionsData : []);
+        } else if (occasionsRes.status === 401) {
+          toast.error("Session expired. Please login again.");
+          logout();
         }
 
         if (categoriesRes.ok) {
@@ -73,32 +83,60 @@ export default function AdminDashboard() {
           setCategories(Array.isArray(categoriesData) ? categoriesData : []);
         }
       } else if (activeTab === "categories") {
-        const res = await fetch(`${API}/categories`, { headers });
-        const data = await res.json();
-        setCategories(data);
+        const res = await fetch(`${API}/categories`); // Public endpoint
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data);
+        }
       } else if (activeTab === "occasions") {
         const res = await fetch(`${API}/occasions/all`, { headers });
-        const data = await res.json();
-        setOccasions(data);
+        if (res.ok) {
+          const data = await res.json();
+          setOccasions(data);
+        } else if (res.status === 401) {
+          toast.error("Session expired. Please login again.");
+          logout();
+        }
       } else if (activeTab === "orders") {
         const res = await fetch(`${API}/orders`, { headers });
-        const data = await res.json();
-        setOrders(data);
+        if (res.ok) {
+          const data = await res.json();
+          setOrders(data);
+        } else if (res.status === 401) {
+          toast.error("Session expired. Please login again.");
+          logout();
+        }
       } else if (activeTab === "messages") {
         const res = await fetch(`${API}/contact`, { headers });
-        const data = await res.json();
-        setMessages(data);
+        if (res.ok) {
+          const data = await res.json();
+          setMessages(data);
+        } else if (res.status === 401) {
+          toast.error("Session expired. Please login again.");
+          logout();
+        }
       } else if (activeTab === "reels") {
         const res = await fetch(`${API}/reels/all`, { headers });
-        const data = await res.json();
-        setReels(data);
+        if (res.ok) {
+          const data = await res.json();
+          setReels(data);
+        } else if (res.status === 401) {
+          toast.error("Session expired. Please login again.");
+          logout();
+        }
       } else if (activeTab === "banners") {
         const res = await fetch(`${API}/banners/all`, { headers });
-        const data = await res.json();
-        setBanners(data);
+        if (res.ok) {
+          const data = await res.json();
+          setBanners(data);
+        } else if (res.status === 401) {
+          toast.error("Session expired. Please login again.");
+          logout();
+        }
       }
     } catch (error) {
       console.error("Error loading data:", error);
+      toast.error("Error loading data. Please try again.");
     } finally {
       setLoading(false);
     }

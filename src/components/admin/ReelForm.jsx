@@ -14,10 +14,19 @@ export default function ReelForm({ reel, onSave, onCancel }) {
     order: 0,
     productId: "",
     isTrending: false,
+    isFeatured: false,
     discountPct: "",
   });
+  const [videoFile, setVideoFile] = useState(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState(null);
+  const [existingVideoUrl, setExistingVideoUrl] = useState(null);
+  const [existingThumbnail, setExistingThumbnail] = useState(null);
   const [loading, setLoading] = useState(false);
   const formRef = useRef(null);
+  const videoInputRef = useRef(null);
+  const thumbnailInputRef = useRef(null);
   const isSubmittingRef = useRef(false);
   const initialSnapshotRef = useRef("");
 
@@ -43,8 +52,15 @@ export default function ReelForm({ reel, onSave, onCancel }) {
         order: reel.order || 0,
         productId: reel.productId ? String(reel.productId) : "",
         isTrending: !!reel.isTrending,
+        isFeatured: !!reel.isFeatured,
         discountPct: reel.discountPct !== null && reel.discountPct !== undefined ? String(reel.discountPct) : "",
       });
+      setExistingVideoUrl(reel.videoUrl || reel.url || null);
+      setExistingThumbnail(reel.thumbnail || null);
+      setVideoPreview(reel.videoUrl || reel.url || null);
+      setThumbnailPreview(reel.thumbnail || null);
+      setVideoFile(null);
+      setThumbnailFile(null);
     } else {
       setForm({
         title: "",
@@ -55,8 +71,15 @@ export default function ReelForm({ reel, onSave, onCancel }) {
         order: 0,
         productId: "",
         isTrending: false,
+        isFeatured: false,
         discountPct: "",
       });
+      setExistingVideoUrl(null);
+      setExistingThumbnail(null);
+      setVideoPreview(null);
+      setThumbnailPreview(null);
+      setVideoFile(null);
+      setThumbnailFile(null);
     }
 
     setTimeout(() => {
@@ -71,6 +94,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
               order: reel.order || 0,
               productId: reel.productId ? String(reel.productId) : "",
               isTrending: !!reel.isTrending,
+              isFeatured: !!reel.isFeatured,
               discountPct: reel.discountPct !== null && reel.discountPct !== undefined ? String(reel.discountPct) : "",
             }
           : {
@@ -82,15 +106,71 @@ export default function ReelForm({ reel, onSave, onCancel }) {
               order: 0,
               productId: "",
               isTrending: false,
+              isFeatured: false,
               discountPct: "",
             }
       );
     }, 0);
   }, [reel]);
 
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith("video/")) {
+        setVideoFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setVideoPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        toast.error("Please select a video file");
+      }
+    }
+  };
+
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith("image/")) {
+        setThumbnailFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setThumbnailPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        toast.error("Please select an image file");
+      }
+    }
+  };
+
+  const removeVideo = () => {
+    setVideoFile(null);
+    setVideoPreview(existingVideoUrl);
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
+    }
+  };
+
+  const removeThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview(existingThumbnail);
+    if (thumbnailInputRef.current) {
+      thumbnailInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmittingRef.current) return;
+    
+    // Validate: either video file or URL must be provided
+    if (!videoFile && !form.url) {
+      toast.error("Please provide either a video file or video URL");
+      return;
+    }
+    
     setLoading(true);
     isSubmittingRef.current = true;
     try {
@@ -100,13 +180,47 @@ export default function ReelForm({ reel, onSave, onCancel }) {
         : `${API}/reels`;
       const method = reel ? "PUT" : "POST";
 
+      const formDataToSend = new FormData();
+      formDataToSend.append("title", form.title);
+      formDataToSend.append("platform", form.platform);
+      formDataToSend.append("isActive", form.isActive);
+      formDataToSend.append("order", form.order);
+      formDataToSend.append("productId", form.productId);
+      formDataToSend.append("isTrending", form.isTrending);
+      formDataToSend.append("isFeatured", form.isFeatured);
+      formDataToSend.append("discountPct", form.discountPct);
+      
+      // Add video: file takes priority over URL
+      if (videoFile) {
+        formDataToSend.append("video", videoFile);
+      } else if (form.url) {
+        formDataToSend.append("url", form.url);
+        formDataToSend.append("videoUrl", form.url);
+      }
+      
+      // Add thumbnail: file takes priority over URL
+      if (thumbnailFile) {
+        formDataToSend.append("thumbnail", thumbnailFile);
+      } else if (form.thumbnail) {
+        formDataToSend.append("thumbnail", form.thumbnail);
+      }
+      
+      // For updates, preserve existing URLs if no new file/URL provided
+      if (reel) {
+        if (!videoFile && !form.url && existingVideoUrl) {
+          formDataToSend.append("existingVideoUrl", existingVideoUrl);
+        }
+        if (!thumbnailFile && !form.thumbnail && existingThumbnail) {
+          formDataToSend.append("existingThumbnail", existingThumbnail);
+        }
+      }
+
       const res = await fetch(url, {
         method,
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        body: formDataToSend,
       });
 
       if (res.ok) {
@@ -122,8 +236,17 @@ export default function ReelForm({ reel, onSave, onCancel }) {
             order: 0,
             productId: "",
             isTrending: false,
+            isFeatured: false,
             discountPct: "",
           });
+          setVideoFile(null);
+          setThumbnailFile(null);
+          setVideoPreview(null);
+          setThumbnailPreview(null);
+          setExistingVideoUrl(null);
+          setExistingThumbnail(null);
+          if (videoInputRef.current) videoInputRef.current.value = "";
+          if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
           initialSnapshotRef.current = "";
         }
       } else {
@@ -154,8 +277,17 @@ export default function ReelForm({ reel, onSave, onCancel }) {
       order: 0,
       productId: "",
       isTrending: false,
+      isFeatured: false,
       discountPct: "",
     });
+    setVideoFile(null);
+    setThumbnailFile(null);
+    setVideoPreview(null);
+    setThumbnailPreview(null);
+    setExistingVideoUrl(null);
+    setExistingThumbnail(null);
+    if (videoInputRef.current) videoInputRef.current.value = "";
+    if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
     initialSnapshotRef.current = "";
     onCancel?.();
   };
@@ -176,11 +308,11 @@ export default function ReelForm({ reel, onSave, onCancel }) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 mb-6 border" style={{ borderColor: 'oklch(92% .04 340)' }}>
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <h3 className="text-xl font-bold" style={{ color: 'oklch(20% .02 340)' }}>
+    <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <h2 className="text-xl font-bold text-gray-900">
           {reel ? "Edit Reel" : "Add New Reel"}
-        </h3>
+        </h2>
         <div className="flex gap-2 shrink-0">
           <button
             type="button"
@@ -194,10 +326,7 @@ export default function ReelForm({ reel, onSave, onCancel }) {
             type="button"
             onClick={() => formRef.current?.requestSubmit?.()}
             disabled={loading}
-            className="px-4 py-2 rounded-lg font-semibold transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 text-white disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-pink-500/40 flex items-center justify-center gap-2"
-            style={{ backgroundColor: 'oklch(92% .04 340)' }}
-            onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = 'oklch(88% .06 340)')}
-            onMouseLeave={(e) => (e.target.style.backgroundColor = 'oklch(92% .04 340)')}
+            className="px-4 py-2 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg font-semibold hover:from-pink-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-pink-500/40 flex items-center justify-center gap-2"
           >
             {loading && (
               <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
@@ -206,74 +335,155 @@ export default function ReelForm({ reel, onSave, onCancel }) {
           </button>
         </div>
       </div>
-      <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-4">
+      <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: 'oklch(40% .02 340)' }}>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Title (Optional)
           </label>
           <input
             type="text"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 transition"
-            style={{ 
-              borderColor: 'oklch(92% .04 340)',
-              color: 'oklch(20% .02 340)'
-            }}
+            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
             placeholder="Reel title"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: 'oklch(40% .02 340)' }}>
-            Reel Video URL <span className="text-red-500">*</span>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Reel Video <span className="text-red-500">*</span>
           </label>
-          <input
-            type="url"
-            value={form.url}
-            onChange={(e) => setForm({ ...form, url: e.target.value })}
-            className="w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 transition bg-white"
-            style={{
-              borderColor: 'oklch(92% .04 340)',
-              color: 'oklch(20% .02 340)'
-            }}
-            placeholder="https://.../reel.mp4"
-            required
-          />
-          <p className="text-xs mt-1" style={{ color: 'oklch(60% .02 340)' }}>
-            Use a direct video URL (mp4/webm), ideally vertical 9:16. Muted auto-play is handled on the website.
+          <div className="space-y-3">
+            {/* File Upload */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Upload Video File (or use URL below)
+              </label>
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                onChange={handleVideoChange}
+                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition text-sm"
+              />
+              {videoFile && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs text-gray-600">{videoFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={removeVideo}
+                    className="text-xs text-red-500 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+              {videoPreview && (
+                <div className="mt-2 relative w-full max-w-xs">
+                  <video
+                    src={videoPreview}
+                    controls
+                    className="w-full rounded-lg border border-gray-200"
+                  />
+                </div>
+              )}
+            </div>
+            
+            {/* URL Input */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Or Enter Video URL
+              </label>
+              <input
+                type="url"
+                value={form.url}
+                onChange={(e) => {
+                  setForm({ ...form, url: e.target.value });
+                  if (e.target.value && !videoFile) {
+                    setVideoPreview(e.target.value);
+                  }
+                }}
+                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                placeholder="https://.../reel.mp4"
+                disabled={!!videoFile}
+              />
+            </div>
+          </div>
+          <p className="text-xs mt-2 text-gray-500">
+            Upload a video file (max 50MB) or provide a direct video URL. Ideally vertical 9:16 format. Muted auto-play is handled on the website.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: 'oklch(40% .02 340)' }}>
-            Thumbnail URL (Optional)
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Thumbnail (Optional)
           </label>
-          <input
-            type="url"
-            value={form.thumbnail}
-            onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
-            className="w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 transition"
-            style={{ 
-              borderColor: 'oklch(92% .04 340)',
-              color: 'oklch(20% .02 340)'
-            }}
-            placeholder="https://example.com/thumbnail.jpg"
-          />
+          <div className="space-y-3">
+            {/* File Upload */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Upload Thumbnail Image (or use URL below)
+              </label>
+              <input
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailChange}
+                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition text-sm"
+              />
+              {thumbnailFile && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs text-gray-600">{thumbnailFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={removeThumbnail}
+                    className="text-xs text-red-500 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+              {thumbnailPreview && (
+                <div className="mt-2 relative w-full max-w-xs">
+                  <img
+                    src={thumbnailPreview}
+                    alt="Thumbnail preview"
+                    className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                  />
+                </div>
+              )}
+            </div>
+            
+            {/* URL Input */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Or Enter Thumbnail URL
+              </label>
+              <input
+                type="url"
+                value={form.thumbnail}
+                onChange={(e) => {
+                  setForm({ ...form, thumbnail: e.target.value });
+                  if (e.target.value && !thumbnailFile) {
+                    setThumbnailPreview(e.target.value);
+                  }
+                }}
+                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                placeholder="https://example.com/thumbnail.jpg"
+                disabled={!!thumbnailFile}
+              />
+            </div>
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: 'oklch(40% .02 340)' }}>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Link Product (Optional)
           </label>
           <select
             value={form.productId}
             onChange={(e) => setForm({ ...form, productId: e.target.value })}
-            className="w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 transition bg-white"
-            style={{
-              borderColor: 'oklch(92% .04 340)',
-              color: 'oklch(20% .02 340)'
-            }}
+            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
           >
             <option value="">No product</option>
             {products.map((p) => (
@@ -286,18 +496,14 @@ export default function ReelForm({ reel, onSave, onCancel }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'oklch(40% .02 340)' }}>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Discount % (Optional)
             </label>
             <input
               type="number"
               value={form.discountPct}
               onChange={(e) => setForm({ ...form, discountPct: e.target.value })}
-              className="w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 transition"
-              style={{
-                borderColor: 'oklch(92% .04 340)',
-                color: 'oklch(20% .02 340)'
-              }}
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
               min="0"
               max="99"
               placeholder="48"
@@ -305,18 +511,14 @@ export default function ReelForm({ reel, onSave, onCancel }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'oklch(40% .02 340)' }}>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Order (Display order)
             </label>
             <input
               type="number"
               value={form.order}
               onChange={(e) => setForm({ ...form, order: parseInt(e.target.value) || 0 })}
-              className="w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 transition"
-              style={{
-                borderColor: 'oklch(92% .04 340)',
-                color: 'oklch(20% .02 340)'
-              }}
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
               min="0"
             />
           </div>
@@ -324,24 +526,20 @@ export default function ReelForm({ reel, onSave, onCancel }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'oklch(40% .02 340)' }}>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Platform
             </label>
             <select
               value={form.platform}
               onChange={(e) => setForm({ ...form, platform: e.target.value })}
-              className="w-full px-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 transition"
-              style={{ 
-                borderColor: 'oklch(92% .04 340)',
-                color: 'oklch(20% .02 340)'
-              }}
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
             >
               <option value="native">Native (Video URL)</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'oklch(40% .02 340)' }}>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Status
             </label>
             <div className="flex items-center gap-2 h-[42px] px-2">
@@ -350,39 +548,45 @@ export default function ReelForm({ reel, onSave, onCancel }) {
                 id="isActive"
                 checked={form.isActive}
                 onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                className="w-4 h-4"
-                style={{ accentColor: 'oklch(92% .04 340)' }}
+                className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
               />
-              <label htmlFor="isActive" className="text-sm font-medium" style={{ color: 'oklch(40% .02 340)' }}>
+              <label htmlFor="isActive" className="text-sm text-gray-700">
                 Active
               </label>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="isTrending"
-            checked={form.isTrending}
-            onChange={(e) => setForm({ ...form, isTrending: e.target.checked })}
-            className="w-4 h-4"
-            style={{ accentColor: 'oklch(92% .04 340)' }}
-          />
-          <label htmlFor="isTrending" className="text-sm font-medium" style={{ color: 'oklch(40% .02 340)' }}>
-            Trending (highlight badge)
+        <div className="space-y-2">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isTrending"
+              checked={form.isTrending}
+              onChange={(e) => setForm({ ...form, isTrending: e.target.checked })}
+              className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
+            />
+            <span className="text-sm text-gray-700">Trending (highlight badge)</span>
+          </label>
+          
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isFeatured"
+              checked={form.isFeatured}
+              onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })}
+              className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
+            />
+            <span className="text-sm text-gray-700">Featured (center video - auto-plays, only one can be featured)</span>
           </label>
         </div>
 
-        <div className="sticky bottom-0 bg-white pt-4 pb-2 border-t" style={{ borderColor: "oklch(92% .04 340)" }}>
-          <div className="flex gap-3">
+        <div className="sticky bottom-0 bg-white pt-4 pb-2 border-t border-gray-200">
+          <div className="flex gap-4">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-3 rounded-lg font-semibold transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              style={{ backgroundColor: 'oklch(92% .04 340)' }}
-              onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = 'oklch(88% .06 340)')}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = 'oklch(92% .04 340)')}
+              className="flex-1 bg-gradient-to-r from-pink-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-pink-600 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading && (
                 <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />

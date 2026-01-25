@@ -1,9 +1,10 @@
 import { API } from "../../api";
-import AdminTable from "./AdminTable";
 import { useToast } from "../../context/ToastContext";
+import OrderableList from "./OrderableList";
 
 export default function ProductList({ products, onEdit, onDelete }) {
   const toast = useToast();
+  
   // Ensure products is always an array
   const safeProducts = Array.isArray(products) ? products : [];
 
@@ -31,110 +32,93 @@ export default function ProductList({ products, onEdit, onDelete }) {
     }
   };
 
-  if (safeProducts.length === 0) {
+  // Sort products by order
+  const sortedProducts = [...safeProducts].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const renderRow = (product, order, dragHandle, orderInput, isDragging) => {
+    const images = product.images
+      ? Array.isArray(product.images)
+        ? product.images
+        : JSON.parse(product.images)
+      : [];
+
     return (
-      <div className="bg-white rounded-xl shadow-md p-12 text-center border border-gray-200">
-        <img src="/logo.png" alt="Gift Choice Logo" className="w-20 h-20 mx-auto mb-4 object-contain opacity-50" />
-        <p className="text-gray-600 font-medium">No products yet. Add your first product above!</p>
-      </div>
-    );
-  }
+      <div
+        className={`flex items-center gap-4 p-4 transition-all ${
+          isDragging ? "opacity-50" : "hover:bg-gray-50"
+        }`}
+      >
+        {/* Drag Handle */}
+        <div className="flex-shrink-0">{dragHandle}</div>
 
-  const columns = [
-    {
-      key: "image",
-      header: "Image",
-      render: (product) => {
-        const images = product.images
-          ? Array.isArray(product.images)
-            ? product.images
-            : JSON.parse(product.images)
-          : [];
-        return images.length > 0 ? (
-          <img
-            src={images[0]}
-            alt={product.name}
-            className="w-14 h-14 object-cover rounded-lg"
-          />
-        ) : (
-          <div className="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center text-xl">
-            <img src="/logo.png" alt="Gift Choice Logo" className="w-10 h-10 object-contain opacity-50" />
+        {/* Order Input */}
+        <div className="flex-shrink-0 w-20">
+          {orderInput || (
+            <div className="text-center">
+              <div className="text-sm font-bold" style={{ color: 'oklch(20% .02 340)' }}>
+                {order}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Image */}
+        <div className="flex-shrink-0">
+          {images.length > 0 ? (
+            <img
+              src={images[0]}
+              alt={product.name}
+              className="w-14 h-14 object-cover rounded-lg"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
+              <img src="/logo.png" alt="Gift Choice Logo" className="w-10 h-10 object-contain opacity-50" />
+            </div>
+          )}
+        </div>
+
+        {/* Name & Details */}
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold" style={{ color: 'oklch(20% .02 340)' }}>
+            {product.name}
           </div>
-        );
-      },
-      searchText: () => "",
-    },
-    {
-      key: "name",
-      header: "Name",
-      render: (product) => (
-        <div>
-          <div className="font-semibold text-gray-900">{product.name}</div>
-          <div className="text-xs text-gray-500 line-clamp-1">{product.description}</div>
+          <div className="text-xs line-clamp-1" style={{ color: 'oklch(50% .02 340)' }}>
+            {product.description}
+          </div>
+          <div className="text-xs mt-1" style={{ color: 'oklch(50% .02 340)' }}>
+            {product.category?.name || "No category"}
+          </div>
         </div>
-      ),
-      searchText: (p) => `${p.name} ${p.description} ${p.keywords ?? ""}`,
-    },
-    {
-      key: "category",
-      header: "Category",
-      render: (product) => product.category?.name || "N/A",
-      searchText: (p) => `${p.category?.name || ""} ${p.category?.slug || ""}`,
-    },
-    {
-      key: "badges",
-      header: "Badges",
-      render: (product) => (
-        <div className="flex flex-wrap gap-1">
-          {product.isFestival && (
-            <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
-              Festival
-            </span>
-          )}
-          {product.isNew && (
-            <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
-              New
-            </span>
-          )}
-          {product.isTrending && (
-            <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
-              Trending
-            </span>
-          )}
-          {product.badge && (
-            <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
-              {product.badge}
-            </span>
-          )}
-        </div>
-      ),
-      searchText: (p) =>
-        [
-          p.isFestival ? "festival" : "",
-          p.isNew ? "new" : "",
-          p.isTrending ? "trending" : "",
-          p.badge || "",
-        ].join(" "),
-    },
-    {
-      key: "sizes",
-      header: "Sizes",
-      render: (product) => `${product.sizes?.length || 0} sizes`,
-      searchText: (p) => String(p.sizes?.length || 0),
-    },
-  ];
 
-  return (
-    <AdminTable
-      title="All Products"
-      items={safeProducts}
-      columns={columns}
-      getRowId={(p) => p.id}
-      actions={(product) => (
-        <div className="flex gap-2">
+        {/* Badges */}
+        <div className="flex-shrink-0">
+          <div className="flex flex-wrap gap-1">
+            {product.isFestival && (
+              <span className="px-2 py-0.5 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
+                Festival
+              </span>
+            )}
+            {product.isNew && (
+              <span className="px-2 py-0.5 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
+                New
+              </span>
+            )}
+            {product.isTrending && (
+              <span className="px-2 py-0.5 bg-pink-100 text-pink-700 text-xs rounded-full font-semibold">
+                Trending
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex-shrink-0 flex gap-2">
           <button
             onClick={() => onEdit(product)}
-            className="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold transition"
+            style={{ backgroundColor: 'oklch(92% .04 340)', color: 'oklch(20% .02 340)' }}
+            onMouseEnter={(e) => !isDragging && (e.target.style.backgroundColor = 'oklch(88% .06 340)')}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = 'oklch(92% .04 340)')}
           >
             Edit
           </button>
@@ -145,7 +129,39 @@ export default function ProductList({ products, onEdit, onDelete }) {
             Delete
           </button>
         </div>
-      )}
+      </div>
+    );
+  };
+
+  const renderOrderInput = (product, currentOrder, inputValue, onChange, onBlur) => (
+    <input
+      type="number"
+      min="1"
+      max={sortedProducts.length}
+      value={inputValue}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={(e) => onBlur(e.target.value)}
+      className="w-16 px-2 py-1 text-center text-sm font-bold border-2 rounded-lg focus:outline-none focus:ring-2 transition"
+      style={{
+        borderColor: 'oklch(92% .04 340)',
+        color: 'oklch(20% .02 340)'
+      }}
+      onClick={(e) => e.stopPropagation()}
+    />
+  );
+
+  return (
+    <OrderableList
+      items={sortedProducts}
+      onReorder={() => {
+        // Refresh list after reorder
+        if (onDelete) onDelete();
+      }}
+      reorderEndpoint="/products/reorder"
+      getItemId={(p) => p.id}
+      renderRow={renderRow}
+      renderOrderInput={renderOrderInput}
+      title="All Products"
       emptyState={
         <>
           <img src="/logo.png" alt="Gift Choice Logo" className="w-20 h-20 mx-auto mb-4 object-contain opacity-50" />

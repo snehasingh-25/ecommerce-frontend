@@ -493,7 +493,16 @@ export default function Home() {
         reels.length > 0 && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white">
             <h2 className="text-3xl font-bold mb-8 text-center" style={{ color: 'oklch(20% .02 340)' }}>
-              Follow Us <span style={{ color: 'oklch(92% .04 340)' }}>@giftchoice</span>
+              Follow Us{" "}
+              <a
+                href="https://www.instagram.com/giftchoicebhl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline transition-all"
+                style={{ color: 'oklch(92% .04 340)' }}
+              >
+                @giftchoicebhl
+              </a>
             </h2>
             <ReelCarousel reels={reels} />
           </div>
