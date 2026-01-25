@@ -423,8 +423,8 @@ export default function Home() {
                     {occasion.name}
                   </span>
                 </Link>
-              ))}
-            </div>
+        ))}
+      </div>
             <button
               onClick={() => scrollOccasions("right")}
               className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"

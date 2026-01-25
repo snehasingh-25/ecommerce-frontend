@@ -93,7 +93,7 @@ export default function BannerSlider() {
               )}
               <Link
                 to={currentBanner.ctaLink || "/categories"}
-                className="inline-block px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                className="inline-block p-3 rounded-lg font-semibold text-sm transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
                 style={{ 
                   backgroundColor: 'oklch(92% .04 340)',
                   color: 'oklch(20% .02 340)'
