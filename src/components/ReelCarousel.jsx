@@ -301,7 +301,7 @@ export default function ReelCarousel({ reels }) {
                 isActive ? "scale-[1.04]" : "scale-[0.94] opacity-90",
               ].join(" ")}
             >
-              <div className="relative rounded-2xl overflow-hidden shadow-md bg-black">
+              <div className="relative  overflow-hidden shadow-md bg-black">
                 {/* 9:16 */}
                 <div className="relative w-full" style={{ paddingBottom: "177.78%" }}>
                   {videoUrl ? (
@@ -319,7 +319,7 @@ export default function ReelCarousel({ reels }) {
                             />
                           ) : (
                             <div className="text-center z-10">
-                              <div className="text-6xl mb-2 animate-pulse">🎬</div>
+                              <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 mx-auto mb-2 object-contain opacity-50 animate-pulse" />
                               <div className="text-white/70 text-xs font-semibold">Loading reel...</div>
                             </div>
                           )}
@@ -329,38 +329,14 @@ export default function ReelCarousel({ reels }) {
                       {/* Instagram Embed */}
                       {embedInfo.type === "instagram" && (
                         <>
-                          <div 
-                            className="absolute inset-0 cursor-pointer"
-                            onClick={(e) => {
-                              // Click through to the iframe to trigger Instagram's play
-                              const iframe = e.currentTarget.nextElementSibling;
-                              if (iframe && iframe.tagName === 'IFRAME') {
-                                // Try to click the iframe's play button area
-                                const rect = iframe.getBoundingClientRect();
-                                const clickEvent = new MouseEvent('click', {
-                                  view: window,
-                                  bubbles: true,
-                                  cancelable: true,
-                                  clientX: rect.left + rect.width / 2,
-                                  clientY: rect.top + rect.height / 2,
-                                });
-                                iframe.dispatchEvent(clickEvent);
-                                // Also try clicking the iframe directly
-                                iframe.click();
-                              }
-                            }}
-                          />
                           <iframe
                             src={embedInfo.embedUrl}
-                            className="absolute inset-0 w-full h-full pointer-events-auto"
+                            className="absolute inset-0 w-full h-full"
                             frameBorder="0"
                             scrolling="no"
-                            allowtransparency="true"
                             allow="encrypted-media"
-                            onLoad={() => {
-                              console.log(`Reel ${reel.id} Instagram embed loaded`);
-                              markReady(reel.id);
-                            }}
+                            loading="lazy"
+                            onLoad={() => markReady(reel.id)}
                             onError={() => {
                               console.error(`Reel ${reel.id} Instagram embed error`);
                               markError(reel.id);
@@ -372,45 +348,17 @@ export default function ReelCarousel({ reels }) {
                               overflow: "hidden",
                             }}
                           />
-                          {/* Click to play overlay - only show if video hasn't started */}
-                          {!videoIsReady && (
-                            <div 
-                              className="absolute inset-0 flex items-center justify-center bg-black/20 z-10 cursor-pointer group"
-                              onClick={() => {
-                                // The iframe will handle the click
-                              }}
-                            >
-                              <div className="text-center">
-                                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center transition-all duration-200 group-hover:scale-110">
-                                  <svg className="w-8 h-8 text-gray-900 ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M8 5v14l11-7z" />
-                                  </svg>
-                                </div>
-                                <div className="text-white font-semibold text-sm drop-shadow-lg">Tap to play</div>
+
+                          {/* Tap overlay */}
+                          {!videoReady.has(reel.id) && (
+                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 pointer-events-none">
+                              <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
+                                <svg className="w-8 h-8 text-black ml-1" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
                               </div>
                             </div>
                           )}
-                          {/* Mute/Unmute button overlay for Instagram */}
-                          {/* <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setMutedFor(reel.id, !isMuted(reel.id));
-                            }}
-                            className="absolute top-3 right-12 z-20 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all duration-200 active:scale-95"
-                            aria-label={isMuted(reel.id) ? "Unmute" : "Mute"}
-                            title={isMuted(reel.id) ? "Click to unmute" : "Click to mute"}
-                          >
-                            {isMuted(reel.id) ? (
-                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-                              </svg>
-                            ) : (
-                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                              </svg>
-                            )}
-                          </button> */}
                         </>
                       )}
 
@@ -494,8 +442,8 @@ export default function ReelCarousel({ reels }) {
                             playsInline
                             loop
                             muted={isMuted(reel.id)}
-                            autoPlay={shouldPlay}
-                            preload={shouldPlay ? "auto" : "metadata"}
+                            autoPlay
+                            preload="auto"
                             onLoadedData={(e) => {
                               const video = e.target;
                               console.log(`Reel ${reel.id} loaded data, readyState:`, video.readyState);
@@ -510,6 +458,7 @@ export default function ReelCarousel({ reels }) {
                             }}
                             onCanPlay={(e) => {
                               const video = e.target;
+                              video.muted = true;
                               console.log(`Reel ${reel.id} can play`);
                               markReady(reel.id);
                               if (shouldPlay) {
@@ -578,7 +527,7 @@ export default function ReelCarousel({ reels }) {
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-black">
                       <div className="text-center px-6 z-10">
-                        <div className="text-5xl mb-3">🎬</div>
+                        <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 mx-auto mb-3 object-contain opacity-50" />
                         <div className="text-white font-semibold">Reel video missing</div>
                         <div className="text-white/70 text-sm mt-1">Add a reel video URL in Admin</div>
                       </div>
@@ -637,7 +586,7 @@ export default function ReelCarousel({ reels }) {
                         )}
                         {embedInfo.type === "instagram" && (
                           <div className="text-white/70 text-[11px] mt-1">
-                            Tap button to {isMuted(reel.id) ? "unmute" : "mute"}
+                            Tap to play
                           </div>
                         )}
                       </div>

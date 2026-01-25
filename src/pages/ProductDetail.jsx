@@ -190,7 +190,7 @@ export default function ProductDetail() {
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "oklch(92% .04 340)" }}>
-                          <span className="text-7xl">🎁</span>
+                          <img src="/logo.png" alt="Gift Choice Logo" className="w-24 h-24 object-contain opacity-50" />
                         </div>
                       )}
 

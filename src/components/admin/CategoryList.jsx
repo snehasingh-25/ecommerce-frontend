@@ -31,7 +31,7 @@ export default function CategoryList({ categories, onEdit, onDelete }) {
   if (categories.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-md p-12 text-center border border-gray-200">
-        <div className="text-6xl mb-4">🏷️</div>
+        <img src="/logo.png" alt="Gift Choice Logo" className="w-20 h-20 mx-auto mb-4 object-contain opacity-50" />
         <p className="text-gray-600 font-medium">No categories yet. Add your first category above!</p>
       </div>
     );
@@ -50,7 +50,7 @@ export default function CategoryList({ categories, onEdit, onDelete }) {
           />
         ) : (
           <div className="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center text-xl">
-            🎁
+            <img src="/logo.png" alt="Gift Choice Logo" className="w-10 h-10 object-contain opacity-50" />
           </div>
         ),
       searchText: () => "",
@@ -108,7 +108,7 @@ export default function CategoryList({ categories, onEdit, onDelete }) {
       )}
       emptyState={
         <>
-          <div className="text-6xl mb-4">🏷️</div>
+          <img src="/logo.png" alt="Gift Choice Logo" className="w-20 h-20 mx-auto mb-4 object-contain opacity-50" />
           <p className="text-gray-600 font-medium">No categories yet. Add your first category above!</p>
         </>
       }

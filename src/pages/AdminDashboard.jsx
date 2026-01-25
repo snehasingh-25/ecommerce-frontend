@@ -130,13 +130,13 @@ export default function AdminDashboard() {
   };
 
   const tabs = [
-    { id: "products", label: "Products", icon: "📦" },
-    { id: "categories", label: "Categories", icon: "🏷️" },
-    { id: "occasions", label: "Occasions", icon: "🎉" },
-    { id: "banners", label: "Banners", icon: "🖼️" },
-    { id: "reels", label: "Reels", icon: "🎬" },
-    { id: "orders", label: "Orders", icon: "🛒" },
-    { id: "messages", label: "Messages", icon: "📩" },
+    { id: "products", label: "Products", icon: null },
+    { id: "categories", label: "Categories", icon: null },
+    { id: "occasions", label: "Occasions", icon: null },
+    { id: "banners", label: "Banners", icon: null },
+    { id: "reels", label: "Reels", icon: null },
+    { id: "orders", label: "Orders", icon: null },
+    { id: "messages", label: "Messages", icon: null },
   ];
 
   return (
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
       <aside className="hidden lg:flex lg:flex-col w-72 bg-white border-r border-gray-200">
         <div className="px-6 py-5 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <img src="/logo.jpeg" alt="GiftChoice" className="h-10 w-auto" />
+            <img src="/logo.png" alt="GiftChoice" className="h-10 w-auto" />
             <div>
               <div className="text-sm font-semibold text-gray-900">GiftChoice</div>
               <div className="text-xs text-gray-600 truncate max-w-[14rem]">{user?.email}</div>
@@ -182,7 +182,9 @@ export default function AdminDashboard() {
             onClick={() => navigate("/")}
             className="w-full px-4 py-2.5 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition font-medium flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
           >
-            <span>🛍️</span>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
             View Shop
           </button>
           <button
@@ -201,7 +203,7 @@ export default function AdminDashboard() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <img src="/logo.jpeg" alt="GiftChoice" className="h-10 w-auto" />
+                <img src="/logo.png" alt="GiftChoice" className="h-10 w-auto" />
                 <div className="min-w-0">
                   <h1 className="text-2xl font-bold text-gray-900">
                     Admin <span className="text-pink-600">Dashboard</span>
@@ -215,7 +217,9 @@ export default function AdminDashboard() {
                   onClick={() => navigate("/")}
                   className="px-4 py-2 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition font-medium flex items-center gap-2 shadow-md hover:shadow-lg"
                 >
-                  <span>🛍️</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
                   View Shop
                 </button>
                 <button
@@ -269,7 +273,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 ">
           {/* Content */}
           {loading ? (
             <div className="bg-white rounded-lg shadow p-12 text-center">

@@ -156,7 +156,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <img 
-              src="/logo.jpeg" 
+              src="/logo.png" 
               alt="GiftChoice Logo" 
               className="h-12 w-auto transform group-hover:scale-110 transition-all duration-300"
             />
@@ -333,9 +333,9 @@ export default function Navbar() {
                                 className="w-12 h-12 object-cover rounded-lg"
                               />
                             ) : (
-                              <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-                                <span className="text-xl">🎁</span>
-                              </div>
+                            <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
+                              <img src="/logo.png" alt="Gift Choice Logo" className="w-10 h-10 object-contain opacity-50" />
+                            </div>
                             )}
                             <div className="flex-1 min-w-0">
                               <div className="font-semibold text-sm truncate" style={{ color: 'oklch(20% .02 340)' }}>
@@ -381,7 +381,9 @@ export default function Navbar() {
                 onMouseEnter={(e) => e.target.style.backgroundColor = 'white'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = 'oklch(92% .04 340)'}
               >
-                <span className="text-2xl transition-transform duration-300 group-hover:rotate-12">🛒</span>
+                <svg className="w-6 h-6 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'oklch(20% .02 340)' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
                 {getCartCount() > 0 && (
                   <span className="absolute top-0 right-0 w-5 h-5 text-xs rounded-full flex items-center justify-center font-semibold animate-pulse" style={{ backgroundColor: 'oklch(92% .04 340)', color: 'oklch(20% .02 340)' }}>
                     {getCartCount()}
@@ -538,10 +540,10 @@ export default function Navbar() {
                           />
                         ) : (
                           <div
-                            className="w-12 h-12 rounded-lg flex items-center justify-center"
+                            className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden"
                             style={{ backgroundColor: "oklch(92% .04 340)" }}
                           >
-                            <span className="text-xl">🎁</span>
+                            <img src="/logo.png" alt="Gift Choice Logo" className="w-10 h-10 object-contain opacity-50" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">

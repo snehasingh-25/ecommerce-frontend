@@ -12,7 +12,7 @@ export default function Footer() {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
               <img
-                src="/logo.jpeg"
+                src="/logo.png"
                 alt="GiftChoice"
                 className="h-12 w-auto"
               />

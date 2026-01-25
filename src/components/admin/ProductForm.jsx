@@ -245,7 +245,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
     <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">
       <div className="flex items-start justify-between gap-4 mb-6">
         <h2 className="text-xl font-bold text-gray-900">
-          {product ? "✏️ Edit Product" : "➕ Add New Product"}
+          {product ? "Edit Product" : "Add New Product"}
         </h2>
         <div className="flex gap-2 shrink-0">
           <button

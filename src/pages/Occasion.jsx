@@ -199,9 +199,9 @@ export default function Occasion() {
                       alt={occasion.name}
                       className="w-full h-full object-cover rounded-full"
                     />
-                  ) : (
-                    <span className="text-4xl sm:text-5xl">🎉</span>
-                  )}
+                    ) : (
+                      <img src="/logo.png" alt="Gift Choice Logo" className="w-3/4 h-3/4 object-contain" />
+                    )}
                 </div>
                 <h3 className="font-semibold text-sm text-center mt-2" style={{ color: "oklch(20% .02 340)" }}>
                   {occasion.name}
@@ -293,7 +293,7 @@ export default function Occasion() {
             ) : (
               <div className="text-center py-16">
                 <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-                  <span className="text-4xl">🎁</span>
+                  <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 object-contain" />
                 </div>
                 <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
                   No products available for this occasion yet
@@ -370,7 +370,7 @@ export default function Occasion() {
             ) : (
               <div className="text-center py-16">
                 <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-                  <span className="text-4xl">🎁</span>
+                  <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 object-contain" />
                 </div>
                 <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
                   No products available yet
@@ -384,7 +384,7 @@ export default function Occasion() {
         {!selectedOccasion && occasions.length === 0 && (
           <div className="text-center py-16">
             <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-              <span className="text-4xl">🎉</span>
+              <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 object-contain" />
             </div>
             <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
               No occasions available yet

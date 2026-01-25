@@ -8,6 +8,7 @@ export default function CategoriesPage() {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const occasionFilter = searchParams.get("occasion") || "";
+  const trendingFilter = searchParams.get("trending") === "true";
   const [categories, setCategories] = useState([]);
   const [occasions, setOccasions] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -43,21 +44,21 @@ export default function CategoriesPage() {
 
   useEffect(() => {
     if (slug && selectedCategory) {
-      fetchCategoryProducts(selectedCategory.slug, occasionFilter);
+      fetchCategoryProducts(selectedCategory.slug, occasionFilter, trendingFilter);
       return;
     }
 
-    // No slug (e.g. /categories): show all products (optionally filtered by occasion)
+    // No slug (e.g. /categories): show all products (optionally filtered by occasion or trending)
     if (!slug) {
-      fetchAllProducts(occasionFilter);
+      fetchAllProducts(occasionFilter, trendingFilter);
       return;
     }
 
     setProducts([]);
     setLoading(false);
-  }, [selectedCategory, slug, occasionFilter]);
+  }, [selectedCategory, slug, occasionFilter, trendingFilter]);
 
-  const fetchCategoryProducts = async (categorySlug, occasion = "") => {
+  const fetchCategoryProducts = async (categorySlug, occasion = "", trending = false) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -65,9 +66,16 @@ export default function CategoriesPage() {
       if (occasion) {
         params.append("occasion", occasion);
       }
+      if (trending) {
+        params.append("trending", "true");
+      }
       const res = await fetch(`${API}/products?${params.toString()}`);
       const data = await res.json();
-      setProducts(data);
+      // If backend doesn't support trending filter, filter on frontend
+      const filteredData = trending 
+        ? (Array.isArray(data) ? data.filter(p => p.isTrending) : [])
+        : (Array.isArray(data) ? data : []);
+      setProducts(filteredData);
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
@@ -75,17 +83,24 @@ export default function CategoriesPage() {
     }
   };
 
-  const fetchAllProducts = async (occasion = "") => {
+  const fetchAllProducts = async (occasion = "", trending = false) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (occasion) {
         params.append("occasion", occasion);
       }
+      if (trending) {
+        params.append("trending", "true");
+      }
       const qs = params.toString();
       const res = await fetch(`${API}/products${qs ? `?${qs}` : ""}`);
       const data = await res.json();
-      setProducts(data || []);
+      // If backend doesn't support trending filter, filter on frontend
+      const filteredData = trending 
+        ? (Array.isArray(data) ? data.filter(p => p.isTrending) : [])
+        : (Array.isArray(data) ? data : []);
+      setProducts(filteredData);
     } catch (error) {
       console.error("Error fetching products:", error);
       setProducts([]);
@@ -94,27 +109,12 @@ export default function CategoriesPage() {
     }
   };
 
-  const getCategoryEmoji = (categoryName) => {
-    const emojiMap = {
-      "Bottles": "🍼",
-      "Soft Toys": "🧸",
-      "Gifts": "🎁",
-      "Anniversary Gifts": "💍",
-      "Birthday Gifts": "🎂",
-      "Wedding Gifts": "💒",
-      "Engagement Gifts": "💑",
-      "Valentines Day": "❤️",
-      "Retirement Gifts": "🎊",
-      "Rakhi": "🧧",
-      "Diwali": "🪔",
-    };
-    return emojiMap[categoryName] || "🎁";
-  };
+  // Removed getCategoryEmoji - all categories use logo as fallback
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(category);
     if (category.slug) {
-      fetchCategoryProducts(category.slug, occasionFilter);
+      fetchCategoryProducts(category.slug, occasionFilter, trendingFilter);
     }
   };
 
@@ -206,7 +206,7 @@ export default function CategoriesPage() {
                       className="w-full h-full object-cover rounded-full"
                     />
                   ) : (
-                    <span className="text-4xl sm:text-5xl">{getCategoryEmoji(category.name)}</span>
+                    <img src="/logo.png" alt="Gift Choice Logo" className="w-3/4 h-3/4 object-contain" />
                   )}
                 </div>
                 <h3 className="font-semibold text-sm text-center mt-2" style={{ color: "oklch(20% .02 340)" }}>
@@ -299,7 +299,7 @@ export default function CategoriesPage() {
             ) : (
               <div className="text-center py-16">
                 <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-                  <span className="text-4xl">🎁</span>
+                  <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 object-contain" />
                 </div>
                 <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
                   No products available in this category yet
@@ -314,7 +314,7 @@ export default function CategoriesPage() {
           <div className="mt-12">
             <div className="mb-8">
               <h3 className="text-3xl font-bold mb-2" style={{ color: 'oklch(20% .02 340)' }}>
-                All Products
+                {trendingFilter ? "Trending Products" : "All Products"}
               </h3>
 
               {/* Occasion Filter (still useful on /categories) */}
@@ -376,7 +376,7 @@ export default function CategoriesPage() {
             ) : (
               <div className="text-center py-16">
                 <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-                  <span className="text-4xl">🎁</span>
+                  <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 object-contain" />
                 </div>
                 <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
                   No products available yet
@@ -390,7 +390,7 @@ export default function CategoriesPage() {
         {!selectedCategory && categories.length === 0 && (
           <div className="text-center py-16">
             <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-              <span className="text-4xl">📦</span>
+              <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 object-contain" />
             </div>
             <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
               No categories available yet

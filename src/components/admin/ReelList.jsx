@@ -47,7 +47,9 @@ export default function ReelList({ reels, onEdit, onDelete }) {
         reel.thumbnail ? (
           <img src={reel.thumbnail} alt={reel.title || "Reel"} className="w-16 h-10 object-cover rounded" />
         ) : (
-          <div className="w-16 h-10 bg-gray-200 rounded flex items-center justify-center">🎬</div>
+          <div className="w-16 h-10 bg-gray-200 rounded flex items-center justify-center overflow-hidden">
+            <img src="/logo.png" alt="Gift Choice Logo" className="w-10 h-10 object-contain opacity-50" />
+          </div>
         ),
       searchText: () => "",
     },

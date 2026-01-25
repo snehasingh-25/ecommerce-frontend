@@ -31,7 +31,7 @@ export default function AdminLogin() {
       <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 max-w-md w-full border border-pink-100">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <img src="/logo.jpeg" alt="GiftChoice" className="h-14 w-auto" />
+            <img src="/logo.png" alt="GiftChoice" className="h-14 w-auto" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Admin <span className="text-pink-600">Login</span>

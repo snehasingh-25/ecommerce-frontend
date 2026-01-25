@@ -8,7 +8,7 @@ export default function ChatBot() {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Birthdays, Anniversaries, and more! 🎉",
+      text: "Birthdays, Anniversaries, and more!",
       sender: "bot",
       timestamp: new Date(),
       action: "occasions",
@@ -337,9 +337,9 @@ export default function ChatBot() {
                       onMouseEnter={(e) => e.target.style.backgroundColor = 'oklch(88% .06 340)'}
                       onMouseLeave={(e) => e.target.style.backgroundColor = 'oklch(92% .04 340)'}
                     >
-                      {message.action === "whatsapp" ? "💬 Chat on WhatsApp" : 
-                       message.action === "occasions" ? "🎉 View Occasions" : 
-                       message.action === "categories" || message.action === "browse" ? "📦 Browse Products" :
+                      {message.action === "whatsapp" ? "Chat on WhatsApp" : 
+                       message.action === "occasions" ? "View Occasions" : 
+                       message.action === "categories" || message.action === "browse" ? "Browse Products" :
                        "View Details"}
                     </button>
                   )}
