@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { API } from "../api";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
+import ProductCard from "../components/ProductCard";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -15,6 +16,8 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [expanded, setExpanded] = useState(() => new Set(["details"]));
+  const [similarProducts, setSimilarProducts] = useState([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   const images = useMemo(() => {
     if (!product?.images) return [];
@@ -53,6 +56,28 @@ export default function ProductDetail() {
         setQuantity(1);
         setActiveImageIndex(0);
         setLoading(false);
+
+        // Fetch similar products from the same category
+        if (data?.category?.slug) {
+          setLoadingSimilar(true);
+          fetch(`${API}/products?category=${data.category.slug}&limit=10`, { signal: ac.signal })
+            .then((res) => res.json())
+            .then((products) => {
+              // Filter out the current product
+              const similar = Array.isArray(products) 
+                ? products.filter((p) => p.id !== Number(id))
+                : [];
+              setSimilarProducts(similar);
+              setLoadingSimilar(false);
+            })
+            .catch((error) => {
+              if (error?.name === "AbortError") return;
+              console.error("Error fetching similar products:", error);
+              setLoadingSimilar(false);
+            });
+        } else {
+          setLoadingSimilar(false);
+        }
       })
       .catch((error) => {
         if (error?.name === "AbortError") return;
@@ -457,6 +482,26 @@ export default function ProductDetail() {
               </div>
             </aside>
           </div>
+
+          {/* Similar Products Section */}
+          {similarProducts.length > 0 && (
+            <section className="mt-16 px-4 sm:px-6 lg:px-8">
+              <h2 className="text-2xl sm:text-3xl font-extrabold mb-6" style={{ color: "oklch(20% .02 340)" }}>
+                Similar Products
+              </h2>
+              {loadingSimilar ? (
+                <div className="text-center py-12">
+                  <div className="text-pink-500 text-lg">Loading similar products...</div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+                  {similarProducts.map((similarProduct) => (
+                    <ProductCard key={similarProduct.id} product={similarProduct} />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
         </div>
       </div>
     </div>
