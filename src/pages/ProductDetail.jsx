@@ -48,7 +48,11 @@ export default function ProductDetail() {
       .then((res) => res.json())
       .then((data) => {
         setProduct(data);
-        if (data?.sizes && data.sizes.length > 0) {
+        // Handle single price products
+        if (data?.hasSinglePrice && data.singlePrice) {
+          // Create a virtual size object for single price products
+          setSelectedSize({ id: 0, label: "Standard", price: parseFloat(data.singlePrice) });
+        } else if (data?.sizes && data.sizes.length > 0) {
           setSelectedSize(data.sizes[0]);
         } else {
           setSelectedSize(null);
@@ -57,10 +61,11 @@ export default function ProductDetail() {
         setActiveImageIndex(0);
         setLoading(false);
 
-        // Fetch similar products from the same category
-        if (data?.category?.slug) {
+        // Fetch similar products from the same category (use first category if multiple)
+        const firstCategory = data?.categories && data.categories.length > 0 ? data.categories[0] : data?.category;
+        if (firstCategory?.slug) {
           setLoadingSimilar(true);
-          fetch(`${API}/products?category=${data.category.slug}&limit=10`, { signal: ac.signal })
+          fetch(`${API}/products?category=${firstCategory.slug}&limit=10`, { signal: ac.signal })
             .then((res) => res.json())
             .then((products) => {
               // Filter out the current product
@@ -89,7 +94,8 @@ export default function ProductDetail() {
   }, [id]);
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    // For single price products, selectedSize is auto-set, so we can proceed
+    if (!selectedSize && !(product?.hasSinglePrice && product?.singlePrice)) {
       toast.error("Please select a size");
       return;
     }
@@ -141,7 +147,16 @@ export default function ProductDetail() {
                   Shop
                 </Link>
               </li>
-              {product.category ? (
+              {product.categories && product.categories.length > 0 ? (
+                <>
+                  <li>/</li>
+                  <li>
+                    <Link to={`/category/${product.categories[0].slug}`} className="hover:underline" style={{ color: "oklch(40% .02 340)" }}>
+                      {product.categories[0].name}
+                    </Link>
+                  </li>
+                </>
+              ) : product.category ? (
                 <>
                   <li>/</li>
                   <li>
@@ -314,8 +329,17 @@ export default function ProductDetail() {
                     </div>
                   </div>
 
-                  {/* Size selector */}
-                  {product.sizes?.length ? (
+                  {/* Size selector - only show for products with multiple sizes */}
+                  {product.hasSinglePrice ? (
+                    <div className="mt-6 rounded-2xl border px-4 py-3" style={{ borderColor: "oklch(92% .04 340)" }}>
+                      <div className="text-sm font-semibold" style={{ color: "oklch(55% .02 340)" }}>
+                        Single Price Product
+                      </div>
+                      <div className="text-lg font-extrabold mt-1" style={{ color: "oklch(20% .02 340)" }}>
+                        ₹{Number(product.singlePrice).toFixed(0)}
+                      </div>
+                    </div>
+                  ) : product.sizes?.length ? (
                     <div className="mt-6">
                       <div className="flex items-center justify-between">
                         <div className="text-sm font-bold" style={{ color: "oklch(20% .02 340)" }}>
@@ -406,7 +430,7 @@ export default function ProductDetail() {
                   <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
                       onClick={handleAddToCart}
-                      disabled={!selectedSize}
+                      disabled={!selectedSize && !(product?.hasSinglePrice && product?.singlePrice)}
                       className="w-full py-3 rounded-2xl font-bold transition-transform duration-200 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ backgroundColor: "oklch(92% .04 340)", color: "oklch(20% .02 340)" }}
                     >
@@ -414,14 +438,16 @@ export default function ProductDetail() {
                     </button>
                     <button
                       onClick={() => {
-                        if (!selectedSize) {
+                        if (!selectedSize && !(product?.hasSinglePrice && product?.singlePrice)) {
                           toast.error("Please select a size");
                           return;
                         }
-                        const message = `Hi! I'm interested in:\n\nProduct: ${product.name}\nSize: ${selectedSize.label}\nQuantity: ${quantity}\nPrice: ₹${selectedSize.price}\nTotal: ₹${(Number(selectedSize.price) * quantity).toFixed(2)}`;
+                        const sizeLabel = product.hasSinglePrice ? "Standard" : selectedSize.label;
+                        const price = product.hasSinglePrice ? product.singlePrice : selectedSize.price;
+                        const message = `Hi! I'm interested in:\n\nProduct: ${product.name}\n${product.hasSinglePrice ? '' : `Size: ${sizeLabel}\n`}Quantity: ${quantity}\nPrice: ₹${price}\nTotal: ₹${(Number(price) * quantity).toFixed(2)}`;
                         window.open(`https://wa.me/917976948872?text=${encodeURIComponent(message)}`);
                       }}
-                      disabled={!selectedSize}
+                      disabled={!selectedSize && !(product?.hasSinglePrice && product?.singlePrice)}
                       className="w-full py-3 rounded-2xl font-bold transition-transform duration-200 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ backgroundColor: "oklch(55% .18 145)", color: "white" }}
                     >

@@ -51,7 +51,7 @@ export default function Footer() {
     "New Arrivals": "/new",
   };
 
-  return (
+    return (
     <footer className="text-white mt-20" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
 

@@ -12,12 +12,14 @@ export default function ProductForm({ product, categories, occasions = [], onSav
     isFestival: false,
     isNew: false,
     isTrending: false,
-    categoryId: "",
+    hasSinglePrice: false,
+    singlePrice: "",
     keywords: "",
   });
-  const [sizes, setSizes] = useState([{ label: "", price: "" }]);
+  const [sizes, setSizes] = useState([]);
   const [images, setImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedOccasions, setSelectedOccasions] = useState([]);
   const [loading, setLoading] = useState(false);
   const formRef = useRef(null);
@@ -29,11 +31,12 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       formData,
       sizes,
       existingImages,
+      selectedCategories,
       selectedOccasions,
       // For new images, treat any selection as "dirty"
       imagesSelectedCount: images.length,
     });
-  }, [formData, sizes, existingImages, selectedOccasions, images.length]);
+  }, [formData, sizes, existingImages, selectedCategories, selectedOccasions, images.length]);
 
   const isDirty = initialSnapshotRef.current !== "" && snapshot !== initialSnapshotRef.current;
 
@@ -46,18 +49,27 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         isFestival: product.isFestival || false,
         isNew: product.isNew || false,
         isTrending: product.isTrending || false,
-        categoryId: product.categoryId || "",
+        hasSinglePrice: product.hasSinglePrice || false,
+        singlePrice: product.singlePrice ? String(product.singlePrice) : "",
         keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
       });
       setSizes(
         product.sizes && product.sizes.length > 0
-          ? product.sizes.map((s) => ({ label: s.label, price: s.price }))
-          : [{ label: "", price: "" }]
+          ? product.sizes.map((s) => ({ label: s.label, price: String(s.price) }))
+          : []
       );
       setExistingImages(product.images || []);
+      // Handle both old (categoryId) and new (categories) format for backward compatibility
+      if (product.categories && product.categories.length > 0) {
+        setSelectedCategories(product.categories.map((pc) => pc.categoryId || pc.category?.id || pc.id));
+      } else if (product.categoryId) {
+        setSelectedCategories([product.categoryId]);
+      } else {
+        setSelectedCategories([]);
+      }
       setSelectedOccasions(
         product.occasions && product.occasions.length > 0
-          ? product.occasions.map((o) => o.id)
+          ? product.occasions.map((o) => o.occasionId || o.occasion?.id || o.id)
           : []
       );
     } else {
@@ -69,12 +81,14 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         isFestival: false,
         isNew: false,
         isTrending: false,
-        categoryId: "",
+        hasSinglePrice: false,
+        singlePrice: "",
         keywords: "",
       });
-      setSizes([{ label: "", price: "" }]);
+      setSizes([]);
       setImages([]);
       setExistingImages([]);
+      setSelectedCategories([]);
       setSelectedOccasions([]);
     }
 
@@ -89,7 +103,8 @@ export default function ProductForm({ product, categories, occasions = [], onSav
               isFestival: product.isFestival || false,
               isNew: product.isNew || false,
               isTrending: product.isTrending || false,
-              categoryId: product.categoryId || "",
+              hasSinglePrice: product.hasSinglePrice || false,
+              singlePrice: product.singlePrice ? String(product.singlePrice) : "",
               keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
             }
           : {
@@ -99,16 +114,25 @@ export default function ProductForm({ product, categories, occasions = [], onSav
               isFestival: false,
               isNew: false,
               isTrending: false,
-              categoryId: "",
+              hasSinglePrice: false,
+              singlePrice: "",
               keywords: "",
             },
         sizes:
           product?.sizes && product.sizes.length > 0
             ? product.sizes.map((s) => ({ label: s.label, price: s.price }))
-            : [{ label: "", price: "" }],
+            : [],
         existingImages: product?.images || [],
+        selectedCategories:
+          product?.categories && product.categories.length > 0
+            ? product.categories.map((pc) => pc.categoryId || pc.category?.id || pc.id)
+            : product?.categoryId
+            ? [product.categoryId]
+            : [],
         selectedOccasions:
-          product?.occasions && product.occasions.length > 0 ? product.occasions.map((o) => o.id) : [],
+          product?.occasions && product.occasions.length > 0
+            ? product.occasions.map((o) => o.occasionId || o.occasion?.id || o.id)
+            : [],
         imagesSelectedCount: 0,
       });
     }, 0);
@@ -117,6 +141,21 @@ export default function ProductForm({ product, categories, occasions = [], onSav
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmittingRef.current) return;
+    
+    // Validation: At least one category is required
+    if (selectedCategories.length === 0) {
+      toast.error("Please select at least one category");
+      return;
+    }
+    
+    // Validation: If hasSinglePrice is true, singlePrice is required
+    if (formData.hasSinglePrice && (!formData.singlePrice || parseFloat(formData.singlePrice) <= 0)) {
+      toast.error("Please enter a valid single price for this product");
+      return;
+    }
+    
+    // Validation: If hasSinglePrice is false, either sizes or no price is acceptable (already optional)
+    
     setLoading(true);
     isSubmittingRef.current = true;
 
@@ -130,9 +169,28 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       formDataToSend.append("isFestival", formData.isFestival);
       formDataToSend.append("isNew", formData.isNew);
       formDataToSend.append("isTrending", formData.isTrending);
-      formDataToSend.append("categoryId", formData.categoryId);
-      formDataToSend.append("keywords", JSON.stringify(formData.keywords.split(",").map((k) => k.trim()).filter(k => k)));
-      formDataToSend.append("sizes", JSON.stringify(sizes.filter((s) => s.label && s.price)));
+      formDataToSend.append("hasSinglePrice", formData.hasSinglePrice);
+      formDataToSend.append("singlePrice", formData.hasSinglePrice && formData.singlePrice ? formData.singlePrice : "");
+      
+      // Auto-generate keywords from product name if not already set
+      let keywordsArray = [];
+      if (formData.keywords && formData.keywords.trim() !== "") {
+        keywordsArray = formData.keywords.split(",").map((k) => k.trim()).filter(k => k);
+      } else {
+        keywordsArray = generateKeywords(formData.name);
+      }
+      formDataToSend.append("keywords", JSON.stringify(keywordsArray));
+      
+      // Categories - send as array
+      formDataToSend.append("categoryIds", JSON.stringify(selectedCategories));
+      
+      // If hasSinglePrice is true, don't send sizes. Otherwise, send sizes if they exist
+      if (formData.hasSinglePrice) {
+        formDataToSend.append("sizes", JSON.stringify([]));
+      } else {
+        // Sizes are optional - only include if they have both label and price
+        formDataToSend.append("sizes", JSON.stringify(sizes.filter((s) => s.label && s.price)));
+      }
       formDataToSend.append("occasionIds", JSON.stringify(selectedOccasions));
 
       if (product && existingImages.length > 0) {
@@ -167,12 +225,14 @@ export default function ProductForm({ product, categories, occasions = [], onSav
           isFestival: false,
           isNew: false,
           isTrending: false,
-          categoryId: "",
+          hasSinglePrice: false,
+          singlePrice: "",
           keywords: "",
         });
-        setSizes([{ label: "", price: "" }]);
+        setSizes([]);
         setImages([]);
         setExistingImages([]);
+        setSelectedCategories([]);
         setSelectedOccasions([]);
         initialSnapshotRef.current = "";
       } else {
@@ -200,12 +260,14 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       isFestival: false,
       isNew: false,
       isTrending: false,
-      categoryId: "",
+      hasSinglePrice: false,
+      singlePrice: "",
       keywords: "",
     });
-    setSizes([{ label: "", price: "" }]);
+    setSizes([]);
     setImages([]);
     setExistingImages([]);
+    setSelectedCategories([]);
     setSelectedOccasions([]);
     initialSnapshotRef.current = "";
     onCancel?.();
@@ -241,6 +303,69 @@ export default function ProductForm({ product, categories, occasions = [], onSav
     setSizes(newSizes);
   };
 
+  // Generate keywords from product name
+  const generateKeywords = (productName) => {
+    if (!productName || productName.trim() === "") {
+      return [];
+    }
+    
+    // Convert to lowercase and split by spaces, hyphens, and other separators
+    const words = productName
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters except hyphens
+      .split(/[\s-]+/) // Split by spaces and hyphens
+      .filter(word => word.length > 2) // Filter out very short words
+      .filter((word, index, self) => self.indexOf(word) === index); // Remove duplicates
+    
+    // Also add the full name as a keyword (if it's not too long)
+    if (productName.length <= 50) {
+      words.unshift(productName.toLowerCase().trim());
+    }
+    
+    return words;
+  };
+
+  // Track previous product name to detect changes
+  const prevProductNameRef = useRef("");
+  const isInitialLoadRef = useRef(true);
+  
+  // Auto-generate keywords when product name changes
+  useEffect(() => {
+    // On initial load, set the ref and skip auto-generation
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      prevProductNameRef.current = formData.name || "";
+      return;
+    }
+    
+    // Only auto-generate if name actually changed (not on initial load)
+    if (formData.name && formData.name.trim() !== "" && formData.name !== prevProductNameRef.current) {
+      const autoKeywords = generateKeywords(formData.name);
+      const keywordsString = autoKeywords.join(", ");
+      
+      setFormData(prev => ({
+        ...prev,
+        keywords: keywordsString
+      }));
+      
+      prevProductNameRef.current = formData.name;
+    } else if (!formData.name || formData.name.trim() === "") {
+      // Clear keywords if name is empty
+      setFormData(prev => ({
+        ...prev,
+        keywords: ""
+      }));
+      prevProductNameRef.current = "";
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.name]);
+  
+  // Reset initial load flag when product changes
+  useEffect(() => {
+    isInitialLoadRef.current = true;
+    prevProductNameRef.current = "";
+  }, [product]);
+
   return (
     <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">
       <div className="flex items-start justify-between gap-4 mb-6">
@@ -270,33 +395,73 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         </div>
       </div>
       <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Product Name *</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Category *</label>
-            <select
-              value={formData.categoryId}
-              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
-              required
-            >
-              <option value="">Select Category</option>
-              {categories.map((cat) => (
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Product Name *</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Categories *</label>
+          {/* Selected Categories as Chips */}
+          {selectedCategories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {selectedCategories.map((catId) => {
+                const category = categories.find((c) => c.id === Number(catId));
+                if (!category) return null;
+                return (
+                  <span
+                    key={catId}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-pink-100 text-pink-700 rounded-full text-sm font-semibold"
+                  >
+                    {category.name}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategories(selectedCategories.filter((id) => id !== catId))}
+                      className="hover:text-pink-900 focus:outline-none"
+                      aria-label={`Remove ${category.name}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+          
+          {/* Category Selector */}
+          <select
+            value=""
+            onChange={(e) => {
+              const catId = e.target.value;
+              if (catId && !selectedCategories.includes(Number(catId))) {
+                setSelectedCategories([...selectedCategories, Number(catId)]);
+              }
+              e.target.value = ""; // Reset select
+            }}
+            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+            required={selectedCategories.length === 0}
+          >
+            <option value="">{selectedCategories.length === 0 ? "Select Categories *" : "Add another category..."}</option>
+            {[...categories]
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .filter((cat) => !selectedCategories.includes(cat.id))
+              .map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
                 </option>
               ))}
-            </select>
-          </div>
+          </select>
+          {selectedCategories.length === 0 && (
+            <p className="text-xs text-gray-500 mt-1">Select at least one category. You can add multiple categories.</p>
+          )}
         </div>
 
         <div>
@@ -310,7 +475,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Badge (e.g., 60 Min Delivery)</label>
             <input
@@ -319,16 +484,6 @@ export default function ProductForm({ product, categories, occasions = [], onSav
               onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
               className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
               placeholder="Optional"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Keywords (comma separated)</label>
-            <input
-              type="text"
-              value={formData.keywords}
-              onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
-              placeholder="gift, present, paisa"
             />
           </div>
           <div>
@@ -368,27 +523,59 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         {occasions.length > 0 && (
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Occasions</label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border-2 border-gray-200 rounded-lg">
-              {occasions.filter(o => o.isActive).map((occasion) => (
-                <label key={occasion.id} className="flex items-center gap-2 cursor-pointer hover:bg-pink-50 p-2 rounded transition">
-                  <input
-                    type="checkbox"
-                    checked={selectedOccasions.includes(occasion.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedOccasions([...selectedOccasions, occasion.id]);
-                      } else {
-                        setSelectedOccasions(selectedOccasions.filter(id => id !== occasion.id));
-                      }
-                    }}
-                    className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
-                  />
-                  <span className="text-sm text-gray-700">{occasion.name}</span>
-                </label>
-              ))}
-            </div>
+            {/* Selected Occasions as Chips */}
+            {selectedOccasions.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {selectedOccasions.map((occId) => {
+                  const occasion = occasions.find((o) => o.id === Number(occId));
+                  if (!occasion) return null;
+                  return (
+                    <span
+                      key={occId}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-pink-100 text-pink-700 rounded-full text-sm font-semibold"
+                    >
+                      {occasion.name}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOccasions(selectedOccasions.filter((id) => id !== occId))}
+                        className="hover:text-pink-900 focus:outline-none"
+                        aria-label={`Remove ${occasion.name}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            
+            {/* Occasion Selector */}
+            <select
+              value=""
+              onChange={(e) => {
+                const occId = e.target.value;
+                if (occId && !selectedOccasions.includes(Number(occId))) {
+                  setSelectedOccasions([...selectedOccasions, Number(occId)]);
+                }
+                e.target.value = ""; // Reset select
+              }}
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+            >
+              <option value="">{selectedOccasions.length === 0 ? "Select Occasions (Optional)" : "Add another occasion..."}</option>
+              {[...occasions]
+                .filter(o => o.isActive)
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .filter((occ) => !selectedOccasions.includes(occ.id))
+                .map((occ) => (
+                  <option key={occ.id} value={occ.id}>
+                    {occ.name}
+                  </option>
+                ))}
+            </select>
             {selectedOccasions.length === 0 && (
-              <p className="text-xs text-gray-500 mt-2">Select occasions this product is suitable for (optional)</p>
+              <p className="text-xs text-gray-500 mt-1">Select occasions this product is suitable for (optional)</p>
             )}
           </div>
         )}
@@ -401,47 +588,86 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         />
 
         <div className="border-t border-gray-200 pt-6">
-          <div className="flex justify-between items-center mb-4">
-            <label className="block text-sm font-semibold text-gray-700">Sizes & Prices *</label>
-            <button
-              type="button"
-              onClick={addSize}
-              className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
-            >
-              + Add Size
-            </button>
+          <div className="mb-4">
+            <label className="flex items-center gap-2 mb-4">
+              <input
+                type="checkbox"
+                checked={formData.hasSinglePrice}
+                onChange={(e) => {
+                  setFormData({ ...formData, hasSinglePrice: e.target.checked });
+                  // Clear sizes when switching to single price
+                  if (e.target.checked) {
+                    setSizes([]);
+                  }
+                }}
+                className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
+              />
+              <span className="text-sm font-semibold text-gray-700">No Size / Single Variant</span>
+            </label>
           </div>
-          <div className="space-y-3">
-            {sizes.map((size, index) => (
-              <div key={index} className="flex gap-3">
-                <input
-                  type="text"
-                  placeholder="Size Label (e.g., Small, Large)"
-                  value={size.label}
-                  onChange={(e) => updateSize(index, "label", e.target.value)}
-                  className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
-                />
-                <input
-                  type="number"
-                  placeholder="Price"
-                  value={size.price}
-                  onChange={(e) => updateSize(index, "price", e.target.value)}
-                  className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
-                  step="0.01"
-                  min="0"
-                />
-                {sizes.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeSize(index)}
-                    className="px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold"
-                  >
-                    Remove
-                  </button>
+
+          {formData.hasSinglePrice ? (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Single Price *</label>
+              <input
+                type="number"
+                value={formData.singlePrice}
+                onChange={(e) => setFormData({ ...formData, singlePrice: e.target.value })}
+                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                step="0.01"
+                min="0"
+                placeholder="Enter price (e.g., 299.99)"
+                required={formData.hasSinglePrice}
+              />
+              <p className="text-xs text-gray-500 mt-1">This product has a single price without size variants.</p>
+            </div>
+          ) : (
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <label className="block text-sm font-semibold text-gray-700">Sizes & Prices (Optional)</label>
+                <button
+                  type="button"
+                  onClick={addSize}
+                  className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
+                >
+                  + Add Size
+                </button>
+              </div>
+              <div className="space-y-3">
+                {sizes.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic">No sizes added. Products can be saved without sizes.</p>
+                ) : (
+                  sizes.map((size, index) => (
+                    <div key={index} className="flex gap-3">
+                      <input
+                        type="text"
+                        placeholder="Size Label (e.g., Small, Large)"
+                        value={size.label}
+                        onChange={(e) => updateSize(index, "label", e.target.value)}
+                        className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Price"
+                        value={size.price}
+                        onChange={(e) => updateSize(index, "price", e.target.value)}
+                        className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                        step="0.01"
+                        min="0"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeSize(index)}
+                        className="px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))
                 )}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
 
         <div className="sticky bottom-0 bg-white pt-4 pb-2 border-t border-gray-200">

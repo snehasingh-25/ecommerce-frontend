@@ -103,6 +103,17 @@ export default function Home() {
         setLoading((prev) => ({ ...prev, reels: false }));
       });
 
+    // Fetch primary banners for hero section
+    fetch(`${API}/banners?type=primary`, { signal: ac.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        setBanners(Array.isArray(data) ? data : []);
+        setLoading((prev) => ({ ...prev, banners: false }));
+      })
+      .catch(() => {
+        setLoading((prev) => ({ ...prev, banners: false }));
+      });
+
     return () => {
       ac.abort();
     };
@@ -144,7 +155,7 @@ export default function Home() {
   };
 
   // Check if any data is still loading
-  const isInitialLoad = loading.categories || loading.occasions || loading.products || loading.reels;
+  const isInitialLoad = loading.categories || loading.occasions || loading.products || loading.reels || loading.banners;
   const heroBanner = banners.length > 0 ? banners[0] : null;
 
   return (
@@ -199,8 +210,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* Banner Slider - Only show when data is loaded */}
-      {!isInitialLoad && <BannerSlider />}
+      {/* Primary Banner Slider - Only show when data is loaded */}
+      {!isInitialLoad && <BannerSlider bannerType="primary" />}
 
       {/* Shop By Category Section */}
       {loading.categories ? (
@@ -485,6 +496,9 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Secondary Banner Section - Between Gifts and Reels */}
+      {!isInitialLoad && <BannerSlider bannerType="secondary" />}
 
       {/* Reels Section */}
       {loading.reels ? (

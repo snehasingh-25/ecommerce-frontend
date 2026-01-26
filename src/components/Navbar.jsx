@@ -341,9 +341,11 @@ export default function Navbar() {
                               <div className="font-semibold text-sm truncate" style={{ color: 'oklch(20% .02 340)' }}>
                                 {product.name}
                               </div>
-                              {product.category && (
+                              {((product.categories && product.categories.length > 0) || product.category) && (
                                 <div className="text-xs truncate" style={{ color: 'oklch(60% .02 340)' }}>
-                                  {product.category.name}
+                                  {product.categories && product.categories.length > 0
+                                    ? product.categories.map(c => c.name || c.category?.name).join(", ")
+                                    : product.category?.name}
                                 </div>
                               )}
                             </div>

@@ -2,14 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { API } from "../api";
 
-export default function BannerSlider() {
+export default function BannerSlider({ bannerType = "primary" }) {
   const [banners, setBanners] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    fetch(`${API}/banners`)
+    fetch(`${API}/banners?type=${bannerType}`)
       .then(res => res.json())
       .then(data => {
         setBanners(data);
@@ -20,7 +20,7 @@ export default function BannerSlider() {
       .catch(error => {
         console.error("Error fetching banners:", error);
       });
-  }, []);
+  }, [bannerType]);
 
   useEffect(() => {
     if (banners.length > 1 && !isPaused) {

@@ -18,6 +18,14 @@ function ProductCard({ product }) {
   }, [product?.images]);
 
   const handleAddToCart = () => {
+    // Handle single price products
+    if (product.hasSinglePrice && product.singlePrice) {
+      // Create a virtual size object for single price products
+      const virtualSize = { id: 0, label: "Standard", price: parseFloat(product.singlePrice) };
+      addToCart(product, virtualSize, 1);
+      return;
+    }
+    
     if (!product.sizes || product.sizes.length === 0) {
       toast.error("This product has no sizes available");
       return;
@@ -32,14 +40,17 @@ function ProductCard({ product }) {
     }
   };
 
-  // Get the lowest price from sizes
-  const getLowestPrice = () => {
+  // Get the price (from singlePrice or lowest from sizes)
+  const getPrice = () => {
+    if (product.hasSinglePrice && product.singlePrice) {
+      return parseFloat(product.singlePrice);
+    }
     if (!product.sizes || product.sizes.length === 0) return null;
     const prices = product.sizes.map(s => parseFloat(s.price));
     return Math.min(...prices);
   };
 
-  const lowestPrice = getLowestPrice();
+  const displayPrice = getPrice();
 
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group">
@@ -93,11 +104,11 @@ function ProductCard({ product }) {
         <p className="text-sm mb-3 line-clamp-2 min-h-[2.5rem]" style={{ color: 'oklch(50% .02 340)' }}>{product.description}</p>
 
         {/* Price */}
-        {lowestPrice && (
+        {displayPrice && (
           <div className="mb-3">
             <span className="text-lg font-bold" style={{ color: 'oklch(20% .02 340)' }}>
-              ₹{lowestPrice}
-              {product.sizes.length > 1 && (
+              ₹{displayPrice}
+              {!product.hasSinglePrice && product.sizes && product.sizes.length > 1 && (
                 <span className="text-sm font-normal ml-1" style={{ color: 'oklch(50% .02 340)' }}>onwards</span>
               )}
             </span>

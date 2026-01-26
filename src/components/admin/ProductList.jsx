@@ -86,7 +86,9 @@ export default function ProductList({ products, onEdit, onDelete }) {
             {product.description}
           </div>
           <div className="text-xs mt-1" style={{ color: 'oklch(50% .02 340)' }}>
-            {product.category?.name || "No category"}
+            {product.categories && product.categories.length > 0
+              ? product.categories.map(c => c.name || c.category?.name).join(", ")
+              : product.category?.name || "No category"}
           </div>
         </div>
 

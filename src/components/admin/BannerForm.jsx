@@ -9,6 +9,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
     subtitle: "",
     ctaText: "",
     ctaLink: "",
+    bannerType: "primary",
     isActive: true,
     order: 0,
   });
@@ -39,6 +40,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
         subtitle: banner.subtitle || "",
         ctaText: banner.ctaText || "",
         ctaLink: banner.ctaLink || "",
+        bannerType: banner.bannerType || "primary",
         isActive: banner.isActive !== undefined ? banner.isActive : true,
         order: banner.order || 0,
       });
@@ -46,7 +48,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
       setImagePreview(banner.imageUrl || null);
       setImage(null);
     } else {
-      setFormData({ title: "", subtitle: "", ctaText: "", ctaLink: "", isActive: true, order: 0 });
+      setFormData({ title: "", subtitle: "", ctaText: "", ctaLink: "", bannerType: "primary", isActive: true, order: 0 });
       setExistingImageUrl(null);
       setImagePreview(null);
       setImage(null);
@@ -60,10 +62,11 @@ export default function BannerForm({ banner, onSave, onCancel }) {
               subtitle: banner.subtitle || "",
               ctaText: banner.ctaText || "",
               ctaLink: banner.ctaLink || "",
+              bannerType: banner.bannerType || "primary",
               isActive: banner.isActive !== undefined ? banner.isActive : true,
               order: banner.order || 0,
             }
-          : { title: "", subtitle: "", ctaText: "", ctaLink: "", isActive: true, order: 0 },
+          : { title: "", subtitle: "", ctaText: "", ctaLink: "", bannerType: "primary", isActive: true, order: 0 },
         existingImageUrl: banner?.imageUrl || null,
         imageSelected: false,
         imagePreview: !!banner?.imageUrl,
@@ -108,6 +111,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
       formDataToSend.append("subtitle", formData.subtitle);
       formDataToSend.append("ctaText", formData.ctaText);
       formDataToSend.append("ctaLink", formData.ctaLink);
+      formDataToSend.append("bannerType", formData.bannerType);
       formDataToSend.append("isActive", formData.isActive);
       formDataToSend.append("order", formData.order);
       
@@ -132,7 +136,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
       if (res.ok) {
         toast.success(banner ? "Banner updated" : "Banner created");
         onSave();
-        setFormData({ title: "", subtitle: "", ctaText: "", ctaLink: "", isActive: true, order: 0 });
+        setFormData({ title: "", subtitle: "", ctaText: "", ctaLink: "", bannerType: "primary", isActive: true, order: 0 });
         setImage(null);
         setImagePreview(null);
         setExistingImageUrl(null);
@@ -157,7 +161,7 @@ export default function BannerForm({ banner, onSave, onCancel }) {
       const ok = window.confirm("You have unsaved changes. Are you sure you want to cancel?");
       if (!ok) return;
     }
-    setFormData({ title: "", subtitle: "", ctaText: "", ctaLink: "", isActive: true, order: 0 });
+      setFormData({ title: "", subtitle: "", ctaText: "", ctaLink: "", bannerType: "primary", isActive: true, order: 0 });
     setImage(null);
     setImagePreview(null);
     setExistingImageUrl(null);
@@ -255,7 +259,19 @@ export default function BannerForm({ banner, onSave, onCancel }) {
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Banner Type *</label>
+            <select
+              value={formData.bannerType}
+              onChange={(e) => setFormData({ ...formData, bannerType: e.target.value })}
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+              required
+            >
+              <option value="primary">Primary (Top Banner)</option>
+              <option value="secondary">Secondary (Second Banner)</option>
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Display Order</label>
             <input
