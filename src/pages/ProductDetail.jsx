@@ -236,6 +236,11 @@ export default function ProductDetail() {
 
                       {/* Badges */}
                       <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                        {product.isReady60Min ? (
+                          <span className="px-3 py-1 text-xs font-bold rounded-full bg-white/90 shadow" style={{ color: "oklch(20% .02 340)" }}>
+                            60 Min
+                          </span>
+                        ) : null}
                         {product.isFestival ? (
                           <span className="px-3 py-1 text-xs font-bold rounded-full bg-white/90 shadow" style={{ color: "oklch(20% .02 340)" }}>
                             Festival

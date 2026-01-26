@@ -12,6 +12,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
     isFestival: false,
     isNew: false,
     isTrending: false,
+    isReady60Min: false,
     hasSinglePrice: false,
     singlePrice: "",
     keywords: "",
@@ -49,6 +50,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         isFestival: product.isFestival || false,
         isNew: product.isNew || false,
         isTrending: product.isTrending || false,
+        isReady60Min: product.isReady60Min || false,
         hasSinglePrice: product.hasSinglePrice || false,
         singlePrice: product.singlePrice ? String(product.singlePrice) : "",
         keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
@@ -81,6 +83,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         isFestival: false,
         isNew: false,
         isTrending: false,
+        isReady60Min: false,
         hasSinglePrice: false,
         singlePrice: "",
         keywords: "",
@@ -103,6 +106,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
               isFestival: product.isFestival || false,
               isNew: product.isNew || false,
               isTrending: product.isTrending || false,
+              isReady60Min: product.isReady60Min || false,
               hasSinglePrice: product.hasSinglePrice || false,
               singlePrice: product.singlePrice ? String(product.singlePrice) : "",
               keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
@@ -114,6 +118,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
               isFestival: false,
               isNew: false,
               isTrending: false,
+              isReady60Min: false,
               hasSinglePrice: false,
               singlePrice: "",
               keywords: "",
@@ -169,6 +174,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       formDataToSend.append("isFestival", formData.isFestival);
       formDataToSend.append("isNew", formData.isNew);
       formDataToSend.append("isTrending", formData.isTrending);
+      formDataToSend.append("isReady60Min", formData.isReady60Min);
       formDataToSend.append("hasSinglePrice", formData.hasSinglePrice);
       formDataToSend.append("singlePrice", formData.hasSinglePrice && formData.singlePrice ? formData.singlePrice : "");
       
@@ -225,6 +231,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
           isFestival: false,
           isNew: false,
           isTrending: false,
+          isReady60Min: false,
           hasSinglePrice: false,
           singlePrice: "",
           keywords: "",
@@ -260,6 +267,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       isFestival: false,
       isNew: false,
       isTrending: false,
+      isReady60Min: false,
       hasSinglePrice: false,
       singlePrice: "",
       keywords: "",
@@ -515,6 +523,15 @@ export default function ProductForm({ product, categories, occasions = [], onSav
                   className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
                 />
                 <span className="text-sm text-gray-700">Trending</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.isReady60Min}
+                  onChange={(e) => setFormData({ ...formData, isReady60Min: e.target.checked })}
+                  className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
+                />
+                <span className="text-sm text-gray-700">60 Min Ready</span>
               </label>
             </div>
           </div>

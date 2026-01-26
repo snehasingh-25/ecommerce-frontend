@@ -75,6 +75,11 @@ function ProductCard({ product }) {
           
           {/* Badges - Top Right */}
           <div className="absolute top-3 right-3 flex flex-col gap-1.5">
+            {product.isReady60Min && (
+              <span className="px-2 py-0.5 text-xs rounded-full font-semibold shadow-sm" style={{ backgroundColor: 'oklch(92% .04 340)', color: 'oklch(20% .02 340)' }}>
+                60 Min
+              </span>
+            )}
             {product.isFestival && (
               <span className="px-2 py-0.5 text-xs rounded-full font-semibold shadow-sm" style={{ backgroundColor: 'oklch(92% .04 340)', color: 'oklch(20% .02 340)' }}>
                 Festival
