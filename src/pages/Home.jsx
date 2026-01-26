@@ -400,28 +400,21 @@ export default function Home() {
                 <Link
                   key={occasion.id}
                   to={`/occasion/${occasion.slug}`}
-                  className="flex-shrink-0 flex flex-col items-center min-w-[110px] sm:min-w-[130px] group"
+                  className="flex-shrink-0 flex flex-col items-center min-w-[140px] sm:min-w-[160px] group"
                 >
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full flex items-center justify-center text-4xl sm:text-5xl border-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300 overflow-hidden cursor-pointer"
+                  <div className="w-32 h-32 sm:w-36 sm:h-36 lg:w-40 lg:h-40 rounded-lg flex items-center justify-center text-4xl sm:text-5xl group-hover:shadow-lg group-hover:scale-110 transition-all duration-300 overflow-hidden cursor-pointer"
                     style={{ 
-                      backgroundColor: 'oklch(92% .04 340)',
-                      borderColor: 'oklch(92% .04 340)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'oklch(88% .06 340)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'oklch(92% .04 340)';
+                      backgroundColor: 'oklch(92% .04 340)'
                     }}
                   >
                     {occasion.imageUrl ? (
                       <img
                         src={occasion.imageUrl}
                         alt={occasion.name}
-                        className="w-full h-full object-cover rounded-full"
+                        className="w-full h-full object-cover rounded-lg"
                       />
                     ) : (
-                      <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
+                      <div className="w-full h-full rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
                         <img src="/logo.png" alt="Gift Choice Logo" className="w-3/4 h-3/4 object-contain" />
                       </div>
                     )}
