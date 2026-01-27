@@ -3,6 +3,8 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import GiftBoxLoader from "../components/GiftBoxLoader";
+import { useProductLoader } from "../hooks/useProductLoader";
 
 export default function CategoriesPage() {
   const { slug } = useParams();
@@ -15,6 +17,9 @@ export default function CategoriesPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const categoryScrollRef = useRef(null);
+  
+  // Time-based loader for products (only shows if loading >= 1 second)
+  const { showLoader: showProductLoader } = useProductLoader(loading);
 
   useEffect(() => {
     Promise.all([
@@ -144,19 +149,27 @@ export default function CategoriesPage() {
     });
   };
 
-  if (loading) {
+  // Time-based loader for initial categories load
+  const { showLoader: showInitialLoader } = useProductLoader(loading && !selectedCategory);
+  
+  if (loading && !selectedCategory) {
     return (
-      <div className="min-h-screen bg-white py-16 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading categories...</p>
-        </div>
-      </div>
+      <>
+        <GiftBoxLoader 
+          isLoading={loading && !selectedCategory} 
+          showLoader={showInitialLoader}
+        />
+      </>
     );
   }
 
   return (
     <div className="min-h-screen bg-white py-16">
+      {/* Gift Box Loading Animation - Only shows if product loading takes >= 1 second */}
+      <GiftBoxLoader 
+        isLoading={loading && selectedCategory !== null} 
+        showLoader={showProductLoader}
+      />
       <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>

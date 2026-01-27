@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
+import GiftBoxLoader from "../components/GiftBoxLoader";
+import { useProductLoader } from "../hooks/useProductLoader";
 
 export default function Occasion() {
   const { slug } = useParams();
@@ -12,6 +14,9 @@ export default function Occasion() {
   const [selectedOccasion, setSelectedOccasion] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Time-based loader (only shows if loading >= 1 second)
+  const { showLoader: showOccasionLoader } = useProductLoader(loading);
   const occasionScrollRef = useRef(null);
 
   const fetchAllProducts = async (category = "") => {
@@ -140,12 +145,12 @@ export default function Occasion() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white py-16 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading occasions...</p>
-        </div>
-      </div>
+      <>
+        <GiftBoxLoader 
+          isLoading={loading} 
+          showLoader={showOccasionLoader}
+        />
+      </>
     );
   }
 

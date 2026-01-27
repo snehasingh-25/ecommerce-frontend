@@ -320,10 +320,15 @@ export default function ReelCarousel({ reels }) {
             ? "basis-full lg:basis-[50%] xl:basis-[40%] mb-4 lg:mb-0" 
             : "basis-[72%] sm:basis-[34%] lg:basis-[22%] xl:basis-[18%]",
           "transition-transform duration-300",
-          isFeatured ? "scale-100" : (isActive ? "scale-[1.04]" : "scale-[0.94] opacity-90"),
+          isFeatured 
+            ? "scale-100" 
+            : (isActive 
+                ? "scale-[1.04] md:scale-100" 
+                : "scale-[0.94] opacity-90 md:scale-100 md:opacity-100"),
         ].join(" ")}
       >
         <div className="relative overflow-hidden shadow-md bg-black">
+          {/* Instagram Reels: 1080 x 1920 pixels = 9:16 aspect ratio = 177.78% */}
           <div className="relative w-full" style={{ paddingBottom: "177.78%" }}>
             {videoUrl ? (
               <>

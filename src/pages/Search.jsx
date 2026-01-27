@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
+import GiftBoxLoader from "../components/GiftBoxLoader";
+import { useProductLoader } from "../hooks/useProductLoader";
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -15,6 +17,9 @@ export default function Search() {
   const [occasions, setOccasions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  // Time-based loader for products (only shows if loading >= 1 second)
+  const { showLoader: showProductLoader } = useProductLoader(loading);
 
   // Fetch categories, occasions, and all products for suggestions
   useEffect(() => {
@@ -110,19 +115,13 @@ export default function Search() {
     setSearchParams(params);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white py-16 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Searching...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-white py-16">
+      {/* Gift Box Loading Animation - Only shows if product loading takes >= 1 second */}
+      <GiftBoxLoader 
+        isLoading={loading} 
+        showLoader={showProductLoader}
+      />
       <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="mb-8">
           <h2 className="text-3xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>

@@ -4,6 +4,8 @@ import { API } from "../api";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import ProductCard from "../components/ProductCard";
+import GiftBoxLoader from "../components/GiftBoxLoader";
+import { useProductLoader } from "../hooks/useProductLoader";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -18,6 +20,10 @@ export default function ProductDetail() {
   const [expanded, setExpanded] = useState(() => new Set(["details"]));
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
+  
+  // Time-based loader (only shows if loading >= 1 second)
+  const { showLoader: showProductLoader } = useProductLoader(loading);
+  const { showLoader: showSimilarLoader } = useProductLoader(loadingSimilar);
 
   const images = useMemo(() => {
     if (!product?.images) return [];
@@ -110,9 +116,12 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-pink-500 text-xl">Loading...</div>
-      </div>
+      <>
+        <GiftBoxLoader 
+          isLoading={loading} 
+          showLoader={showProductLoader}
+        />
+      </>
     );
   }
 
@@ -130,7 +139,13 @@ export default function ProductDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <>
+      {/* Gift Box Loading Animation for similar products */}
+      <GiftBoxLoader 
+        isLoading={loadingSimilar} 
+        showLoader={showSimilarLoader}
+      />
+      <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Top bar */}
         <div className="px-4 sm:px-6 lg:px-8 pt-6">
@@ -321,24 +336,12 @@ export default function ProductDetail() {
                     )}
                   </div>
 
-                  {/* Quick trust row */}
-                  <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] sm:text-xs">
-                    <div className="rounded-2xl border px-3 py-2 text-center" style={{ borderColor: "oklch(92% .04 340)", color: "oklch(40% .02 340)" }}>
-                      Easy gifting
-                    </div>
-                    <div className="rounded-2xl border px-3 py-2 text-center" style={{ borderColor: "oklch(92% .04 340)", color: "oklch(40% .02 340)" }}>
-                      Secure checkout
-                    </div>
-                    <div className="rounded-2xl border px-3 py-2 text-center" style={{ borderColor: "oklch(92% .04 340)", color: "oklch(40% .02 340)" }}>
-                      Fast support
-                    </div>
-                  </div>
 
                   {/* Size selector - only show for products with multiple sizes */}
                   {product.hasSinglePrice ? (
                     <div className="mt-6 rounded-2xl border px-4 py-3" style={{ borderColor: "oklch(92% .04 340)" }}>
                       <div className="text-sm font-semibold" style={{ color: "oklch(55% .02 340)" }}>
-                        Single Price Product
+                        Price
                       </div>
                       <div className="text-lg font-extrabold mt-1" style={{ color: "oklch(20% .02 340)" }}>
                         ₹{Number(product.singlePrice).toFixed(0)}
@@ -520,11 +523,7 @@ export default function ProductDetail() {
               <h2 className="text-2xl sm:text-3xl font-extrabold mb-6" style={{ color: "oklch(20% .02 340)" }}>
                 Similar Products
               </h2>
-              {loadingSimilar ? (
-                <div className="text-center py-12">
-                  <div className="text-pink-500 text-lg">Loading similar products...</div>
-                </div>
-              ) : (
+              {similarProducts.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
                   {similarProducts.map((similarProduct) => (
                     <ProductCard key={similarProduct.id} product={similarProduct} />
@@ -536,5 +535,6 @@ export default function ProductDetail() {
         </div>
       </div>
     </div>
+    </>
   );
 }

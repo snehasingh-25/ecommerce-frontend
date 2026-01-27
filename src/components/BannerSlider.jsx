@@ -60,20 +60,29 @@ export default function BannerSlider({ bannerType = "primary" }) {
 
   const currentBanner = banners[currentIndex];
 
+  // Banner aspect ratio: 3189×1408 px = 2.265:1 (width:height)
+  // padding-bottom = (1408 / 3189) * 100 = 44.15%
+  const bannerAspectRatio = (1408 / 3189) * 100;
+
   return (
     <div 
-      className="relative w-full overflow-hidden h-[220px] sm:h-[320px] lg:h-[500px]"
+      className="relative w-full overflow-hidden"
+      style={{ paddingBottom: `${bannerAspectRatio}%` }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Banner Image */}
-      <div className="relative w-full h-full">
+      {/* Banner Image Container */}
+      <div className="absolute inset-0 w-full h-full">
         <img
           src={currentBanner.imageUrl}
           alt={currentBanner.title}
-          className="w-full h-full object-contain sm:object-cover transition-opacity duration-500"
+          className="w-full h-full object-cover object-center transition-opacity duration-500"
           decoding="async"
           fetchPriority="high"
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'center'
+          }}
         />
         
         {/* Overlay Gradient */}

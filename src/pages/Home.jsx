@@ -4,37 +4,8 @@ import ProductCard from "../components/ProductCard";
 import { Link } from "react-router-dom";
 import BannerSlider from "../components/BannerSlider";
 import { MemoReelCarousel as ReelCarousel } from "../components/ReelCarousel";
-
-// Loading spinner component
-const LoadingSpinner = ({ size = "md" }) => {
-  const sizeClasses = {
-    sm: "w-4 h-4",
-    md: "w-8 h-8",
-    lg: "w-12 h-12",
-  };
-  return (
-    <div className="flex items-center justify-center">
-      <div
-        className={`${sizeClasses[size]} border-4 border-gray-200 border-t-current rounded-full animate-spin`}
-        style={{ borderTopColor: 'oklch(40% .02 340)' }}
-      />
-    </div>
-  );
-};
-
-// Loading section component
-const LoadingSection = ({ title }) => (
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <div className="flex items-center justify-center py-16">
-      <div className="text-center">
-        <LoadingSpinner size="lg" />
-        <p className="mt-4 text-sm font-medium" style={{ color: 'oklch(60% .02 340)' }}>
-          Loading {title}...
-        </p>
-      </div>
-    </div>
-  </div>
-);
+import GiftBoxLoader from "../components/GiftBoxLoader";
+import { useProductLoader } from "../hooks/useProductLoader";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -53,6 +24,10 @@ export default function Home() {
   });
   const scrollRef = useRef(null);
   const occasionScrollRef = useRef(null);
+  
+  // Time-based loader for products (main focus)
+  const isProductsLoading = loading.products;
+  const { showLoader: showProductLoader } = useProductLoader(isProductsLoading);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -158,10 +133,55 @@ export default function Home() {
   const isInitialLoad = loading.categories || loading.occasions || loading.products || loading.reels || loading.banners;
   const heroBanner = banners.length > 0 ? banners[0] : null;
 
+  // Time-based loader for all data (similar to useProductLoader)
+  const [showAnyLoader, setShowAnyLoader] = useState(isInitialLoad);
+  const loadingStartTime = useRef(isInitialLoad ? Date.now() : null);
+  const minLoadTimeReached = useRef(false);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (isInitialLoad) {
+      if (loadingStartTime.current === null) {
+        loadingStartTime.current = Date.now();
+        minLoadTimeReached.current = false;
+        setShowAnyLoader(true);
+        timeoutRef.current = setTimeout(() => {
+          minLoadTimeReached.current = true;
+        }, 100);
+      } else {
+        setShowAnyLoader(true);
+      }
+    } else {
+      if (loadingStartTime.current !== null) {
+        const loadDuration = Date.now() - loadingStartTime.current;
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+        if (loadDuration < 100 && !minLoadTimeReached.current) {
+          setShowAnyLoader(false);
+        } else {
+          setTimeout(() => setShowAnyLoader(false), 100 - loadDuration);
+        }
+        loadingStartTime.current = null;
+      }
+    }
+  }, [isInitialLoad]);
+
+  const isAnyLoading = isInitialLoad;
+
   return (
     <div className="min-h-screen bg-white fade-in">
-      {/* Hero Section - Shows immediately on initial load */}
-      {isInitialLoad && (
+      {/* Gift Box Loading Animation - Only shows if loading takes >= 0.1 seconds */}
+      <GiftBoxLoader 
+        isLoading={isAnyLoading} 
+        showLoader={showAnyLoader}
+      />
+      {/* Hide content while loader is showing */}
+      {!showAnyLoader && (
+        <>
+          {/* Hero Section - Shows immediately on initial load */}
+          {isInitialLoad && (
         <div className="relative w-full overflow-hidden h-[300px] sm:h-[400px] lg:h-[500px]">
           {/* Use banner image if available, otherwise use gradient */}
           {heroBanner && heroBanner.imageUrl ? (
@@ -187,9 +207,6 @@ export default function Home() {
               <p className="text-lg sm:text-xl text-white/90 mb-6 drop-shadow-md">
                 {heroBanner?.subtitle || "Discover the perfect gift for every occasion"}
               </p>
-              <div className="flex justify-center">
-                <LoadingSpinner size="lg" />
-              </div>
             </div>
           </div>
           
@@ -214,9 +231,7 @@ export default function Home() {
       {!isInitialLoad && <BannerSlider bannerType="primary" />}
 
       {/* Shop By Category Section */}
-      {loading.categories ? (
-        <LoadingSection title="categories" />
-      ) : categories.length > 0 ? (
+      {categories.length > 0 ? (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold" style={{ color: 'oklch(20% .02 340)' }}>Shop By Category</h2>
@@ -318,9 +333,7 @@ export default function Home() {
       ) : null}
 
       {/* Trending Products Section */}
-      {loading.products ? (
-        <LoadingSection title="trending products" />
-      ) : trendingProducts.length > 0 ? (
+      {trendingProducts.length > 0 ? (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white">
           <div className="flex items-center justify-between mb-10">
             <h2 className="text-3xl font-bold" style={{ color: 'oklch(20% .02 340)' }}>Trending Products</h2>
@@ -354,9 +367,7 @@ export default function Home() {
       ) : null}
 
       {/* Shop By Occasion Section */}
-      {loading.occasions ? (
-        <LoadingSection title="occasions" />
-      ) : occasions.length > 0 ? (
+      {occasions.length > 0 ? (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold" style={{ color: 'oklch(20% .02 340)' }}>Shop By Occasion</h2>
@@ -450,10 +461,8 @@ export default function Home() {
         </div>
       ) : null}
 
-      {/* Trending Gifts Section */}
-      {loading.products ? (
-        <LoadingSection title="products" />
-      ) : (
+      {/* Trending Gifts Section - Hide while loader is showing */}
+      {!showProductLoader && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white">
           <div className="flex items-center justify-between mb-10">
             <h2 className="text-3xl font-bold" style={{ color: 'oklch(20% .02 340)' }}>Gifts</h2>
@@ -494,10 +503,7 @@ export default function Home() {
       {!isInitialLoad && <BannerSlider bannerType="secondary" />}
 
       {/* Reels Section */}
-      {loading.reels ? (
-        <LoadingSection title="reels" />
-      ) : (
-        reels.length > 0 && (
+      {reels.length > 0 && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white">
             <h2 className="text-3xl font-bold mb-8 text-center" style={{ color: 'oklch(20% .02 340)' }}>
               Follow Us{" "}
@@ -513,9 +519,9 @@ export default function Home() {
             </h2>
             <ReelCarousel reels={reels} />
           </div>
-        )
       )}
-
+        </>
+      )}
     </div>
   );
 }
