@@ -4,6 +4,7 @@ import { API } from "../api";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import ProductCard from "../components/ProductCard";
+import RecommendationCarousel from "../components/RecommendationCarousel";
 import GiftBoxLoader from "../components/GiftBoxLoader";
 import { useProductLoader } from "../hooks/useProductLoader";
 
@@ -20,6 +21,8 @@ export default function ProductDetail() {
   const [expanded, setExpanded] = useState(() => new Set(["details"]));
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   
   // Time-based loader (only shows if loading >= 1 second)
   const { showLoader: showProductLoader } = useProductLoader(loading);
@@ -66,6 +69,20 @@ export default function ProductDetail() {
         setQuantity(1);
         setActiveImageIndex(0);
         setLoading(false);
+
+        // Fetch recommendations using the recommendation engine
+        setLoadingRecommendations(true);
+        fetch(`${API}/recommendations/${data.id}?limit=10`, { signal: ac.signal })
+          .then((res) => res.json())
+          .then((products) => {
+            setRecommendedProducts(Array.isArray(products) ? products : []);
+            setLoadingRecommendations(false);
+          })
+          .catch((error) => {
+            if (error?.name === "AbortError") return;
+            console.error("Error fetching recommendations:", error);
+            setLoadingRecommendations(false);
+          });
 
         // Fetch similar products from the same category (use first category if multiple)
         const firstCategory = data?.categories && data.categories.length > 0 ? data.categories[0] : data?.category;
@@ -495,23 +512,7 @@ export default function ProductDetail() {
 
                   <div className="h-px" style={{ backgroundColor: "oklch(92% .04 340)" }} />
 
-                  <button
-                    type="button"
-                    onClick={() => toggleSection("delivery")}
-                    className="w-full flex items-center justify-between px-5 py-4 text-left"
-                  >
-                    <div className="font-bold" style={{ color: "oklch(20% .02 340)" }}>
-                      Delivery & returns
-                    </div>
-                    <div className="text-xl font-black" style={{ color: "oklch(40% .02 340)" }}>
-                      {expanded.has("delivery") ? "−" : "+"}
-                    </div>
-                  </button>
-                  {expanded.has("delivery") ? (
-                    <div className="px-5 pb-5 text-sm leading-relaxed" style={{ color: "oklch(55% .02 340)" }}>
-                      Ships quickly. For custom gifting queries, use WhatsApp checkout. Returns depend on personalization and product condition.
-                    </div>
-                  ) : null}
+                  
                 </div>
               </div>
             </aside>
@@ -532,6 +533,12 @@ export default function ProductDetail() {
               )}
             </section>
           )}
+
+          {/* Recommendation Carousel Section */}
+          <RecommendationCarousel 
+            products={recommendedProducts} 
+            isLoading={loadingRecommendations}
+          />
         </div>
       </div>
     </div>
