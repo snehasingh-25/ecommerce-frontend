@@ -2,6 +2,42 @@ import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import OrderableList from "./OrderableList";
 
+// Build a clone for "Duplicate" (no id so form treats as new product)
+function cloneProductForDuplicate(product) {
+  const images = product.images
+    ? Array.isArray(product.images)
+      ? product.images
+      : typeof product.images === "string"
+        ? (() => {
+            try {
+              const parsed = JSON.parse(product.images);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          })()
+        : []
+    : [];
+  const videos = product.videos && Array.isArray(product.videos) ? product.videos : [];
+  return {
+    ...product,
+    id: null,
+    name: (product.name || "").trim() + " (Copy)",
+    images,
+    videos,
+    sizes:
+      product.sizes && product.sizes.length > 0
+        ? product.sizes.map((s) => ({
+            label: s.label,
+            price: s.price,
+            originalPrice: s.originalPrice ?? null,
+          }))
+        : [],
+    categories: product.categories || [],
+    occasions: product.occasions || [],
+  };
+}
+
 export default function ProductList({ products, onEdit, onDelete }) {
   const toast = useToast();
   
@@ -114,7 +150,7 @@ export default function ProductList({ products, onEdit, onDelete }) {
         </div>
 
         {/* Actions */}
-        <div className="flex-shrink-0 flex gap-2">
+        <div className="flex-shrink-0 flex gap-2 flex-wrap">
           <button
             onClick={() => onEdit(product)}
             className="px-3 py-1.5 rounded-lg text-sm font-semibold transition"
@@ -123,6 +159,23 @@ export default function ProductList({ products, onEdit, onDelete }) {
             onMouseLeave={(e) => (e.target.style.backgroundColor = 'oklch(92% .04 340)')}
           >
             Edit
+          </button>
+          <button
+            onClick={() => onEdit(cloneProductForDuplicate(product))}
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold transition border"
+            style={{ borderColor: 'oklch(70% .06 340)', color: 'oklch(40% .02 340)' }}
+            onMouseEnter={(e) => {
+              if (!isDragging) {
+                e.target.style.backgroundColor = 'oklch(96% .02 340)';
+                e.target.style.borderColor = 'oklch(60% .06 340)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '';
+              e.target.style.borderColor = 'oklch(70% .06 340)';
+            }}
+          >
+            Duplicate
           </button>
           <button
             onClick={() => handleDelete(product.id)}

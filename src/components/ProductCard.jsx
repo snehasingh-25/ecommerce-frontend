@@ -40,17 +40,30 @@ function ProductCard({ product }) {
     }
   };
 
-  // Get the price (from singlePrice or lowest from sizes)
-  const getPrice = () => {
-    if (product.hasSinglePrice && product.singlePrice) {
-      return parseFloat(product.singlePrice);
+  // Get selling price and optional MRP (from singlePrice or lowest from sizes)
+  const getPriceInfo = () => {
+    if (product.hasSinglePrice && product.singlePrice != null) {
+      const selling = parseFloat(product.singlePrice);
+      const mrp = product.originalPrice != null && product.originalPrice !== "" ? parseFloat(product.originalPrice) : null;
+      return { selling, mrp };
     }
     if (!product.sizes || product.sizes.length === 0) return null;
-    const prices = product.sizes.map(s => parseFloat(s.price));
-    return Math.min(...prices);
+    const withMrp = product.sizes.map((s) => ({
+      selling: parseFloat(s.price),
+      mrp: s.originalPrice != null && s.originalPrice !== "" ? parseFloat(s.originalPrice) : null,
+    }));
+    const minSelling = Math.min(...withMrp.map((x) => x.selling));
+    const minWithMrp = withMrp.find((x) => x.selling === minSelling);
+    return minWithMrp ? { selling: minWithMrp.selling, mrp: minWithMrp.mrp } : { selling: minSelling, mrp: null };
   };
 
-  const displayPrice = getPrice();
+  const priceInfo = getPriceInfo();
+  const displayPrice = priceInfo ? priceInfo.selling : null;
+  const displayMrp = priceInfo && priceInfo.mrp != null && priceInfo.mrp > displayPrice ? priceInfo.mrp : null;
+  const discountPct =
+    displayMrp != null && displayMrp > 0 && displayPrice < displayMrp
+      ? Math.round(((displayMrp - displayPrice) / displayMrp) * 100)
+      : null;
 
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group">
@@ -108,15 +121,27 @@ function ProductCard({ product }) {
         </Link>
         <p className="text-sm mb-3 line-clamp-2 min-h-[2.5rem]" style={{ color: 'oklch(50% .02 340)' }}>{product.description}</p>
 
-        {/* Price */}
-        {displayPrice && (
-          <div className="mb-3">
+        {/* Price - Amazon-style: MRP struck through, selling price bold, optional discount % */}
+        {displayPrice != null && (
+          <div className="mb-3 flex flex-wrap items-baseline gap-2">
             <span className="text-lg font-bold" style={{ color: 'oklch(20% .02 340)' }}>
-              ₹{displayPrice}
+              ₹{Number(displayPrice).toLocaleString('en-IN')}
               {!product.hasSinglePrice && product.sizes && product.sizes.length > 1 && (
                 <span className="text-sm font-normal ml-1" style={{ color: 'oklch(50% .02 340)' }}>onwards</span>
               )}
             </span>
+            {displayMrp != null && displayMrp > displayPrice && (
+              <>
+                <span className="text-sm line-through" style={{ color: 'oklch(55% .02 340)' }}>
+                  ₹{Number(displayMrp).toLocaleString('en-IN')}
+                </span>
+                {discountPct != null && discountPct > 0 && (
+                  <span className="text-xs font-semibold text-green-600">
+                    {discountPct}% OFF
+                  </span>
+                )}
+              </>
+            )}
           </div>
         )}
 

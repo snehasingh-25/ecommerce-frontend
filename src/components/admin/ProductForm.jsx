@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../../api";
 import ImageUpload from "./ImageUpload";
+import VideoUpload from "./VideoUpload";
 import { useToast } from "../../context/ToastContext";
+
+// Treat as "edit" only when product has a valid id (duplicate passes product with id null/undefined)
+const isEditProduct = (p) => p && (p.id != null && p.id !== "");
 
 export default function ProductForm({ product, categories, occasions = [], onSave, onCancel }) {
   const toast = useToast();
+  const isEdit = isEditProduct(product);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -15,14 +20,19 @@ export default function ProductForm({ product, categories, occasions = [], onSav
     isReady60Min: false,
     hasSinglePrice: false,
     singlePrice: "",
+    originalPrice: "", // MRP for single-price products
     keywords: "",
   });
   const [sizes, setSizes] = useState([]);
+  const [sizeOptions, setSizeOptions] = useState([]); // Reusable size options from API
   const [images, setImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [existingVideos, setExistingVideos] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedOccasions, setSelectedOccasions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingSizeOptions, setLoadingSizeOptions] = useState(false);
   const formRef = useRef(null);
   const isSubmittingRef = useRef(false);
   const initialSnapshotRef = useRef("");
@@ -53,14 +63,20 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         isReady60Min: product.isReady60Min || false,
         hasSinglePrice: product.hasSinglePrice || false,
         singlePrice: product.singlePrice ? String(product.singlePrice) : "",
+        originalPrice: product.originalPrice != null ? String(product.originalPrice) : "",
         keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
       });
       setSizes(
         product.sizes && product.sizes.length > 0
-          ? product.sizes.map((s) => ({ label: s.label, price: String(s.price) }))
+          ? product.sizes.map((s) => ({
+              label: s.label,
+              price: String(s.price ?? ""),
+              originalPrice: s.originalPrice != null ? String(s.originalPrice) : "",
+            }))
           : []
       );
       setExistingImages(product.images || []);
+      setExistingVideos(product.videos && Array.isArray(product.videos) ? product.videos : []);
       // Handle both old (categoryId) and new (categories) format for backward compatibility
       if (product.categories && product.categories.length > 0) {
         setSelectedCategories(product.categories.map((pc) => pc.categoryId || pc.category?.id || pc.id));
@@ -86,6 +102,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         isReady60Min: false,
         hasSinglePrice: false,
         singlePrice: "",
+        originalPrice: "",
         keywords: "",
       });
       setSizes([]);
@@ -109,6 +126,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
               isReady60Min: product.isReady60Min || false,
               hasSinglePrice: product.hasSinglePrice || false,
               singlePrice: product.singlePrice ? String(product.singlePrice) : "",
+              originalPrice: product.originalPrice != null ? String(product.originalPrice) : "",
               keywords: product.keywords ? (Array.isArray(product.keywords) ? product.keywords.join(", ") : product.keywords) : "",
             }
           : {
@@ -121,13 +139,15 @@ export default function ProductForm({ product, categories, occasions = [], onSav
               isReady60Min: false,
               hasSinglePrice: false,
               singlePrice: "",
+              originalPrice: "",
               keywords: "",
             },
         sizes:
           product?.sizes && product.sizes.length > 0
-            ? product.sizes.map((s) => ({ label: s.label, price: s.price }))
+            ? product.sizes.map((s) => ({ label: s.label, price: s.price, originalPrice: s.originalPrice }))
             : [],
         existingImages: product?.images || [],
+        existingVideos: product?.videos && Array.isArray(product.videos) ? product.videos : [],
         selectedCategories:
           product?.categories && product.categories.length > 0
             ? product.categories.map((pc) => pc.categoryId || pc.category?.id || pc.id)
@@ -142,6 +162,20 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       });
     }, 0);
   }, [product]);
+
+  // Fetch reusable size options when form mounts
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingSizeOptions(true);
+    fetch(`${API}/size-options`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && Array.isArray(data)) setSizeOptions(data);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingSizeOptions(false));
+    return () => { cancelled = true; };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -177,6 +211,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       formDataToSend.append("isReady60Min", formData.isReady60Min);
       formDataToSend.append("hasSinglePrice", formData.hasSinglePrice);
       formDataToSend.append("singlePrice", formData.hasSinglePrice && formData.singlePrice ? formData.singlePrice : "");
+      formDataToSend.append("originalPrice", formData.hasSinglePrice && formData.originalPrice ? formData.originalPrice : "");
       
       // Auto-generate keywords from product name if not already set
       let keywordsArray = [];
@@ -194,21 +229,36 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       if (formData.hasSinglePrice) {
         formDataToSend.append("sizes", JSON.stringify([]));
       } else {
-        // Sizes are optional - only include if they have both label and price
-        formDataToSend.append("sizes", JSON.stringify(sizes.filter((s) => s.label && s.price)));
+        // Sizes are optional - include label, price, originalPrice
+        formDataToSend.append(
+          "sizes",
+          JSON.stringify(
+            sizes.filter((s) => s.label && s.price).map((s) => ({
+              label: s.label,
+              price: s.price,
+              originalPrice: s.originalPrice != null && s.originalPrice !== "" ? s.originalPrice : null,
+            }))
+          )
+        );
       }
       formDataToSend.append("occasionIds", JSON.stringify(selectedOccasions));
 
       if (product && existingImages.length > 0) {
         formDataToSend.append("existingImages", JSON.stringify(existingImages));
       }
+      if (product && existingVideos.length > 0) {
+        formDataToSend.append("existingVideos", JSON.stringify(existingVideos));
+      }
 
       images.forEach((file) => {
         formDataToSend.append("images", file);
       });
+      videos.forEach((file) => {
+        formDataToSend.append("videos", file);
+      });
 
-      const url = product ? `${API}/products/${product.id}` : `${API}/products`;
-      const method = product ? "PUT" : "POST";
+      const url = isEdit ? `${API}/products/${product.id}` : `${API}/products`;
+      const method = isEdit ? "PUT" : "POST";
 
       const res = await fetch(url, {
         method,
@@ -221,7 +271,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       const data = await res.json();
 
       if (res.ok) {
-        toast.success(product ? "Product updated" : "Product created");
+        toast.success(isEdit ? "Product updated" : "Product created");
         onSave();
         // Reset form
         setFormData({
@@ -234,6 +284,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
           isReady60Min: false,
           hasSinglePrice: false,
           singlePrice: "",
+          originalPrice: "",
           keywords: "",
         });
         setSizes([]);
@@ -270,11 +321,14 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       isReady60Min: false,
       hasSinglePrice: false,
       singlePrice: "",
+      originalPrice: "",
       keywords: "",
     });
     setSizes([]);
     setImages([]);
     setExistingImages([]);
+    setVideos([]);
+    setExistingVideos([]);
     setSelectedCategories([]);
     setSelectedOccasions([]);
     initialSnapshotRef.current = "";
@@ -307,8 +361,40 @@ export default function ProductForm({ product, categories, occasions = [], onSav
 
   const updateSize = (index, field, value) => {
     const newSizes = [...sizes];
-    newSizes[index][field] = value;
+    if (!newSizes[index]) return;
+    newSizes[index] = { ...newSizes[index], [field]: value };
     setSizes(newSizes);
+  };
+
+  // Toggle saved size option: add/remove from sizes with price/originalPrice
+  const toggleSizeOption = (label) => {
+    const existing = sizes.find((s) => (s.label || "").trim().toLowerCase() === (label || "").trim().toLowerCase());
+    if (existing) {
+      setSizes(sizes.filter((s) => (s.label || "").trim().toLowerCase() !== (label || "").trim().toLowerCase()));
+    } else {
+      setSizes([...sizes, { label: label.trim(), price: "", originalPrice: "" }]);
+    }
+  };
+
+  // Add custom size and optionally save to reusable options
+  const addCustomSize = async (label, saveAsReusable = false) => {
+    const trimmed = (label || "").trim();
+    if (!trimmed) return;
+    if (sizes.some((s) => (s.label || "").trim().toLowerCase() === trimmed.toLowerCase())) {
+      toast.error("This size is already added");
+      return;
+    }
+    setSizes([...sizes, { label: trimmed, price: "", originalPrice: "" }]);
+    if (saveAsReusable) {
+      try {
+        const token = localStorage.getItem("adminToken");
+        await fetch(`${API}/size-options`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ label: trimmed }),
+        });
+      } catch (_) {}
+    }
   };
 
   // Generate keywords from product name
@@ -378,7 +464,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
     <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">
       <div className="flex items-start justify-between gap-4 mb-6">
         <h2 className="text-xl font-bold text-gray-900">
-          {product ? "Edit Product" : "Add New Product"}
+          {isEdit ? "Edit Product" : "Add New Product"}
         </h2>
         <div className="flex gap-2 shrink-0">
           <button
@@ -398,7 +484,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
             {loading && (
               <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
             )}
-            {product ? "Update" : "Save"}
+            {isEdit ? "Update" : "Save"}
           </button>
         </div>
       </div>
@@ -416,59 +502,37 @@ export default function ProductForm({ product, categories, occasions = [], onSav
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Categories *</label>
-          {/* Selected Categories as Chips */}
-          {selectedCategories.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {selectedCategories.map((catId) => {
-                const category = categories.find((c) => c.id === Number(catId));
-                if (!category) return null;
-                return (
-                  <span
-                    key={catId}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-pink-100 text-pink-700 rounded-full text-sm font-semibold"
-                  >
-                    {category.name}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCategories(selectedCategories.filter((id) => id !== catId))}
-                      className="hover:text-pink-900 focus:outline-none"
-                      aria-label={`Remove ${category.name}`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </span>
-                );
-              })}
-            </div>
-          )}
-          
-          {/* Category Selector */}
-          <select
-            value=""
-            onChange={(e) => {
-              const catId = e.target.value;
-              if (catId && !selectedCategories.includes(Number(catId))) {
-                setSelectedCategories([...selectedCategories, Number(catId)]);
-              }
-              e.target.value = ""; // Reset select
-            }}
-            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
-            required={selectedCategories.length === 0}
-          >
-            <option value="">{selectedCategories.length === 0 ? "Select Categories *" : "Add another category..."}</option>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-3 rounded-xl border-2 border-gray-200 bg-gray-50/50">
             {[...categories]
               .sort((a, b) => a.name.localeCompare(b.name))
-              .filter((cat) => !selectedCategories.includes(cat.id))
-              .map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-          </select>
+              .map((cat) => {
+                const isSelected = selectedCategories.includes(cat.id);
+                return (
+                  <label
+                    key={cat.id}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition ${
+                      isSelected ? "border-pink-500 bg-pink-50" : "border-gray-200 bg-white hover:border-pink-300"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {
+                        if (isSelected) {
+                          setSelectedCategories(selectedCategories.filter((id) => id !== cat.id));
+                        } else {
+                          setSelectedCategories([...selectedCategories, cat.id]);
+                        }
+                      }}
+                      className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500 shrink-0"
+                    />
+                    <span className="text-sm font-medium text-gray-700 truncate">{cat.name}</span>
+                  </label>
+                );
+              })}
+          </div>
           {selectedCategories.length === 0 && (
-            <p className="text-xs text-gray-500 mt-1">Select at least one category. You can add multiple categories.</p>
+            <p className="text-xs text-gray-500 mt-1">Select at least one category.</p>
           )}
         </div>
 
@@ -531,7 +595,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
                   onChange={(e) => setFormData({ ...formData, isReady60Min: e.target.checked })}
                   className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
                 />
-                <span className="text-sm text-gray-700">60 Min Ready</span>
+                <span className="text-sm text-gray-700">60 Minutes Ready</span>
               </label>
             </div>
           </div>
@@ -539,61 +603,38 @@ export default function ProductForm({ product, categories, occasions = [], onSav
 
         {occasions.length > 0 && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Occasions</label>
-            {/* Selected Occasions as Chips */}
-            {selectedOccasions.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {selectedOccasions.map((occId) => {
-                  const occasion = occasions.find((o) => o.id === Number(occId));
-                  if (!occasion) return null;
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Occasions (optional)</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-3 rounded-xl border-2 border-gray-200 bg-gray-50/50">
+              {[...occasions]
+                .filter((o) => o.isActive !== false)
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((occ) => {
+                  const isSelected = selectedOccasions.includes(occ.id);
                   return (
-                    <span
-                      key={occId}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-pink-100 text-pink-700 rounded-full text-sm font-semibold"
+                    <label
+                      key={occ.id}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition ${
+                        isSelected ? "border-pink-500 bg-pink-50" : "border-gray-200 bg-white hover:border-pink-300"
+                      }`}
                     >
-                      {occasion.name}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedOccasions(selectedOccasions.filter((id) => id !== occId))}
-                        className="hover:text-pink-900 focus:outline-none"
-                        aria-label={`Remove ${occasion.name}`}
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </span>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {
+                          if (isSelected) {
+                            setSelectedOccasions(selectedOccasions.filter((id) => id !== occ.id));
+                          } else {
+                            setSelectedOccasions([...selectedOccasions, occ.id]);
+                          }
+                        }}
+                        className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500 shrink-0"
+                      />
+                      <span className="text-sm font-medium text-gray-700 truncate">{occ.name}</span>
+                    </label>
                   );
                 })}
-              </div>
-            )}
-            
-            {/* Occasion Selector */}
-            <select
-              value=""
-              onChange={(e) => {
-                const occId = e.target.value;
-                if (occId && !selectedOccasions.includes(Number(occId))) {
-                  setSelectedOccasions([...selectedOccasions, Number(occId)]);
-                }
-                e.target.value = ""; // Reset select
-              }}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
-            >
-              <option value="">{selectedOccasions.length === 0 ? "Select Occasions (Optional)" : "Add another occasion..."}</option>
-              {[...occasions]
-                .filter(o => o.isActive)
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .filter((occ) => !selectedOccasions.includes(occ.id))
-                .map((occ) => (
-                  <option key={occ.id} value={occ.id}>
-                    {occ.name}
-                  </option>
-                ))}
-            </select>
-            {selectedOccasions.length === 0 && (
-              <p className="text-xs text-gray-500 mt-1">Select occasions this product is suitable for (optional)</p>
-            )}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Select occasions this product is suitable for (optional)</p>
           </div>
         )}
 
@@ -602,6 +643,13 @@ export default function ProductForm({ product, categories, occasions = [], onSav
           existingImages={existingImages}
           onImagesChange={setImages}
           onExistingImagesChange={setExistingImages}
+        />
+
+        <VideoUpload
+          videos={videos}
+          existingVideos={existingVideos}
+          onVideosChange={setVideos}
+          onExistingVideosChange={setExistingVideos}
         />
 
         <div className="border-t border-gray-200 pt-6">
@@ -624,58 +672,141 @@ export default function ProductForm({ product, categories, occasions = [], onSav
           </div>
 
           {formData.hasSinglePrice ? (
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Single Price *</label>
-              <input
-                type="number"
-                value={formData.singlePrice}
-                onChange={(e) => setFormData({ ...formData, singlePrice: e.target.value })}
-                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
-                step="0.01"
-                min="0"
-                placeholder="Enter price (e.g., 299.99)"
-                required={formData.hasSinglePrice}
-              />
-              <p className="text-xs text-gray-500 mt-1">This product has a single price without size variants.</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Selling Price *</label>
+                <input
+                  type="number"
+                  value={formData.singlePrice}
+                  onChange={(e) => setFormData({ ...formData, singlePrice: e.target.value })}
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g., 999"
+                  required={formData.hasSinglePrice}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Original Price / MRP (optional)</label>
+                <input
+                  type="number"
+                  value={formData.originalPrice}
+                  onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g., 1499 (shown struck through)"
+                />
+                <p className="text-xs text-gray-500 mt-1">Displayed as strikethrough; discount % is auto-calculated.</p>
+              </div>
+              <p className="text-xs text-gray-500">This product has a single price without size variants.</p>
             </div>
           ) : (
             <div>
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-semibold text-gray-700">Sizes & Prices (Optional)</label>
+              </div>
+              {/* Reusable size options as checkboxes */}
+              {sizeOptions.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs text-gray-600 mb-2">Select saved sizes (then set price/MRP below):</p>
+                  <div className="flex flex-wrap gap-2">
+                    {sizeOptions.map((opt) => {
+                      const isSelected = sizes.some((s) => (s.label || "").trim().toLowerCase() === (opt.label || "").trim().toLowerCase());
+                      return (
+                        <label
+                          key={opt.id}
+                          className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition ${
+                            isSelected ? "border-pink-500 bg-pink-50" : "border-gray-200 bg-white"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSizeOption(opt.label)}
+                            className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {/* Custom size: add one-off or save for future */}
+              <div className="flex gap-2 mb-4 flex-wrap">
+                <input
+                  type="text"
+                  id="custom-size-label"
+                  placeholder="Custom size"
+                  className="flex-1 min-w-[120px] px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const input = e.target;
+                      addCustomSize(input.value, false);
+                      input.value = "";
+                    }
+                  }}
+                />
                 <button
                   type="button"
-                  onClick={addSize}
-                  className="px-4 py-2 bg-pink-500 text-white rounded-lg text-sm font-semibold hover:bg-pink-600 transition"
+                  onClick={() => {
+                    const input = document.getElementById("custom-size-label");
+                    if (input) {
+                      addCustomSize(input.value, false);
+                      input.value = "";
+                    }
+                  }}
+                  className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-300 transition"
                 >
-                  + Add Size
+                  + Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const input = document.getElementById("custom-size-label");
+                    if (input) {
+                      addCustomSize(input.value, true);
+                      input.value = "";
+                      toast.success("Size added and saved for future products");
+                    }
+                  }}
+                  className="px-4 py-2.5 border-2 border-pink-500 text-pink-600 rounded-lg text-sm font-semibold hover:bg-pink-50 transition"
+                >
+                  Add & save for future
                 </button>
               </div>
+              {/* Size rows: label, selling price, MRP */}
               <div className="space-y-3">
                 {sizes.length === 0 ? (
-                  <p className="text-sm text-gray-500 italic">No sizes added. Products can be saved without sizes.</p>
+                  <p className="text-sm text-gray-500 italic">No sizes added. Select from above or add a custom size.</p>
                 ) : (
                   sizes.map((size, index) => (
-                    <div key={index} className="flex gap-3">
+                    <div key={index} className="flex flex-wrap gap-2 items-center p-3 rounded-lg border border-gray-200 bg-gray-50/50">
+                      <span className="font-semibold text-gray-700 min-w-[4rem]">{size.label}</span>
                       <input
-                        type="text"
-                        placeholder="Size Label (e.g., Small, Large)"
-                        value={size.label}
-                        onChange={(e) => updateSize(index, "label", e.target.value)}
-                        className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                        type="number"
+                        placeholder="Selling price"
+                        value={size.price}
+                        onChange={(e) => updateSize(index, "price", e.target.value)}
+                        className="w-28 px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition text-sm"
+                        step="0.01"
+                        min="0"
                       />
                       <input
                         type="number"
-                        placeholder="Price"
-                        value={size.price}
-                        onChange={(e) => updateSize(index, "price", e.target.value)}
-                        className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition"
+                        placeholder="MRP (optional)"
+                        value={size.originalPrice ?? ""}
+                        onChange={(e) => updateSize(index, "originalPrice", e.target.value)}
+                        className="w-28 px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 transition text-sm"
                         step="0.01"
                         min="0"
                       />
                       <button
                         type="button"
                         onClick={() => removeSize(index)}
-                        className="px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold"
+                        className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm font-semibold"
                       >
                         Remove
                       </button>
@@ -697,7 +828,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
               {loading && (
                 <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
               )}
-              {product ? "Update" : "Save"}
+              {isEdit ? "Update" : "Save"}
             </button>
             <button
               type="button"

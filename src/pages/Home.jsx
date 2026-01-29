@@ -24,10 +24,12 @@ export default function Home() {
   });
   const scrollRef = useRef(null);
   const occasionScrollRef = useRef(null);
+  const scrollEndTimerRef = useRef(null);
+  const occasionScrollEndTimerRef = useRef(null);
   
-  // Time-based loader for products (main focus)
+  // Time-based loader for products (used by useProductLoader internally; main content uses showAnyLoader)
   const isProductsLoading = loading.products;
-  const { showLoader: showProductLoader } = useProductLoader(isProductsLoading);
+  useProductLoader(isProductsLoading);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -94,6 +96,14 @@ export default function Home() {
     };
   }, []);
 
+  // Clean up scroll-end timers on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
+      if (occasionScrollEndTimerRef.current) clearTimeout(occasionScrollEndTimerRef.current);
+    };
+  }, []);
+
   // After initial content is visible, progressively render more product cards
   useEffect(() => {
     if (!products.length) return;
@@ -109,24 +119,79 @@ export default function Home() {
 
   // Removed getCategoryIcon - all categories use logo as fallback
 
+  // Infinite carousel: triple the list so we can scroll seamlessly and reset position
+  const categoriesTriple = useMemo(
+    () => (categories.length > 0 ? [...categories, ...categories, ...categories] : []),
+    [categories]
+  );
+  const occasionsTriple = useMemo(
+    () => (occasions.length > 0 ? [...occasions, ...occasions, ...occasions] : []),
+    [occasions]
+  );
+  const categorySetWidthRef = useRef(0);
+  const occasionSetWidthRef = useRef(0);
+
+  // Initialize scroll position to middle set and handle loop reset (categories)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || categories.length === 0) return;
+    const setWidth = el.scrollWidth / 3;
+    categorySetWidthRef.current = setWidth;
+    el.scrollLeft = setWidth;
+  }, [categories]);
+
+  useEffect(() => {
+    const el = occasionScrollRef.current;
+    if (!el || occasions.length === 0) return;
+    const setWidth = el.scrollWidth / 3;
+    occasionSetWidthRef.current = setWidth;
+    el.scrollLeft = setWidth;
+  }, [occasions]);
+
   const scrollCategories = (direction) => {
-    if (scrollRef.current) {
-      const scrollAmount = 300;
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-    }
+    const el = scrollRef.current;
+    if (!el || categories.length === 0) return;
+    const scrollAmount = 300;
+    el.scrollBy({ left: direction === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
+    const setWidth = categorySetWidthRef.current || el.scrollWidth / 3;
+    setTimeout(() => {
+      if (!scrollRef.current) return;
+      const sl = scrollRef.current.scrollLeft;
+      if (sl >= setWidth * 2 - 50) scrollRef.current.scrollLeft = sl - setWidth;
+      else if (sl <= 50) scrollRef.current.scrollLeft = sl + setWidth;
+    }, 350);
   };
 
   const scrollOccasions = (direction) => {
-    if (occasionScrollRef.current) {
-      const scrollAmount = 300;
-      occasionScrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-    }
+    const el = occasionScrollRef.current;
+    if (!el || occasions.length === 0) return;
+    const scrollAmount = 300;
+    el.scrollBy({ left: direction === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
+    const setWidth = occasionSetWidthRef.current || el.scrollWidth / 3;
+    setTimeout(() => {
+      if (!occasionScrollRef.current) return;
+      const sl = occasionScrollRef.current.scrollLeft;
+      if (sl >= setWidth * 2 - 50) occasionScrollRef.current.scrollLeft = sl - setWidth;
+      else if (sl <= 50) occasionScrollRef.current.scrollLeft = sl + setWidth;
+    }, 350);
+  };
+
+  // Scroll loop reset on scroll end (for drag/swipe and so middle set stays in sync)
+  const handleCategoryScrollEnd = () => {
+    const el = scrollRef.current;
+    if (!el || categories.length === 0) return;
+    const setWidth = categorySetWidthRef.current || el.scrollWidth / 3;
+    const sl = el.scrollLeft;
+    if (sl >= setWidth * 2 - 50) el.scrollLeft = sl - setWidth;
+    else if (sl <= 50) el.scrollLeft = sl + setWidth;
+  };
+  const handleOccasionScrollEnd = () => {
+    const el = occasionScrollRef.current;
+    if (!el || occasions.length === 0) return;
+    const setWidth = occasionSetWidthRef.current || el.scrollWidth / 3;
+    const sl = el.scrollLeft;
+    if (sl >= setWidth * 2 - 50) el.scrollLeft = sl - setWidth;
+    else if (sl <= 50) el.scrollLeft = sl + setWidth;
   };
 
   // Check if any data is still loading
@@ -135,7 +200,7 @@ export default function Home() {
 
   // Time-based loader for all data (similar to useProductLoader)
   const [showAnyLoader, setShowAnyLoader] = useState(isInitialLoad);
-  const loadingStartTime = useRef(isInitialLoad ? Date.now() : null);
+  const loadingStartTime = useRef(null);
   const minLoadTimeReached = useRef(false);
   const timeoutRef = useRef(null);
 
@@ -144,12 +209,20 @@ export default function Home() {
       if (loadingStartTime.current === null) {
         loadingStartTime.current = Date.now();
         minLoadTimeReached.current = false;
-        setShowAnyLoader(true);
+        const id = setTimeout(() => setShowAnyLoader(true), 0);
         timeoutRef.current = setTimeout(() => {
           minLoadTimeReached.current = true;
         }, 100);
+        return () => {
+          clearTimeout(id);
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+          }
+        };
       } else {
-        setShowAnyLoader(true);
+        const id = setTimeout(() => setShowAnyLoader(true), 0);
+        return () => clearTimeout(id);
       }
     } else {
       if (loadingStartTime.current !== null) {
@@ -159,9 +232,9 @@ export default function Home() {
           timeoutRef.current = null;
         }
         if (loadDuration < 100 && !minLoadTimeReached.current) {
-          setShowAnyLoader(false);
+          setTimeout(() => setShowAnyLoader(false), 0);
         } else {
-          setTimeout(() => setShowAnyLoader(false), 100 - loadDuration);
+          setTimeout(() => setShowAnyLoader(false), Math.max(0, 100 - loadDuration));
         }
         loadingStartTime.current = null;
       }
@@ -270,10 +343,14 @@ export default function Home() {
               ref={scrollRef}
               className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-4 px-1 sm:px-2"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              onScroll={() => {
+                if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
+                scrollEndTimerRef.current = setTimeout(handleCategoryScrollEnd, 150);
+              }}
             >
-              {categories.map((category) => (
+              {categoriesTriple.map((category, i) => (
                 <Link
-                  key={category.id}
+                  key={`cat-${i}-${category.id}`}
                   to={`/category/${category.slug}`}
                   className="flex-shrink-0 flex flex-col items-center min-w-[100px] sm:min-w-[120px] group"
                 >
@@ -406,10 +483,14 @@ export default function Home() {
               ref={occasionScrollRef}
               className="flex gap-5 overflow-x-auto scrollbar-hide pb-4 px-2"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              onScroll={() => {
+                if (occasionScrollEndTimerRef.current) clearTimeout(occasionScrollEndTimerRef.current);
+                occasionScrollEndTimerRef.current = setTimeout(handleOccasionScrollEnd, 150);
+              }}
             >
-              {occasions.map((occasion) => (
+              {occasionsTriple.map((occasion, i) => (
                 <Link
-                  key={occasion.id}
+                  key={`occ-${i}-${occasion.id}`}
                   to={`/occasion/${occasion.slug}`}
                   className="flex-shrink-0 flex flex-col items-center min-w-[140px] sm:min-w-[160px] group"
                 >
@@ -438,8 +519,8 @@ export default function Home() {
                     {occasion.name}
                   </span>
                 </Link>
-        ))}
-      </div>
+              ))}
+            </div>
             <button
               onClick={() => scrollOccasions("right")}
               className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
@@ -462,7 +543,7 @@ export default function Home() {
       ) : null}
 
       {/* Trending Gifts Section - Hide while loader is showing */}
-      {!showProductLoader && (
+      {!showAnyLoader && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white">
           <div className="flex items-center justify-between mb-10">
             <h2 className="text-3xl font-bold" style={{ color: 'oklch(20% .02 340)' }}>Gifts</h2>

@@ -39,7 +39,20 @@ export default function ProductDetail() {
     }
   }, [product?.images]);
 
-  const activeImage = images[activeImageIndex] || images[0] || null;
+  const videos = useMemo(() => {
+    if (!product?.videos || !Array.isArray(product.videos)) return [];
+    return product.videos;
+  }, [product?.videos]);
+
+  // Combined media: images first, then videos (each item: { type, url })
+  const media = useMemo(() => {
+    const imgItems = images.map((url) => ({ type: "image", url }));
+    const vidItems = videos.map((url) => ({ type: "video", url }));
+    return [...imgItems, ...vidItems];
+  }, [images, videos]);
+
+  const activeMedia = media[activeImageIndex] || media[0] || null;
+  const activeImage = activeMedia?.type === "image" ? activeMedia.url : null;
 
   const toggleSection = (key) => {
     setExpanded((prev) => {
@@ -59,8 +72,12 @@ export default function ProductDetail() {
         setProduct(data);
         // Handle single price products
         if (data?.hasSinglePrice && data.singlePrice) {
-          // Create a virtual size object for single price products
-          setSelectedSize({ id: 0, label: "Standard", price: parseFloat(data.singlePrice) });
+          setSelectedSize({
+            id: 0,
+            label: "Standard",
+            price: parseFloat(data.singlePrice),
+            originalPrice: data.originalPrice != null && data.originalPrice !== "" ? parseFloat(data.originalPrice) : null,
+          });
         } else if (data?.sizes && data.sizes.length > 0) {
           setSelectedSize(data.sizes[0]);
         } else {
@@ -212,9 +229,9 @@ export default function ProductDetail() {
             <section className="lg:col-span-7">
               <div className="lg:flex lg:gap-4">
                 {/* Thumbnails (desktop vertical) */}
-                {images.length > 1 ? (
+                {media.length > 1 ? (
                   <div className="hidden lg:flex flex-col gap-3 w-20 shrink-0">
-                    {images.slice(0, 8).map((img, idx) => {
+                    {media.slice(0, 8).map((item, idx) => {
                       const active = idx === activeImageIndex;
                       return (
                         <button
@@ -232,15 +249,25 @@ export default function ProductDetail() {
                           }}
                         >
                           <div className="aspect-square bg-white">
-                            <img
-                              src={img}
-                              alt={`${product.name} ${idx + 1}`}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                              width={96}
-                              height={96}
-                            />
+                            {item.type === "video" ? (
+                              <video
+                                src={item.url}
+                                className="w-full h-full object-cover"
+                                muted
+                                playsInline
+                                preload="metadata"
+                              />
+                            ) : (
+                              <img
+                                src={item.url}
+                                alt={`${product.name} ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                decoding="async"
+                                width={96}
+                                height={96}
+                              />
+                            )}
                           </div>
                         </button>
                       );
@@ -248,11 +275,19 @@ export default function ProductDetail() {
                   </div>
                 ) : null}
 
-                {/* Primary image */}
+                {/* Primary image or video */}
                 <div className="flex-1">
                   <div className="relative rounded-3xl overflow-hidden bg-white border" style={{ borderColor: "oklch(92% .04 340)" }}>
-                    <div className="relative w-full" style={{ paddingBottom: "100%" }}>
-                      {activeImage ? (
+                    <div className="relative w-full" style={{ paddingBottom: activeMedia?.type === "video" ? "56.25%" : "100%" }}>
+                      {activeMedia?.type === "video" ? (
+                        <video
+                          src={activeMedia.url}
+                          className="absolute inset-0 w-full h-full object-contain bg-black"
+                          controls
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : activeImage ? (
                         <img
                           src={activeImage}
                           alt={product.name}
@@ -293,9 +328,9 @@ export default function ProductDetail() {
                   </div>
 
                   {/* Thumbnails (mobile horizontal) */}
-                  {images.length > 1 ? (
+                  {media.length > 1 ? (
                     <div className="mt-4 flex gap-3 overflow-x-auto pb-2 lg:hidden" style={{ WebkitOverflowScrolling: "touch" }}>
-                      {images.slice(0, 10).map((img, idx) => {
+                      {media.slice(0, 10).map((item, idx) => {
                         const active = idx === activeImageIndex;
                         return (
                           <button
@@ -309,15 +344,25 @@ export default function ProductDetail() {
                             style={{ borderColor: "oklch(92% .04 340)" }}
                           >
                             <div className="aspect-square bg-white">
-                              <img
-                                src={img}
-                                alt={`${product.name} ${idx + 1}`}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                                decoding="async"
-                                width={96}
-                                height={96}
-                              />
+                              {item.type === "video" ? (
+                                <video
+                                  src={item.url}
+                                  className="w-full h-full object-cover"
+                                  muted
+                                  playsInline
+                                  preload="metadata"
+                                />
+                              ) : (
+                                <img
+                                  src={item.url}
+                                  alt={`${product.name} ${idx + 1}`}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                  decoding="async"
+                                  width={96}
+                                  height={96}
+                                />
+                              )}
                             </div>
                           </button>
                         );
@@ -336,15 +381,45 @@ export default function ProductDetail() {
                     {product.name}
                   </h1>
 
-                  <div className="mt-3 flex items-baseline gap-2">
+                  <div className="mt-3 flex flex-wrap items-baseline gap-2">
                     {selectedSize ? (
                       <>
                         <div className="text-2xl font-extrabold" style={{ color: "oklch(20% .02 340)" }}>
-                          ₹{Number(selectedSize.price).toFixed(0)}
+                          ₹{Number(selectedSize.price).toLocaleString("en-IN")}
                         </div>
+                        {(() => {
+                          const mrp = selectedSize.originalPrice ?? (product?.hasSinglePrice ? product?.originalPrice : null);
+                          if (mrp == null || Number(mrp) <= Number(selectedSize.price)) return null;
+                          return (
+                            <>
+                              <span className="text-base line-through" style={{ color: "oklch(55% .02 340)" }}>
+                                ₹{Number(mrp).toLocaleString("en-IN")}
+                              </span>
+                              <span className="text-sm font-semibold text-green-600">
+                                {Math.round(((mrp - selectedSize.price) / mrp) * 100)}% OFF
+                              </span>
+                            </>
+                          );
+                        })()}
                         <div className="text-sm font-semibold" style={{ color: "oklch(55% .02 340)" }}>
                           {selectedSize.label}
                         </div>
+                      </>
+                    ) : product?.hasSinglePrice && product?.singlePrice != null ? (
+                      <>
+                        <div className="text-2xl font-extrabold" style={{ color: "oklch(20% .02 340)" }}>
+                          ₹{Number(product.singlePrice).toLocaleString("en-IN")}
+                        </div>
+                        {product.originalPrice != null && Number(product.originalPrice) > Number(product.singlePrice) && (
+                          <>
+                            <span className="text-base line-through" style={{ color: "oklch(55% .02 340)" }}>
+                              ₹{Number(product.originalPrice).toLocaleString("en-IN")}
+                            </span>
+                            <span className="text-sm font-semibold text-green-600">
+                              {Math.round(((product.originalPrice - product.singlePrice) / product.originalPrice) * 100)}% OFF
+                            </span>
+                          </>
+                        )}
                       </>
                     ) : (
                       <div className="text-sm font-semibold" style={{ color: "oklch(55% .02 340)" }}>
@@ -360,8 +435,20 @@ export default function ProductDetail() {
                       <div className="text-sm font-semibold" style={{ color: "oklch(55% .02 340)" }}>
                         Price
                       </div>
-                      <div className="text-lg font-extrabold mt-1" style={{ color: "oklch(20% .02 340)" }}>
-                        ₹{Number(product.singlePrice).toFixed(0)}
+                      <div className="flex flex-wrap items-baseline gap-2 mt-1">
+                        <span className="text-lg font-extrabold" style={{ color: "oklch(20% .02 340)" }}>
+                          ₹{Number(product.singlePrice).toLocaleString("en-IN")}
+                        </span>
+                        {product.originalPrice != null && Number(product.originalPrice) > Number(product.singlePrice) && (
+                          <>
+                            <span className="text-sm line-through" style={{ color: "oklch(55% .02 340)" }}>
+                              ₹{Number(product.originalPrice).toLocaleString("en-IN")}
+                            </span>
+                            <span className="text-xs font-semibold text-green-600">
+                              {Math.round(((product.originalPrice - product.singlePrice) / product.originalPrice) * 100)}% OFF
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   ) : product.sizes?.length ? (
@@ -395,8 +482,15 @@ export default function ProductDetail() {
                               <div className="text-sm font-bold" style={{ color: "oklch(20% .02 340)" }}>
                                 {size.label}
                               </div>
-                              <div className="text-sm font-extrabold mt-0.5" style={{ color: "oklch(40% .02 340)" }}>
-                                ₹{Number(size.price).toFixed(0)}
+                              <div className="flex flex-wrap items-baseline gap-1.5 mt-0.5">
+                                <span className="text-sm font-extrabold" style={{ color: "oklch(40% .02 340)" }}>
+                                  ₹{Number(size.price).toLocaleString("en-IN")}
+                                </span>
+                                {size.originalPrice != null && Number(size.originalPrice) > Number(size.price) && (
+                                  <span className="text-xs line-through" style={{ color: "oklch(55% .02 340)" }}>
+                                    ₹{Number(size.originalPrice).toLocaleString("en-IN")}
+                                  </span>
+                                )}
                               </div>
                             </button>
                           );
