@@ -33,6 +33,8 @@ export default function ProductForm({ product, categories, occasions = [], onSav
   const [selectedOccasions, setSelectedOccasions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingSizeOptions, setLoadingSizeOptions] = useState(false);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [descriptionLanguage, setDescriptionLanguage] = useState("English");
   const formRef = useRef(null);
   const isSubmittingRef = useRef(false);
   const initialSnapshotRef = useRef("");
@@ -397,6 +399,57 @@ export default function ProductForm({ product, categories, occasions = [], onSav
     }
   };
 
+  // Generate product description via backend (OpenAI)
+  const handleGenerateDescription = async () => {
+    if (!formData.name?.trim()) {
+      toast.error("Enter product name first");
+      return;
+    }
+    setGeneratingDescription(true);
+    try {
+      const categoryNames = selectedCategories
+        .map((id) => categories.find((c) => c.id === id)?.name)
+        .filter(Boolean)
+        .join(", ");
+      const occasionNames = selectedOccasions
+        .map((id) => occasions.find((o) => o.id === id)?.name)
+        .filter(Boolean)
+        .join(", ");
+      const sizeVariant = sizes.map((s) => s.label).filter(Boolean).join(", ");
+      let priceRange = "";
+      if (formData.hasSinglePrice && formData.singlePrice) {
+        priceRange = `₹${formData.singlePrice}`;
+      } else if (sizes.length > 0) {
+        const prices = sizes.map((s) => s.price).filter((p) => p != null && p !== "");
+        if (prices.length) priceRange = `₹${Math.min(...prices.map(Number))} - ₹${Math.max(...prices.map(Number))}`;
+      }
+      const res = await fetch(`${API}/generate-description`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_name: formData.name.trim(),
+          category: categoryNames || "General",
+          size: sizeVariant || "One size",
+          material: "",
+          color: "",
+          target_audience: "",
+          price_range: priceRange || "",
+          use_case: occasionNames || "",
+          features: formData.keywords || formData.badge || "",
+          language: descriptionLanguage,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate");
+      if (data.description) setFormData((prev) => ({ ...prev, description: data.description }));
+      toast.success("Description generated");
+    } catch (e) {
+      toast.error(e.message || "Could not generate description");
+    } finally {
+      setGeneratingDescription(false);
+    }
+  };
+
   // Generate keywords from product name
   const generateKeywords = (productName) => {
     if (!productName || productName.trim() === "") {
@@ -537,7 +590,36 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Description *</label>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <label className="block text-sm font-semibold text-gray-700">Description *</label>
+            <div className="flex items-center gap-2">
+              <select
+                value={descriptionLanguage}
+                onChange={(e) => setDescriptionLanguage(e.target.value)}
+                className="text-sm border border-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-pink-500"
+                disabled={generatingDescription}
+              >
+                <option value="English">English</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Hinglish">Hinglish</option>
+              </select>
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={generatingDescription}
+                className="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              >
+                {generatingDescription ? (
+                  <>
+                    <span className="inline-block w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    Generating…
+                  </>
+                ) : (
+                  "Generate description"
+                )}
+              </button>
+            </div>
+          </div>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
