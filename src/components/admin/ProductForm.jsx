@@ -29,6 +29,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
   const [existingImages, setExistingImages] = useState([]);
   const [videos, setVideos] = useState([]);
   const [existingVideos, setExistingVideos] = useState([]);
+  const [instagramEmbeds, setInstagramEmbeds] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedOccasions, setSelectedOccasions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -79,6 +80,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       );
       setExistingImages(product.images || []);
       setExistingVideos(product.videos && Array.isArray(product.videos) ? product.videos : []);
+      setInstagramEmbeds(product.instagramEmbeds && Array.isArray(product.instagramEmbeds) ? product.instagramEmbeds : []);
       // Handle both old (categoryId) and new (categories) format for backward compatibility
       if (product.categories && product.categories.length > 0) {
         setSelectedCategories(product.categories.map((pc) => pc.categoryId || pc.category?.id || pc.id));
@@ -110,6 +112,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       setSizes([]);
       setImages([]);
       setExistingImages([]);
+      setInstagramEmbeds([]);
       setSelectedCategories([]);
       setSelectedOccasions([]);
     }
@@ -258,6 +261,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       videos.forEach((file) => {
         formDataToSend.append("videos", file);
       });
+      formDataToSend.append("instagramEmbeds", JSON.stringify(instagramEmbeds));
 
       const url = isEdit ? `${API}/products/${product.id}` : `${API}/products`;
       const method = isEdit ? "PUT" : "POST";
@@ -399,8 +403,8 @@ export default function ProductForm({ product, categories, occasions = [], onSav
     }
   };
 
-  // Generate product description via backend (OpenAI)
-  const handleGenerateDescription = async () => {
+  // Generate product description via backend (one-time per product when cached; Regenerate forces new)
+  const handleGenerateDescription = async (forceRegenerate = false) => {
     if (!formData.name?.trim()) {
       toast.error("Enter product name first");
       return;
@@ -423,26 +427,35 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         const prices = sizes.map((s) => s.price).filter((p) => p != null && p !== "");
         if (prices.length) priceRange = `₹${Math.min(...prices.map(Number))} - ₹${Math.max(...prices.map(Number))}`;
       }
+      const payload = {
+        product_name: formData.name.trim(),
+        category: categoryNames || "General",
+        size: sizeVariant || "One size",
+        material: "",
+        color: "",
+        target_audience: "",
+        price_range: priceRange || "",
+        use_case: occasionNames || "",
+        features: formData.keywords || formData.badge || "",
+        language: descriptionLanguage,
+      };
+      if (isEdit && product?.id) {
+        payload.productId = product.id;
+        payload.forceRegenerate = forceRegenerate;
+      }
+      const firstImageUrl = existingImages?.length > 0 ? existingImages[0] : null;
+      if (firstImageUrl) {
+        payload.imageUrl = firstImageUrl.startsWith("http") ? firstImageUrl : `${API}${firstImageUrl.startsWith("/") ? "" : "/"}${firstImageUrl}`;
+      }
       const res = await fetch(`${API}/generate-description`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          product_name: formData.name.trim(),
-          category: categoryNames || "General",
-          size: sizeVariant || "One size",
-          material: "",
-          color: "",
-          target_audience: "",
-          price_range: priceRange || "",
-          use_case: occasionNames || "",
-          features: formData.keywords || formData.badge || "",
-          language: descriptionLanguage,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to generate");
       if (data.description) setFormData((prev) => ({ ...prev, description: data.description }));
-      toast.success("Description generated");
+      toast.success(data.fromCache ? "Description loaded from cache" : "Description generated");
     } catch (e) {
       toast.error(e.message || "Could not generate description");
     } finally {
@@ -592,7 +605,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         <div>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <label className="block text-sm font-semibold text-gray-700">Description *</label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <select
                 value={descriptionLanguage}
                 onChange={(e) => setDescriptionLanguage(e.target.value)}
@@ -605,7 +618,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
               </select>
               <button
                 type="button"
-                onClick={handleGenerateDescription}
+                onClick={() => handleGenerateDescription(false)}
                 disabled={generatingDescription}
                 className="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
@@ -618,6 +631,16 @@ export default function ProductForm({ product, categories, occasions = [], onSav
                   "Generate description"
                 )}
               </button>
+              {isEdit && product?.id && (
+                <button
+                  type="button"
+                  onClick={() => handleGenerateDescription(true)}
+                  disabled={generatingDescription}
+                  className="text-sm px-3 py-1.5 text-amber-700 bg-amber-50 border border-amber-200 rounded-lg font-medium hover:bg-amber-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Regenerate
+                </button>
+              )}
             </div>
           </div>
           <textarea
@@ -732,6 +755,11 @@ export default function ProductForm({ product, categories, occasions = [], onSav
           existingVideos={existingVideos}
           onVideosChange={setVideos}
           onExistingVideosChange={setExistingVideos}
+        />
+
+        <InstagramEmbedInput
+          instagramEmbeds={instagramEmbeds}
+          onChange={setInstagramEmbeds}
         />
 
         <div className="border-t border-gray-200 pt-6">
