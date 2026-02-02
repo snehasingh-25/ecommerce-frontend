@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../../api";
 import ImageUpload from "./ImageUpload";
 import VideoUpload from "./VideoUpload";
+import InstagramEmbedInput from "./InstagramEmbedInput";
 import { useToast } from "../../context/ToastContext";
 
 // Treat as "edit" only when product has a valid id (duplicate passes product with id null/undefined)
