@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { API } from "../api";
 import { useCart } from "../context/CartContext";
@@ -7,7 +7,17 @@ import ProductCard from "../components/ProductCard";
 import RecommendationCarousel from "../components/RecommendationCarousel";
 import GiftBoxLoader from "../components/GiftBoxLoader";
 import { useProductLoader } from "../hooks/useProductLoader";
-import { initializeInstagramEmbeds } from "../utils/instagramEmbed";
+import { MemoReelCarousel as ReelCarousel } from "../components/ReelCarousel";
+
+function getInstagramEmbedUrl(url) {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  const reelMatch = trimmed.match(/instagram\.com\/reel\/([A-Za-z0-9_-]+)/);
+  const postMatch = trimmed.match(/instagram\.com\/p\/([A-Za-z0-9_-]+)/);
+  const postId = reelMatch?.[1] || postMatch?.[1];
+  if (!postId) return null;
+  return `https://www.instagram.com/p/${postId}/embed/`;
+}
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -24,6 +34,7 @@ export default function ProductDetail() {
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const [productReels, setProductReels] = useState([]);
   
   // Time-based loader (only shows if loading >= 1 second)
   const { showLoader: showProductLoader } = useProductLoader(loading);
@@ -66,9 +77,8 @@ export default function ProductDetail() {
 
   const activeMedia = media[activeImageIndex] || media[0] || null;
   const activeImage = activeMedia?.type === "image" ? activeMedia.url : null;
-  const activeVideo = activeMedia?.type === "video" ? activeMedia.url : null;
   const activeInstagram = activeMedia?.type === "instagram" ? activeMedia.url : null;
-  const instagramEmbedRef = useRef(null);
+  const activeInstagramEmbedUrl = activeInstagram ? getInstagramEmbedUrl(activeInstagram) : null;
 
   const toggleSection = (key) => {
     setExpanded((prev) => {
@@ -103,10 +113,18 @@ export default function ProductDetail() {
         setActiveImageIndex(0);
         setLoading(false);
 
-        // Initialize Instagram embeds if present (after DOM renders)
-        if (data?.instagramEmbeds?.length > 0) {
-          setTimeout(() => initializeInstagramEmbeds(), 300);
-        }
+        // Fetch reels linked to this product
+        fetch(`${API}/reels`, { signal: ac.signal })
+          .then((res) => res.json())
+          .then((reelsData) => {
+            const allReels = Array.isArray(reelsData) ? reelsData : [];
+            const linkedReels = allReels.filter((reel) => Number(reel.productId) === Number(data.id));
+            setProductReels(linkedReels);
+          })
+          .catch((error) => {
+            if (error?.name === "AbortError") return;
+            setProductReels([]);
+          });
 
         // Fetch recommendations using the recommendation engine
         setLoadingRecommendations(true);
@@ -148,6 +166,7 @@ export default function ProductDetail() {
       .catch((error) => {
         if (error?.name === "AbortError") return;
         console.error("Error fetching product:", error);
+        setProductReels([]);
         setLoading(false);
       });
 
@@ -307,30 +326,30 @@ export default function ProductDetail() {
                   <div className="relative rounded-3xl overflow-hidden bg-white border" style={{ borderColor: "oklch(92% .04 340)" }}>
                     <div className="relative w-full" style={{ paddingBottom: activeMedia?.type === "instagram" ? "125%" : activeMedia?.type === "video" ? "56.25%" : "100%" }}>
                       {activeMedia?.type === "instagram" ? (
-                        <div 
-                          ref={instagramEmbedRef}
-                          className="absolute inset-0 w-full h-full overflow-auto bg-gray-50 flex items-center justify-center p-4"
-                          dangerouslySetInnerHTML={{
-                            __html: `
-                              <blockquote 
-                                class="instagram-media" 
-                                data-instgrm-permalink="${activeInstagram}/?utm_source=ig_embed&utm_campaign=loading" 
-                                data-instgrm-version="14"
-                                style="
-                                  background:#FFF; 
-                                  border:0; 
-                                  border-radius:3px; 
-                                  box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); 
-                                  margin: 1px auto; 
-                                  max-width:540px; 
-                                  min-width:326px; 
-                                  padding:0; 
-                                  width:99.375%;
-                                "
-                              ></blockquote>
-                            `
-                          }}
-                        />
+                        <div className="absolute inset-0 w-full h-full bg-gray-50 flex items-center justify-center p-4">
+                          {activeInstagramEmbedUrl ? (
+                            <iframe
+                              title="Instagram embed"
+                              src={activeInstagramEmbedUrl}
+                              className="w-full h-full rounded-xl"
+                              frameBorder="0"
+                              scrolling="no"
+                              allow="encrypted-media"
+                              loading="lazy"
+                              style={{ maxWidth: "540px" }}
+                            />
+                          ) : (
+                            <a
+                              href={activeInstagram || "#"}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm font-semibold underline"
+                              style={{ color: "oklch(40% .02 340)" }}
+                            >
+                              Open Instagram post
+                            </a>
+                          )}
+                        </div>
                       ) : activeMedia?.type === "video" ? (
                         <video
                           src={activeMedia.url}
@@ -663,6 +682,16 @@ export default function ProductDetail() {
               </div>
             </aside>
           </div>
+
+          {/* Product Reels Section */}
+          {productReels.length > 0 && (
+            <section className="mt-16 px-4 sm:px-6 lg:px-8">
+              <h2 className="text-2xl sm:text-3xl font-extrabold mb-6" style={{ color: "oklch(20% .02 340)" }}>
+                Product Reels
+              </h2>
+              <ReelCarousel reels={productReels} />
+            </section>
+          )}
 
           {/* Similar Products Section */}
           {similarProducts.length > 0 && (

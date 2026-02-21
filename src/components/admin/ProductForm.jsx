@@ -31,6 +31,8 @@ export default function ProductForm({ product, categories, occasions = [], onSav
   const [videos, setVideos] = useState([]);
   const [existingVideos, setExistingVideos] = useState([]);
   const [instagramEmbeds, setInstagramEmbeds] = useState([]);
+  const [linkedReels, setLinkedReels] = useState([]);
+  const [loadingLinkedReels, setLoadingLinkedReels] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedOccasions, setSelectedOccasions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -182,6 +184,124 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       .finally(() => setLoadingSizeOptions(false));
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (!isEdit || !product?.id) {
+      setLinkedReels([]);
+      setLoadingLinkedReels(false);
+      return;
+    }
+
+    let cancelled = false;
+    const token = localStorage.getItem("adminToken");
+    setLoadingLinkedReels(true);
+
+    fetch(`${API}/reels/all`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load reels");
+        return res.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        const reels = Array.isArray(data) ? data : [];
+        setLinkedReels(
+          reels.filter((r) => Number(r.productId ?? r.product?.id) === Number(product.id))
+        );
+      })
+      .catch(async () => {
+        // Fallback to public reels endpoint (active reels only)
+        try {
+          const res = await fetch(`${API}/reels`);
+          const data = await res.json();
+          if (cancelled) return;
+          const reels = Array.isArray(data) ? data : [];
+          setLinkedReels(
+            reels.filter((r) => Number(r.productId ?? r.product?.id) === Number(product.id))
+          );
+        } catch {
+          if (!cancelled) setLinkedReels([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingLinkedReels(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEdit, product?.id]);
+
+  useEffect(() => {
+    if (!isEdit || !product?.id) return;
+
+    let cancelled = false;
+    fetch(`${API}/products/${product.id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch full product details");
+        return res.json();
+      })
+      .then((fullProduct) => {
+        if (cancelled || !fullProduct) return;
+
+        setFormData({
+          name: fullProduct.name || "",
+          description: fullProduct.description || "",
+          badge: fullProduct.badge || "",
+          isFestival: fullProduct.isFestival || false,
+          isNew: fullProduct.isNew || false,
+          isTrending: fullProduct.isTrending || false,
+          isReady60Min: fullProduct.isReady60Min || false,
+          hasSinglePrice: fullProduct.hasSinglePrice || false,
+          singlePrice: fullProduct.singlePrice ? String(fullProduct.singlePrice) : "",
+          originalPrice: fullProduct.originalPrice != null ? String(fullProduct.originalPrice) : "",
+          keywords: fullProduct.keywords
+            ? (Array.isArray(fullProduct.keywords) ? fullProduct.keywords.join(", ") : fullProduct.keywords)
+            : "",
+        });
+
+        setSizes(
+          fullProduct.sizes && fullProduct.sizes.length > 0
+            ? fullProduct.sizes.map((s) => ({
+                label: s.label,
+                price: String(s.price ?? ""),
+                originalPrice: s.originalPrice != null ? String(s.originalPrice) : "",
+              }))
+            : []
+        );
+
+        setExistingImages(fullProduct.images || []);
+        setExistingVideos(fullProduct.videos && Array.isArray(fullProduct.videos) ? fullProduct.videos : []);
+        setInstagramEmbeds(
+          fullProduct.instagramEmbeds && Array.isArray(fullProduct.instagramEmbeds)
+            ? fullProduct.instagramEmbeds
+            : []
+        );
+
+        if (fullProduct.categories && fullProduct.categories.length > 0) {
+          setSelectedCategories(fullProduct.categories.map((pc) => pc.categoryId || pc.category?.id || pc.id));
+        } else if (fullProduct.categoryId) {
+          setSelectedCategories([fullProduct.categoryId]);
+        } else {
+          setSelectedCategories([]);
+        }
+
+        setSelectedOccasions(
+          fullProduct.occasions && fullProduct.occasions.length > 0
+            ? fullProduct.occasions.map((o) => o.occasionId || o.occasion?.id || o.id)
+            : []
+        );
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (cancelled) return;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEdit, product?.id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -762,6 +882,35 @@ export default function ProductForm({ product, categories, occasions = [], onSav
           instagramEmbeds={instagramEmbeds}
           onChange={setInstagramEmbeds}
         />
+
+        <div className="rounded-xl border-2 border-gray-200 bg-gray-50/50 p-4">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Linked Reels</label>
+          {!isEdit || !product?.id ? (
+            <p className="text-sm text-gray-600">Save this product first, then linked reels will appear here automatically.</p>
+          ) : loadingLinkedReels ? (
+            <p className="text-sm text-gray-600">Loading linked reels...</p>
+          ) : linkedReels.length === 0 ? (
+            <p className="text-sm text-gray-600">No reels linked to this product yet.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {linkedReels.map((reel) => (
+                <div key={reel.id} className="rounded-lg overflow-hidden border border-gray-200 bg-white">
+                  {reel.thumbnail ? (
+                    <img src={reel.thumbnail} alt={reel.title || `Reel ${reel.id}`} className="w-full aspect-video object-cover" />
+                  ) : (
+                    <div className="w-full aspect-video bg-gray-100 flex items-center justify-center text-xs text-gray-500">
+                      No thumbnail
+                    </div>
+                  )}
+                  <div className="p-2">
+                    <p className="text-xs font-medium text-gray-700 truncate">{reel.title || `Reel #${reel.id}`}</p>
+                    <p className="text-[11px] text-gray-500 mt-1">{reel.isActive ? "Active" : "Inactive"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="border-t border-gray-200 pt-6">
           <div className="mb-4">

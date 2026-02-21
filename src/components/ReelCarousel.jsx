@@ -26,10 +26,11 @@ function getVideoEmbedInfo(url) {
   
   if (instagramReelMatch || instagramPostMatch) {
     const postId = instagramReelMatch?.[1] || instagramPostMatch?.[1];
+    const instagramType = instagramReelMatch ? "reel" : "p";
     return {
       type: "instagram",
       postId,
-      embedUrl: `https://www.instagram.com/p/${postId}/embed/`,
+      embedUrl: `https://www.instagram.com/${instagramType}/${postId}/embed/`,
       originalUrl: trimmed,
     };
   }
@@ -353,25 +354,30 @@ export default function ReelCarousel({ reels }) {
 
                 {embedInfo.type === "instagram" && (
                   <>
-                    <iframe
-                      src={embedInfo.embedUrl}
-                      className="absolute inset-0 w-full h-full"
-                      frameBorder="0"
-                      scrolling="no"
-                      allow="encrypted-media"
-                      loading="lazy"
-                      onLoad={() => markReady(reel.id)}
-                      onError={() => {
-                        console.error(`Reel ${reel.id} Instagram embed error`);
-                        markError(reel.id);
-                      }}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        border: "none",
-                        overflow: "hidden",
-                      }}
-                    />
+                    <div className="absolute inset-0 overflow-hidden bg-black">
+                      <iframe
+                        src={embedInfo.embedUrl}
+                        className="absolute"
+                        frameBorder="0"
+                        scrolling="no"
+                        allow="encrypted-media"
+                        //sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                        //referrerPolicy="strict-origin-when-cross-origin"
+                        loading="lazy"
+                        onLoad={() => markReady(reel.id)}
+                        onError={() => {
+                          console.error(`Reel ${reel.id} Instagram embed error`);
+                          markError(reel.id);
+                        }}
+                        style={{
+                          left: 0,
+                          width: "105%",
+                          height: "190%",
+                          border: "none",
+                          overflow: "hidden",
+                        }}
+                      />
+                    </div>
                     {!videoReady.has(reel.id) && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 pointer-events-none">
                         <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
