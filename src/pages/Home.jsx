@@ -6,6 +6,7 @@ import BannerSlider from "../components/BannerSlider";
 import { MemoReelCarousel as ReelCarousel } from "../components/ReelCarousel";
 import GiftBoxLoader from "../components/GiftBoxLoader";
 import { useProductLoader } from "../hooks/useProductLoader";
+import ProductCarousel from "../components/ProductCarousel";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -562,21 +563,19 @@ export default function Home() {
               </Link>
             )}
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            {visibleProducts.length > 0 ? (
-              visibleProducts.map((p) => <ProductCard key={p.id} product={p} />)
-            ) : (
-              <div className="col-span-full text-center py-16">
-                <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-                  <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 object-contain" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2" style={{ color: 'oklch(20% .02 340)' }}>Gift Choice</h3>
-                <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
-                  More amazing gifts coming soon!
-                </p>
+          {visibleProducts.length > 0 ? (
+            <ProductCarousel products={visibleProducts} title="Gifts" showAutoScroll={false} />
+          ) : (
+            <div className="text-center py-16">
+              <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
+                <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 object-contain" />
               </div>
-            )}
-          </div>
+              <h3 className="text-2xl font-bold mb-2" style={{ color: 'oklch(20% .02 340)' }}>Gift Choice</h3>
+              <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
+                More amazing gifts coming soon!
+              </p>
+            </div>
+          )}
         </div>
       )}
 
