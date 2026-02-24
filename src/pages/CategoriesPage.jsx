@@ -63,6 +63,16 @@ export default function CategoriesPage() {
   // Time-based loader for initial categories load
   const { showLoader: showInitialLoader } = useProductLoader(loading && !selectedCategory);
   
+  // Build filters based on selected category - MUST be called unconditionally
+  const currentFilters = useMemo(() => ({
+    category: selectedCategory?.slug,
+    occasion: occasionFilter || undefined,
+    isTrending: searchParams.get("trending") === "true" || undefined,
+  }), [selectedCategory, occasionFilter, searchParams]);
+
+  // Time-based loader for product loading
+  const { showLoader: showProductLoader } = useProductLoader(loading && selectedCategory !== null);
+  
   if (loading && !selectedCategory) {
     return (
       <>
@@ -73,13 +83,6 @@ export default function CategoriesPage() {
       </>
     );
   }
-
-  // Build filters based on selected category
-  const currentFilters = useMemo(() => ({
-    category: selectedCategory?.slug,
-    occasion: occasionFilter || undefined,
-    isTrending: searchParams.get("trending") === "true" || undefined,
-  }), [selectedCategory, occasionFilter, searchParams]);
 
   return (
     <div className="min-h-screen bg-white py-16">
