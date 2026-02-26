@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
 import { API } from "../api";
-import GiftBoxLoader from "./GiftBoxLoader";
-import { useProductLoader } from "../hooks/useProductLoader";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Time-based loader for products (only shows if loading >= 1 second)
-  const { showLoader: showProductLoader } = useProductLoader(loading);
 
   useEffect(() => {
     setLoading(true);
@@ -25,11 +20,6 @@ export default function Products() {
 
   return (
     <>
-      {/* Gift Box Loading Animation - Disabled */}
-      <GiftBoxLoader 
-        isLoading={loading} 
-        showLoader={false}
-      />
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
       {products.map(p => (
         <div key={p.id} className="bg-white rounded shadow p-4">

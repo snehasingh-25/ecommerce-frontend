@@ -3,8 +3,6 @@ import { API } from "../api";
 import ProductCard from "./ProductCard";
 import ProductFilters from "./ProductFilters";
 import SortDropdown from "./SortDropdown";
-import GiftBoxLoader from "./GiftBoxLoader";
-import { useProductLoader } from "../hooks/useProductLoader";
 
 export default function ProductListing({ 
   initialFilters = {},
@@ -18,8 +16,6 @@ export default function ProductListing({
   const [sort, setSort] = useState("relevance");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  
-  const { showLoader: showProductLoader } = useProductLoader(loading);
 
   // Sync initialFilters changes (e.g., when category changes via navigation)
   useEffect(() => {
@@ -101,8 +97,6 @@ export default function ProductListing({
 
   return (
     <>
-      <GiftBoxLoader isLoading={loading} showLoader={false} />
-      
       <div className="flex gap-6 lg:gap-8">
         {/* Desktop: Filters Sidebar */}
         {showFilters && (

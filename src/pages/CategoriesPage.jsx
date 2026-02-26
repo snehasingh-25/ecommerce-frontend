@@ -3,8 +3,6 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import { Link } from "react-router-dom";
 import ProductListing from "../components/ProductListing";
-import GiftBoxLoader from "../components/GiftBoxLoader";
-import { useProductLoader } from "../hooks/useProductLoader";
 
 export default function CategoriesPage() {
   const { slug } = useParams();
@@ -60,37 +58,19 @@ export default function CategoriesPage() {
     });
   };
 
-  // Time-based loader for initial categories load
-  const { showLoader: showInitialLoader } = useProductLoader(loading && !selectedCategory);
-  
   // Build filters based on selected category - MUST be called unconditionally
   const currentFilters = useMemo(() => ({
     category: selectedCategory?.slug,
     occasion: occasionFilter || undefined,
     isTrending: searchParams.get("trending") === "true" || undefined,
   }), [selectedCategory, occasionFilter, searchParams]);
-
-  // Time-based loader for product loading
-  const { showLoader: showProductLoader } = useProductLoader(loading && selectedCategory !== null);
   
   if (loading && !selectedCategory) {
-    return (
-      <>
-        <GiftBoxLoader 
-          isLoading={loading && !selectedCategory} 
-          showLoader={false}
-        />
-      </>
-    );
+    return null;
   }
 
   return (
     <div className="min-h-screen bg-white py-16">
-      {/* Gift Box Loading Animation - Disabled */}
-      <GiftBoxLoader 
-        isLoading={loading && selectedCategory !== null} 
-        showLoader={false}
-      />
       <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>

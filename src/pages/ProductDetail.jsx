@@ -5,8 +5,6 @@ import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import ProductCard from "../components/ProductCard";
 import RecommendationCarousel from "../components/RecommendationCarousel";
-import GiftBoxLoader from "../components/GiftBoxLoader";
-import { useProductLoader } from "../hooks/useProductLoader";
 import { MemoReelCarousel as ReelCarousel } from "../components/ReelCarousel";
 import InstagramThumbnail from "../components/InstagramThumbnail";
 
@@ -36,10 +34,6 @@ export default function ProductDetail() {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [productReels, setProductReels] = useState([]);
-  
-  // Time-based loader (only shows if loading >= 1 second)
-  const { showLoader: showProductLoader } = useProductLoader(loading);
-  const { showLoader: showSimilarLoader } = useProductLoader(loadingSimilar);
 
   const images = useMemo(() => {
     if (!product?.images) return [];
@@ -190,14 +184,7 @@ export default function ProductDetail() {
   };
 
   if (loading) {
-    return (
-      <>
-        <GiftBoxLoader 
-          isLoading={loading} 
-          showLoader={false}
-        />
-      </>
-    );
+    return null;
   }
 
   if (!product) {
@@ -215,11 +202,6 @@ export default function ProductDetail() {
 
   return (
     <>
-      {/* Gift Box Loading Animation for similar products - Disabled */}
-      <GiftBoxLoader 
-        isLoading={loadingSimilar} 
-        showLoader={false}
-      />
       <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Top bar */}

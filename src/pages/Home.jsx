@@ -4,8 +4,6 @@ import ProductCard from "../components/ProductCard";
 import { Link } from "react-router-dom";
 import BannerSlider from "../components/BannerSlider";
 import { MemoReelCarousel as ReelCarousel } from "../components/ReelCarousel";
-import GiftBoxLoader from "../components/GiftBoxLoader";
-import { useProductLoader } from "../hooks/useProductLoader";
 import ProductCarousel from "../components/ProductCarousel";
 
 export default function Home() {
@@ -27,10 +25,6 @@ export default function Home() {
   const occasionScrollRef = useRef(null);
   const scrollEndTimerRef = useRef(null);
   const occasionScrollEndTimerRef = useRef(null);
-  
-  // Time-based loader for products (used by useProductLoader internally; main content uses showAnyLoader)
-  const isProductsLoading = loading.products;
-  useProductLoader(isProductsLoading);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -197,112 +191,14 @@ export default function Home() {
 
   // Check if any data is still loading
   const isInitialLoad = loading.categories || loading.occasions || loading.products || loading.reels || loading.banners;
-  const heroBanner = banners.length > 0 ? banners[0] : null;
-
-  // Time-based loader for all data (similar to useProductLoader)
-  const [showAnyLoader, setShowAnyLoader] = useState(isInitialLoad);
-  const loadingStartTime = useRef(null);
-  const minLoadTimeReached = useRef(false);
-  const timeoutRef = useRef(null);
-
-  useEffect(() => {
-    if (isInitialLoad) {
-      if (loadingStartTime.current === null) {
-        loadingStartTime.current = Date.now();
-        minLoadTimeReached.current = false;
-        const id = setTimeout(() => setShowAnyLoader(true), 0);
-        timeoutRef.current = setTimeout(() => {
-          minLoadTimeReached.current = true;
-        }, 100);
-        return () => {
-          clearTimeout(id);
-          if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-          }
-        };
-      } else {
-        const id = setTimeout(() => setShowAnyLoader(true), 0);
-        return () => clearTimeout(id);
-      }
-    } else {
-      if (loadingStartTime.current !== null) {
-        const loadDuration = Date.now() - loadingStartTime.current;
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = null;
-        }
-        if (loadDuration < 100 && !minLoadTimeReached.current) {
-          setTimeout(() => setShowAnyLoader(false), 0);
-        } else {
-          setTimeout(() => setShowAnyLoader(false), Math.max(0, 100 - loadDuration));
-        }
-        loadingStartTime.current = null;
-      }
-    }
-  }, [isInitialLoad]);
-
-  const isAnyLoading = isInitialLoad;
 
   return (
     <div className="min-h-screen bg-white fade-in">
-      {/* Gift Box Loading Animation - Disabled */}
-      <GiftBoxLoader 
-        isLoading={isAnyLoading} 
-        showLoader={false}
-      />
-      {/* Hide content while loader is showing */}
-      {!showAnyLoader && (
+      {/* Content */}
+      {!isInitialLoad && (
         <>
-          {/* Hero Section - Shows immediately on initial load */}
-          {isInitialLoad && (
-        <div className="relative w-full overflow-hidden h-[300px] sm:h-[400px] lg:h-[500px]">
-          {/* Use banner image if available, otherwise use gradient */}
-          {heroBanner && heroBanner.imageUrl ? (
-            <>
-              <img
-                src={heroBanner.imageUrl}
-                alt={heroBanner.title || "Gift Choice"}
-                className="w-full h-full object-cover"
-                loading="eager"
-                fetchPriority="high"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
-            </>
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50"></div>
-          )}
-          
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center px-4">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 text-white drop-shadow-lg">
-                {heroBanner?.title || "Gift Choice"}
-              </h1>
-              <p className="text-lg sm:text-xl text-white/90 mb-6 drop-shadow-md">
-                {heroBanner?.subtitle || "Discover the perfect gift for every occasion"}
-              </p>
-            </div>
-          </div>
-          
-          {/* Decorative elements - only show if no banner image */}
-          {!heroBanner && (
-            <>
-              <div className="absolute top-10 left-10 w-16 h-16 opacity-20 rounded-full p-2" style={{ backgroundColor: 'rgba(255, 192, 203, 0.3)' }}>
-                <img src="/logo.png" alt="Gift Choice Logo" className="w-full h-full object-contain" />
-              </div>
-              <div className="absolute bottom-10 right-10 w-16 h-16 opacity-20 rounded-full p-2" style={{ backgroundColor: 'rgba(255, 192, 203, 0.3)' }}>
-                <img src="/logo.png" alt="Gift Choice Logo" className="w-full h-full object-contain" />
-              </div>
-              <div className="absolute top-1/2 right-20 w-14 h-14 opacity-20 rounded-full p-2" style={{ backgroundColor: 'rgba(255, 192, 203, 0.3)' }}>
-                <img src="/logo.png" alt="Gift Choice Logo" className="w-full h-full object-contain" />
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Primary Banner Slider - Only show when data is loaded */}
-      {!isInitialLoad && <BannerSlider bannerType="primary" />}
+      {/* Primary Banner Slider */}
+      <BannerSlider bannerType="primary" />
 
       {/* Shop By Category Section */}
       {categories.length > 0 ? (
@@ -543,8 +439,7 @@ export default function Home() {
         </div>
       ) : null}
 
-      {/* Trending Gifts Section - Hide while loader is showing */}
-      {!showAnyLoader && (
+      {/* Trending Gifts Section */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white">
           <div className="flex items-center justify-between mb-10">
             <h2 className="text-3xl font-bold" style={{ color: 'oklch(20% .02 340)' }}>Gifts</h2>
@@ -577,7 +472,6 @@ export default function Home() {
             </div>
           )}
         </div>
-      )}
 
       {/* Secondary Banner Section - Between Gifts and Reels */}
       {!isInitialLoad && <BannerSlider bannerType="secondary" />}
