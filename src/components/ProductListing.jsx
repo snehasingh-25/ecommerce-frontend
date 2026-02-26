@@ -21,6 +21,16 @@ export default function ProductListing({
   
   const { showLoader: showProductLoader } = useProductLoader(loading);
 
+  // Sync initialFilters changes (e.g., when category changes via navigation)
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      category: initialFilters.category,
+      occasion: initialFilters.occasion,
+      isTrending: initialFilters.isTrending,
+    }));
+  }, [initialFilters.category, initialFilters.occasion, initialFilters.isTrending]);
+
   // Build API URL with filters and sort
   const apiUrl = useMemo(() => {
     const params = new URLSearchParams();
@@ -91,7 +101,7 @@ export default function ProductListing({
 
   return (
     <>
-      <GiftBoxLoader isLoading={loading} showLoader={showProductLoader} />
+      <GiftBoxLoader isLoading={loading} showLoader={false} />
       
       <div className="flex gap-6 lg:gap-8">
         {/* Desktop: Filters Sidebar */}

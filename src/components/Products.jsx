@@ -25,10 +25,10 @@ export default function Products() {
 
   return (
     <>
-      {/* Gift Box Loading Animation - Only shows if product loading takes >= 1 second */}
+      {/* Gift Box Loading Animation - Disabled */}
       <GiftBoxLoader 
         isLoading={loading} 
-        showLoader={showProductLoader}
+        showLoader={false}
       />
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
       {products.map(p => (

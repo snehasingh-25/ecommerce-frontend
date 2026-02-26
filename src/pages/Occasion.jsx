@@ -148,7 +148,7 @@ export default function Occasion() {
       <>
         <GiftBoxLoader 
           isLoading={loading} 
-          showLoader={showOccasionLoader}
+          showLoader={false}
         />
       </>
     );

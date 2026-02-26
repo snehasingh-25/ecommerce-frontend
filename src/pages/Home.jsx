@@ -246,10 +246,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white fade-in">
-      {/* Gift Box Loading Animation - Only shows if loading takes >= 0.1 seconds */}
+      {/* Gift Box Loading Animation - Disabled */}
       <GiftBoxLoader 
         isLoading={isAnyLoading} 
-        showLoader={showAnyLoader}
+        showLoader={false}
       />
       {/* Hide content while loader is showing */}
       {!showAnyLoader && (

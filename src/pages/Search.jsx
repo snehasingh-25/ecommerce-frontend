@@ -117,10 +117,10 @@ export default function Search() {
 
   return (
     <div className="min-h-screen bg-white py-16">
-      {/* Gift Box Loading Animation - Only shows if product loading takes >= 1 second */}
+      {/* Gift Box Loading Animation - Disabled */}
       <GiftBoxLoader 
         isLoading={loading} 
-        showLoader={showProductLoader}
+        showLoader={false}
       />
       <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="mb-8">

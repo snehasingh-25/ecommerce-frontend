@@ -12,7 +12,7 @@ export default function ProtectedRoute({ children }) {
       <>
         <GiftBoxLoader 
           isLoading={loading} 
-          showLoader={showAuthLoader}
+          showLoader={false}
         />
       </>
     );

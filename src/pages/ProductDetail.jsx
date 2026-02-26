@@ -194,7 +194,7 @@ export default function ProductDetail() {
       <>
         <GiftBoxLoader 
           isLoading={loading} 
-          showLoader={showProductLoader}
+          showLoader={false}
         />
       </>
     );
@@ -215,10 +215,10 @@ export default function ProductDetail() {
 
   return (
     <>
-      {/* Gift Box Loading Animation for similar products */}
+      {/* Gift Box Loading Animation for similar products - Disabled */}
       <GiftBoxLoader 
         isLoading={loadingSimilar} 
-        showLoader={showSimilarLoader}
+        showLoader={false}
       />
       <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto">
