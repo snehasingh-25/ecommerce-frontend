@@ -5,10 +5,39 @@ import VideoUpload from "./VideoUpload";
 import InstagramEmbedInput from "./InstagramEmbedInput";
 import { useToast } from "../../context/ToastContext";
 
-// Treat as "edit" only when product has a valid id (duplicate passes product with id null/undefined)
-const isEditProduct = (p) => p && (p.id != null && p.id !== "");
+// Treat as "edit" only when product has a valid server id (duplicate/temp have no or temp id)
+const isEditProduct = (p) =>
+  p && (p.id != null && p.id !== "") && !String(p.id).startsWith("temp-");
 
-export default function ProductForm({ product, categories, occasions = [], onSave, onCancel }) {
+function parseProductImages(images) {
+  if (!images) return [];
+  if (Array.isArray(images)) return images;
+  if (typeof images === "string") {
+    try {
+      const parsed = JSON.parse(images);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+const OPTIMISTIC_DELAY_MS = 1000;
+
+export default function ProductForm({
+  product,
+  categories,
+  occasions = [],
+  onSave,
+  onCancel,
+  /** Optimistic create: called after 1s with temp product to show in list */
+  onOptimisticAdd,
+  /** Optimistic success: called with (tempId, serverProduct) so parent can replace temp with real */
+  onOptimisticSuccess,
+  /** Optimistic failure: called with tempId so parent can remove temp product and re-enable form */
+  onOptimisticFailure,
+}) {
   const toast = useToast();
   const isEdit = isEditProduct(product);
   const [formData, setFormData] = useState({
@@ -26,8 +55,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
   });
   const [sizes, setSizes] = useState([]);
   const [sizeOptions, setSizeOptions] = useState([]); // Reusable size options from API
-  const [images, setImages] = useState([]);
-  const [existingImages, setExistingImages] = useState([]);
+  const [imageItems, setImageItems] = useState([]); // { type: 'existing', url } | { type: 'new', id, file, objectURL? }
   const [videos, setVideos] = useState([]);
   const [existingVideos, setExistingVideos] = useState([]);
   const [instagramEmbeds, setInstagramEmbeds] = useState([]);
@@ -47,13 +75,12 @@ export default function ProductForm({ product, categories, occasions = [], onSav
     return JSON.stringify({
       formData,
       sizes,
-      existingImages,
+      imageItemsLength: imageItems.length,
+      imageItemsOrder: imageItems.map((i) => (i.type === "existing" ? i.url : i.id)),
       selectedCategories,
       selectedOccasions,
-      // For new images, treat any selection as "dirty"
-      imagesSelectedCount: images.length,
     });
-  }, [formData, sizes, existingImages, selectedCategories, selectedOccasions, images.length]);
+  }, [formData, sizes, imageItems, selectedCategories, selectedOccasions]);
 
   const isDirty = initialSnapshotRef.current !== "" && snapshot !== initialSnapshotRef.current;
 
@@ -81,7 +108,12 @@ export default function ProductForm({ product, categories, occasions = [], onSav
             }))
           : []
       );
-      setExistingImages(product.images || []);
+      setImageItems((prev) => {
+        prev.forEach((i) => {
+          if (i.type === "new" && i.objectURL) URL.revokeObjectURL(i.objectURL);
+        });
+        return parseProductImages(product.images).map((url) => ({ type: "existing", url }));
+      });
       setExistingVideos(product.videos && Array.isArray(product.videos) ? product.videos : []);
       setInstagramEmbeds(product.instagramEmbeds && Array.isArray(product.instagramEmbeds) ? product.instagramEmbeds : []);
       // Handle both old (categoryId) and new (categories) format for backward compatibility
@@ -113,8 +145,7 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         keywords: "",
       });
       setSizes([]);
-      setImages([]);
-      setExistingImages([]);
+      setImageItems([]);
       setInstagramEmbeds([]);
       setSelectedCategories([]);
       setSelectedOccasions([]);
@@ -154,7 +185,6 @@ export default function ProductForm({ product, categories, occasions = [], onSav
           product?.sizes && product.sizes.length > 0
             ? product.sizes.map((s) => ({ label: s.label, price: s.price, originalPrice: s.originalPrice }))
             : [],
-        existingImages: product?.images || [],
         existingVideos: product?.videos && Array.isArray(product.videos) ? product.videos : [],
         selectedCategories:
           product?.categories && product.categories.length > 0
@@ -166,7 +196,8 @@ export default function ProductForm({ product, categories, occasions = [], onSav
           product?.occasions && product.occasions.length > 0
             ? product.occasions.map((o) => o.occasionId || o.occasion?.id || o.id)
             : [],
-        imagesSelectedCount: 0,
+        imageItemsLength: product ? parseProductImages(product.images).length : 0,
+        imageItemsOrder: product ? parseProductImages(product.images).join(",") : "",
       });
     }, 0);
   }, [product]);
@@ -271,7 +302,12 @@ export default function ProductForm({ product, categories, occasions = [], onSav
             : []
         );
 
-        setExistingImages(fullProduct.images || []);
+        setImageItems((prev) => {
+          prev.forEach((i) => {
+            if (i.type === "new" && i.objectURL) URL.revokeObjectURL(i.objectURL);
+          });
+          return parseProductImages(fullProduct.images).map((url) => ({ type: "existing", url }));
+        });
         setExistingVideos(fullProduct.videos && Array.isArray(fullProduct.videos) ? fullProduct.videos : []);
         setInstagramEmbeds(
           fullProduct.instagramEmbeds && Array.isArray(fullProduct.instagramEmbeds)
@@ -303,123 +339,177 @@ export default function ProductForm({ product, categories, occasions = [], onSav
     };
   }, [isEdit, product?.id]);
 
+  const buildFormPayload = () => {
+    const formDataToSend = new FormData();
+    formDataToSend.append("name", formData.name);
+    formDataToSend.append("description", formData.description);
+    formDataToSend.append("badge", formData.badge);
+    formDataToSend.append("isFestival", formData.isFestival);
+    formDataToSend.append("isNew", formData.isNew);
+    formDataToSend.append("isTrending", formData.isTrending);
+    formDataToSend.append("isReady60Min", formData.isReady60Min);
+    formDataToSend.append("hasSinglePrice", formData.hasSinglePrice);
+    formDataToSend.append("singlePrice", formData.hasSinglePrice && formData.singlePrice ? formData.singlePrice : "");
+    formDataToSend.append("originalPrice", formData.hasSinglePrice && formData.originalPrice ? formData.originalPrice : "");
+    let keywordsArray = [];
+    if (formData.keywords && formData.keywords.trim() !== "") {
+      keywordsArray = formData.keywords.split(",").map((k) => k.trim()).filter(Boolean);
+    } else {
+      keywordsArray = generateKeywords(formData.name);
+    }
+    formDataToSend.append("keywords", JSON.stringify(keywordsArray));
+    formDataToSend.append("categoryIds", JSON.stringify(selectedCategories));
+    if (formData.hasSinglePrice) {
+      formDataToSend.append("sizes", JSON.stringify([]));
+    } else {
+      formDataToSend.append(
+        "sizes",
+        JSON.stringify(
+          sizes.filter((s) => s.label && s.price).map((s) => ({
+            label: s.label,
+            price: s.price,
+            originalPrice: s.originalPrice != null && s.originalPrice !== "" ? s.originalPrice : null,
+          }))
+        )
+      );
+    }
+    formDataToSend.append("occasionIds", JSON.stringify(selectedOccasions));
+    const orderedExisting = imageItems.filter((i) => i.type === "existing").map((i) => i.url);
+    const orderedNewFiles = imageItems.filter((i) => i.type === "new").map((i) => i.file);
+    const imageOrderPayload = imageItems.map((i) => (i.type === "existing" ? i.url : "NEW"));
+    if (product && (orderedExisting.length > 0 || orderedNewFiles.length > 0)) {
+      formDataToSend.append("existingImages", JSON.stringify(orderedExisting));
+      if (isEdit && imageOrderPayload.length > 0) {
+        formDataToSend.append("imageOrder", JSON.stringify(imageOrderPayload));
+      }
+    }
+    if (product && existingVideos.length > 0) {
+      formDataToSend.append("existingVideos", JSON.stringify(existingVideos));
+    }
+    orderedNewFiles.forEach((file) => formDataToSend.append("images", file));
+    videos.forEach((file) => formDataToSend.append("videos", file));
+    formDataToSend.append("instagramEmbeds", JSON.stringify(instagramEmbeds));
+    return formDataToSend;
+  };
+
+  const buildOptimisticProduct = (tempId) => {
+    const imageUrls = imageItems.map((i) => (i.type === "existing" ? i.url : i.objectURL || ""));
+    const resolvedCategories = (categories || []).filter((c) => selectedCategories.includes(c.id)).map((c) => ({ id: c.id, name: c.name }));
+    return {
+      id: tempId,
+      name: formData.name || "Untitled",
+      description: (formData.description || "").slice(0, 200),
+      order: 0,
+      images: imageUrls.filter(Boolean),
+      categories: resolvedCategories,
+      isFestival: !!formData.isFestival,
+      isNew: !!formData.isNew,
+      isTrending: !!formData.isTrending,
+      hasSinglePrice: !!formData.hasSinglePrice,
+      singlePrice: formData.hasSinglePrice && formData.singlePrice ? parseFloat(formData.singlePrice) : null,
+      sizes: sizes.filter((s) => s.label && s.price).map((s) => ({ label: s.label, price: parseFloat(s.price) || 0, originalPrice: null })),
+    };
+  };
+
+  const resetFormState = () => {
+    setFormData({
+      name: "",
+      description: "",
+      badge: "",
+      isFestival: false,
+      isNew: false,
+      isTrending: false,
+      isReady60Min: false,
+      hasSinglePrice: false,
+      singlePrice: "",
+      originalPrice: "",
+      keywords: "",
+    });
+    setSizes([]);
+    setImageItems((prev) => {
+      prev.forEach((i) => {
+        if (i.type === "new" && i.objectURL) URL.revokeObjectURL(i.objectURL);
+      });
+      return [];
+    });
+    setSelectedCategories([]);
+    setSelectedOccasions([]);
+    initialSnapshotRef.current = "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmittingRef.current) return;
-    
-    // Validation: At least one category is required
+
     if (selectedCategories.length === 0) {
       toast.error("Please select at least one category");
       return;
     }
-    
-    // Validation: If hasSinglePrice is true, singlePrice is required
     if (formData.hasSinglePrice && (!formData.singlePrice || parseFloat(formData.singlePrice) <= 0)) {
       toast.error("Please enter a valid single price for this product");
       return;
     }
-    
-    // Validation: If hasSinglePrice is false, either sizes or no price is acceptable (already optional)
-    
+
     setLoading(true);
     isSubmittingRef.current = true;
 
+    const isOptimisticCreate = !isEdit && onOptimisticAdd && onOptimisticSuccess && onOptimisticFailure;
+
+    if (isOptimisticCreate) {
+      if (product && String(product.id).startsWith("temp-")) {
+        onOptimisticFailure(product.id);
+      }
+      const tempId = `temp-${Date.now()}`;
+      const optimisticProduct = buildOptimisticProduct(tempId);
+      setTimeout(() => {
+        onOptimisticAdd(optimisticProduct);
+        toast.success("Product added successfully");
+      }, OPTIMISTIC_DELAY_MS);
+
+      try {
+        const token = localStorage.getItem("adminToken");
+        const formDataToSend = buildFormPayload();
+        const res = await fetch(`${API}/products`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formDataToSend,
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          onOptimisticSuccess(tempId, data);
+          resetFormState();
+          onSave();
+        } else {
+          onOptimisticFailure(tempId);
+          toast.error(data.error || data.message || "Failed to save product. Please try again.");
+        }
+      } catch (error) {
+        onOptimisticFailure(tempId);
+        toast.error(error.message || "Failed to save product. Please try again.");
+      } finally {
+        setLoading(false);
+        isSubmittingRef.current = false;
+      }
+      return;
+    }
+
     try {
       const token = localStorage.getItem("adminToken");
-      const formDataToSend = new FormData();
-
-      formDataToSend.append("name", formData.name);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("badge", formData.badge);
-      formDataToSend.append("isFestival", formData.isFestival);
-      formDataToSend.append("isNew", formData.isNew);
-      formDataToSend.append("isTrending", formData.isTrending);
-      formDataToSend.append("isReady60Min", formData.isReady60Min);
-      formDataToSend.append("hasSinglePrice", formData.hasSinglePrice);
-      formDataToSend.append("singlePrice", formData.hasSinglePrice && formData.singlePrice ? formData.singlePrice : "");
-      formDataToSend.append("originalPrice", formData.hasSinglePrice && formData.originalPrice ? formData.originalPrice : "");
-      
-      // Auto-generate keywords from product name if not already set
-      let keywordsArray = [];
-      if (formData.keywords && formData.keywords.trim() !== "") {
-        keywordsArray = formData.keywords.split(",").map((k) => k.trim()).filter(k => k);
-      } else {
-        keywordsArray = generateKeywords(formData.name);
-      }
-      formDataToSend.append("keywords", JSON.stringify(keywordsArray));
-      
-      // Categories - send as array
-      formDataToSend.append("categoryIds", JSON.stringify(selectedCategories));
-      
-      // If hasSinglePrice is true, don't send sizes. Otherwise, send sizes if they exist
-      if (formData.hasSinglePrice) {
-        formDataToSend.append("sizes", JSON.stringify([]));
-      } else {
-        // Sizes are optional - include label, price, originalPrice
-        formDataToSend.append(
-          "sizes",
-          JSON.stringify(
-            sizes.filter((s) => s.label && s.price).map((s) => ({
-              label: s.label,
-              price: s.price,
-              originalPrice: s.originalPrice != null && s.originalPrice !== "" ? s.originalPrice : null,
-            }))
-          )
-        );
-      }
-      formDataToSend.append("occasionIds", JSON.stringify(selectedOccasions));
-
-      if (product && existingImages.length > 0) {
-        formDataToSend.append("existingImages", JSON.stringify(existingImages));
-      }
-      if (product && existingVideos.length > 0) {
-        formDataToSend.append("existingVideos", JSON.stringify(existingVideos));
-      }
-
-      images.forEach((file) => {
-        formDataToSend.append("images", file);
-      });
-      videos.forEach((file) => {
-        formDataToSend.append("videos", file);
-      });
-      formDataToSend.append("instagramEmbeds", JSON.stringify(instagramEmbeds));
-
+      const formDataToSend = buildFormPayload();
       const url = isEdit ? `${API}/products/${product.id}` : `${API}/products`;
       const method = isEdit ? "PUT" : "POST";
-
       const res = await fetch(url, {
         method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formDataToSend,
       });
-
       const data = await res.json();
 
       if (res.ok) {
         toast.success(isEdit ? "Product updated" : "Product created");
         onSave();
-        // Reset form
-        setFormData({
-          name: "",
-          description: "",
-          badge: "",
-          isFestival: false,
-          isNew: false,
-          isTrending: false,
-          isReady60Min: false,
-          hasSinglePrice: false,
-          singlePrice: "",
-          originalPrice: "",
-          keywords: "",
-        });
-        setSizes([]);
-        setImages([]);
-        setExistingImages([]);
-        setSelectedCategories([]);
-        setSelectedOccasions([]);
-        initialSnapshotRef.current = "";
+        resetFormState();
       } else {
         toast.error(data.error || data.message || "Failed to save product");
       }
@@ -452,8 +542,12 @@ export default function ProductForm({ product, categories, occasions = [], onSav
       keywords: "",
     });
     setSizes([]);
-    setImages([]);
-    setExistingImages([]);
+    setImageItems((prev) => {
+      prev.forEach((i) => {
+        if (i.type === "new" && i.objectURL) URL.revokeObjectURL(i.objectURL);
+      });
+      return [];
+    });
     setVideos([]);
     setExistingVideos([]);
     setSelectedCategories([]);
@@ -564,7 +658,9 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         payload.productId = product.id;
         payload.forceRegenerate = forceRegenerate;
       }
-      const firstImageUrl = existingImages?.length > 0 ? existingImages[0] : null;
+      const firstImageItem = imageItems?.length > 0 ? imageItems[0] : null;
+      const firstImageUrl =
+        firstImageItem?.type === "existing" ? firstImageItem.url : null;
       if (firstImageUrl) {
         payload.imageUrl = firstImageUrl.startsWith("http") ? firstImageUrl : `${API}${firstImageUrl.startsWith("/") ? "" : "/"}${firstImageUrl}`;
       }
@@ -865,10 +961,8 @@ export default function ProductForm({ product, categories, occasions = [], onSav
         )}
 
         <ImageUpload
-          images={images}
-          existingImages={existingImages}
-          onImagesChange={setImages}
-          onExistingImagesChange={setExistingImages}
+          imageItems={imageItems}
+          onImageItemsChange={setImageItems}
         />
 
         <VideoUpload

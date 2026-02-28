@@ -147,6 +147,31 @@ export default function AdminDashboard() {
     loadData();
   };
 
+  const handleOptimisticAdd = (optimisticProduct) => {
+    setProducts((prev) => [...prev, optimisticProduct]);
+  };
+
+  const handleOptimisticSuccess = (tempId, serverProduct) => {
+    setProducts((prev) => {
+      const idx = prev.findIndex((p) => p.id === tempId);
+      if (idx === -1) return [...prev, serverProduct];
+      return prev.map((p) => (p.id === tempId ? { ...serverProduct, order: p.order ?? serverProduct.order } : p));
+    });
+    setEditingProduct(null);
+  };
+
+  const handleOptimisticFailure = (tempId) => {
+    setProducts((prev) => prev.filter((p) => p.id !== tempId));
+  };
+
+  const handleProductDelete = (product) => {
+    if (product && String(product.id).startsWith("temp-")) {
+      setProducts((prev) => prev.filter((p) => p.id !== product.id));
+      return;
+    }
+    loadData();
+  };
+
   const handleCategorySave = () => {
     setEditingCategory(null);
     loadData();
@@ -328,11 +353,14 @@ export default function AdminDashboard() {
                   occasions={occasions}
                   onSave={handleProductSave}
                   onCancel={() => setEditingProduct(null)}
+                  onOptimisticAdd={handleOptimisticAdd}
+                  onOptimisticSuccess={handleOptimisticSuccess}
+                  onOptimisticFailure={handleOptimisticFailure}
                 />
                 <ProductList
                   products={products}
                   onEdit={setEditingProduct}
-                  onDelete={loadData}
+                  onDelete={handleProductDelete}
                 />
               </div>
             )}

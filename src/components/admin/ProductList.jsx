@@ -44,12 +44,18 @@ export default function ProductList({ products, onEdit, onDelete }) {
   // Ensure products is always an array
   const safeProducts = Array.isArray(products) ? products : [];
 
-  const handleDelete = async (productId) => {
+  const handleDelete = async (product) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
+
+    const isTemp = product && String(product.id).startsWith("temp-");
+    if (isTemp) {
+      onDelete(product);
+      return;
+    }
 
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await fetch(`${API}/products/${productId}`, {
+      const res = await fetch(`${API}/products/${product.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -58,7 +64,7 @@ export default function ProductList({ products, onEdit, onDelete }) {
 
       if (res.ok) {
         toast.success("Product deleted");
-        onDelete();
+        onDelete(product);
       } else {
         const data = await res.json();
         toast.error(data.error || data.message || "Failed to delete product");
@@ -178,7 +184,7 @@ export default function ProductList({ products, onEdit, onDelete }) {
             Duplicate
           </button>
           <button
-            onClick={() => handleDelete(product.id)}
+            onClick={() => handleDelete(product)}
             className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition"
           >
             Delete
