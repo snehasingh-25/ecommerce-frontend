@@ -198,7 +198,7 @@ export default function ProductFilters({
   };
 
   const FilterContent = () => (
-    <div className="p-4 lg:p-0">
+    <div className="p-6">
       {/* Categories */}
       {filterOptions.categories && filterOptions.categories.length > 0 && (
         <FilterSection title="Category" defaultOpen={true}>
@@ -246,7 +246,7 @@ export default function ProductFilters({
       {/* Price Range */}
       {filterOptions.priceRange && (
         <FilterSection title="Price" defaultOpen={true}>
-          <div className="space-y-3">
+          <div className="space-y-3 space-x-2">
             <div className="flex gap-2">
               <input
                 type="number"
@@ -385,17 +385,17 @@ export default function ProductFilters({
 
   return (
     <>
-      {/* Mobile: Overlay */}
+      {/* Overlay (all screen sizes – match mobile) */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40"
           onClick={onToggle}
         />
       )}
 
-      {/* Desktop: Sticky Sidebar */}
+      {/* Legacy desktop sidebar – hidden; filters use sheet on all screens */}
       <aside className={`
-        hidden lg:block lg:sticky lg:top-6
+        hidden
         w-64 shrink-0
         h-fit
         bg-white
@@ -424,9 +424,9 @@ export default function ProductFilters({
         </div>
       </aside>
 
-      {/* Mobile: Bottom Sheet */}
+      {/* Bottom Sheet (all screen sizes – match mobile design) */}
       <div className={`
-        fixed lg:hidden
+        fixed
         bottom-0 left-0 right-0
         bg-white
         rounded-t-2xl
@@ -437,7 +437,7 @@ export default function ProductFilters({
         max-h-[85vh]
         flex flex-col
       `}>
-        {/* Mobile Header */}
+        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold" style={{ color: "oklch(20% .02 340)" }}>
             Filters
@@ -453,12 +453,12 @@ export default function ProductFilters({
           </button>
         </div>
 
-        {/* Mobile Content */}
+        {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <FilterContent />
         </div>
 
-        {/* Mobile Footer - Fixed at bottom */}
+        {/* Footer - Fixed at bottom */}
         <div className="p-4 border-t border-gray-200 bg-white flex gap-3">
           {hasActiveFilters && (
             <button

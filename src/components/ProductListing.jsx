@@ -97,34 +97,24 @@ export default function ProductListing({
 
   return (
     <>
-      <div className="flex gap-6 lg:gap-8">
-        {/* Desktop: Filters Sidebar */}
-        {showFilters && (
-          <aside className="hidden lg:block lg:w-64 shrink-0">
-            <ProductFilters
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              isOpen={filtersOpen}
-              onToggle={() => setFiltersOpen(!filtersOpen)}
-            />
-          </aside>
-        )}
-
-        {/* Main Content */}
-        <div className="flex-1 min-w-0">
-          {/* Mobile: Filter and Sort Buttons */}
-          {showFilters && (
-            <div className="lg:hidden mb-4 flex items-center gap-3">
-              <button
-                onClick={() => setFiltersOpen(true)}
-                className="flex-1 px-4 py-2.5 border rounded-md text-sm font-medium flex items-center justify-center gap-2"
-                style={{ borderColor: "oklch(92% .04 340)", color: "oklch(20% .02 340)" }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                </svg>
-                Filters
-              </button>
+      <div className="max-w-6xl mx-auto">
+        {/* Main Content - same layout on all screen sizes (match mobile) */}
+        <div className="flex-1 min-w-0 max-w-full">
+          {/* Filters + Sort buttons (all screens, same as mobile) */}
+          {(showFilters || showSort) && (
+            <div className="mb-4 flex items-center gap-3">
+              {showFilters && (
+                <button
+                  onClick={() => setFiltersOpen(true)}
+                  className="flex-1 px-4 py-2.5 border rounded-md text-sm font-medium flex items-center justify-center gap-2"
+                  style={{ borderColor: "oklch(92% .04 340)", color: "oklch(20% .02 340)" }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  </svg>
+                  Filters
+                </button>
+              )}
               {showSort && (
                 <button
                   onClick={() => setSortOpen(true)}
@@ -140,35 +130,19 @@ export default function ProductListing({
             </div>
           )}
 
-          {/* Desktop: Header with Sort */}
-          <div className="hidden lg:flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
-            <div className="text-sm font-medium" style={{ color: "oklch(55% .02 340)" }}>
-              {products.length} {products.length === 1 ? "product" : "products"} found
-            </div>
-            {showSort && (
-              <SortDropdown 
-                sort={sort} 
-                onSortChange={handleSortChange}
-                isMobile={false}
-              />
-            )}
-          </div>
-
-          {/* Mobile: Filters Bottom Sheet */}
+          {/* Filters overlay/sheet (all screens) */}
           {showFilters && (
-            <div className="lg:hidden">
-              <ProductFilters
-                filters={filters}
-                onFiltersChange={handleFiltersChange}
-                isOpen={filtersOpen}
-                onToggle={() => setFiltersOpen(false)}
-                onApply={() => setFiltersOpen(false)}
-                onClear={() => {}}
-              />
-            </div>
+            <ProductFilters
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              isOpen={filtersOpen}
+              onToggle={() => setFiltersOpen(false)}
+              onApply={() => setFiltersOpen(false)}
+              onClear={() => {}}
+            />
           )}
 
-          {/* Mobile: Sort Bottom Sheet */}
+          {/* Sort overlay/sheet (all screens) */}
           {showSort && (
             <SortDropdown
               sort={sort}

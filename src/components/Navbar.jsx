@@ -241,7 +241,10 @@ export default function Navbar() {
                     }
                   }}
                   onBlur={(e) => {
-                    // Delay to allow click on suggestions
+                    // Don't close if focus moved into the suggestions dropdown (so click on suggestion works)
+                    if (e.relatedTarget && suggestionsRef.current?.contains(e.relatedTarget)) {
+                      return;
+                    }
                     setTimeout(() => {
                       if (!searchQuery) {
                         e.target.style.borderColor = 'oklch(92% .04 340)';
@@ -311,9 +314,12 @@ export default function Navbar() {
                           <Link
                             key={product.id}
                             to={`/product/${product.id}`}
-                            onClick={() => {
+                            onMouseDown={(e) => {
+                              // Navigate on mousedown so the click isn't lost when input blurs
+                              e.preventDefault();
                               setShowSuggestions(false);
                               setSearchQuery("");
+                              navigate(`/product/${product.id}`);
                             }}
                             className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
                             style={{ 
@@ -478,7 +484,11 @@ export default function Navbar() {
                 if (typedInstanceRef.current) typedInstanceRef.current.stop();
                 if (searchSuggestions.length > 0) setShowSuggestions(true);
               }}
-              onBlur={() => {
+              onBlur={(e) => {
+                // Don't close if focus moved into the suggestions dropdown (so tap on suggestion works)
+                if (e.relatedTarget && suggestionsRef.current?.contains(e.relatedTarget)) {
+                  return;
+                }
                 setTimeout(() => {
                   setShowSuggestions(false);
                   if (!searchQuery) {
@@ -520,9 +530,11 @@ export default function Navbar() {
                       <Link
                         key={product.id}
                         to={`/product/${product.id}`}
-                        onClick={() => {
+                        onMouseDown={(e) => {
+                          e.preventDefault();
                           setShowSuggestions(false);
                           setSearchQuery("");
+                          navigate(`/product/${product.id}`);
                         }}
                         className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
                         style={{ backgroundColor: "transparent" }}
