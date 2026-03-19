@@ -13,6 +13,7 @@ import Home from "./pages/Home";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Occasion from "./pages/Occasion";
+import Relation from "./pages/Relation";
 import NewArrivals from "./pages/NewArrivals";
 import CategoriesPage from "./pages/CategoriesPage";
 import ProductDetail from "./pages/ProductDetail";
@@ -32,6 +33,8 @@ function PublicLayout() {
         <Route path="/category/:slug" element={<CategoriesPage />} />
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/relation" element={<Relation />} />
+        <Route path="/relation/:slug" element={<Relation />} />
         <Route path="/occasion" element={<Occasion />} />
         <Route path="/occasion/:slug" element={<Occasion />} />
         <Route path="/new" element={<NewArrivals />} />

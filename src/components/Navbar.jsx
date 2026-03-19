@@ -27,6 +27,7 @@ export default function Navbar() {
     { path: "/", label: "Home" },
     { path: "/categories", label: "Categories" },
     { path: "/occasion", label: "Occasions" },
+    { path: "/relation", label: "Relations" },
     { path: "/new", label: "New Arrivals"},
     { path: "/about", label: "About" },
     { path: "/contact", label: "Contact" },

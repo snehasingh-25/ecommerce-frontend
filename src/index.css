@@ -123,6 +123,18 @@ a, button, input, textarea, select {
   display: none;
 }
 
+/* Hide the main page (vertical) scrollbar, but keep scrolling */
+html,
+body {
+  -ms-overflow-style: none; /* IE/Edge legacy */
+  scrollbar-width: none; /* Firefox */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
 /* Thin scrollbar (horizontal/vertical) for specific containers */
 .scrollbar-thin {
   scrollbar-width: thin; /* Firefox */

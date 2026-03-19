@@ -14,7 +14,7 @@ export default function CategoriesPage() {
   const categoryScrollRef = useRef(null);
   
   // Build initial filters for ProductListing
-  const initialFilters = useMemo(() => ({
+  const _initialFilters = useMemo(() => ({
     category: slug || undefined,
     occasion: occasionFilter || undefined,
     isTrending: searchParams.get("trending") === "true" || undefined,
@@ -96,7 +96,7 @@ export default function CategoriesPage() {
 
           <div
             ref={categoryScrollRef}
-            className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-thin pb-4 px-1 sm:px-10"
+            className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-4 px-1 sm:px-10"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             {categories.map((category) => (

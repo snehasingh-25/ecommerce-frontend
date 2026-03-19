@@ -9,18 +9,21 @@ const FUSE_OPTIONS = { threshold: 0.4, includeScore: true, minMatchCharLength: 2
  * @param {(product: Object) => void} props.onSelectProduct
  * @param {(category: Object) => void} [props.onSelectCategory]
  * @param {(occasion: Object) => void} [props.onSelectOccasion]
+ * @param {(relation: Object) => void} [props.onSelectRelation]
  * @param {(query: string) => void} [props.onViewAllResults]
  */
 export default function AdminSearchBar({
   onSelectProduct,
   onSelectCategory,
   onSelectOccasion,
+  onSelectRelation,
   onViewAllResults,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [allProducts, setAllProducts] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
   const [allOccasions, setAllOccasions] = useState([]);
+  const [allRelations, setAllRelations] = useState([]);
   const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
   const searchInputRef = useRef(null);
   const suggestionsRef = useRef(null);
@@ -35,25 +38,34 @@ export default function AdminSearchBar({
         .then((r) => (r.ok ? r.json() : []))
         .then((d) => (Array.isArray(d) ? d : []))
         .catch(() => []),
-    ]).then(([products, categories, occasions]) => {
+      fetch(`${API}/relations/all`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken") || ""}` },
+      })
+        .then((r) => (r.ok ? r.json() : []))
+        .then((d) => (Array.isArray(d) ? d : []))
+        .catch(() => []),
+    ]).then(([products, categories, occasions, relations]) => {
       setAllProducts(products);
       setAllCategories(categories);
       setAllOccasions(occasions);
+      setAllRelations(relations);
     });
   }, []);
 
   const suggestions = useMemo(() => {
     const q = searchQuery.trim();
-    if (q.length < 2) return { products: [], categories: [], occasions: [] };
+    if (q.length < 2) return { products: [], categories: [], occasions: [], relations: [] };
     const productFuse = new Fuse(allProducts, { keys: ["name", "description", "keywords"], ...FUSE_OPTIONS });
     const categoryFuse = new Fuse(allCategories, { keys: ["name", "slug", "description"], ...FUSE_OPTIONS });
     const occasionFuse = new Fuse(allOccasions, { keys: ["name", "slug", "description"], ...FUSE_OPTIONS });
+    const relationFuse = new Fuse(allRelations, { keys: ["name", "slug", "description"], ...FUSE_OPTIONS });
     return {
       products: productFuse.search(q).slice(0, 4).map((r) => r.item),
       categories: categoryFuse.search(q).slice(0, 3).map((r) => r.item),
       occasions: occasionFuse.search(q).slice(0, 3).map((r) => r.item),
+      relations: relationFuse.search(q).slice(0, 3).map((r) => r.item),
     };
-  }, [searchQuery, allProducts, allCategories, allOccasions]);
+  }, [searchQuery, allProducts, allCategories, allOccasions, allRelations]);
 
 
   useEffect(() => {
@@ -74,7 +86,8 @@ export default function AdminSearchBar({
   const hasAnySuggestions =
     suggestions.products.length > 0 ||
     suggestions.categories.length > 0 ||
-    suggestions.occasions.length > 0;
+    suggestions.occasions.length > 0 ||
+    suggestions.relations.length > 0;
   const showSuggestions = hasAnySuggestions && !suggestionsDismissed;
 
   const dismissSuggestions = () => {
@@ -95,6 +108,11 @@ export default function AdminSearchBar({
   const handleSelectOccasion = (occasion) => {
     dismissSuggestions();
     onSelectOccasion?.(occasion);
+  };
+
+  const handleSelectRelation = (relation) => {
+    dismissSuggestions();
+    onSelectRelation?.(relation);
   };
 
   const handleViewAllResults = () => {
@@ -127,7 +145,7 @@ export default function AdminSearchBar({
             if (e.relatedTarget && suggestionsRef.current?.contains(e.relatedTarget)) return;
             setTimeout(() => setSuggestionsDismissed(true), 200);
           }}
-          placeholder="Search products, categories, occasions..."
+          placeholder="Search products, categories, occasions, relations..."
           className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-4 pr-10 text-sm text-gray-900 placeholder-gray-500 transition focus:border-pink-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-pink-500"
         />
         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -260,6 +278,44 @@ export default function AdminSearchBar({
                       <div className="truncate text-sm font-medium text-gray-900">{occasion.name}</div>
                       {occasion.slug && (
                         <div className="truncate text-xs text-gray-500">{occasion.slug}</div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
+            {suggestions.relations.length > 0 && (
+              <>
+                <div className="mt-1 border-t border-gray-100 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Relations
+                </div>
+                {suggestions.relations.map((relation) => (
+                  <button
+                    key={`r-${relation.id}`}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelectRelation(relation);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-gray-50"
+                  >
+                    {relation.imageUrl ? (
+                      <img
+                        src={relation.imageUrl}
+                        alt={relation.name}
+                        className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-gray-900">{relation.name}</div>
+                      {relation.slug && (
+                        <div className="truncate text-xs text-gray-500">{relation.slug}</div>
                       )}
                     </div>
                   </button>

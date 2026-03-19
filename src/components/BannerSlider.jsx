@@ -26,7 +26,7 @@ export default function BannerSlider({ bannerType = "primary" }) {
     if (banners.length > 1 && !isPaused) {
       intervalRef.current = setInterval(() => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length);
-      }, 20000); // 20 seconds
+      }, 6000); // 6 seconds
 
       return () => {
         if (intervalRef.current) {
@@ -60,9 +60,12 @@ export default function BannerSlider({ bannerType = "primary" }) {
 
   const currentBanner = banners[currentIndex];
 
-  // Banner aspect ratio: 3189×1408 px = 2.265:1 (width:height)
-  // padding-bottom = (1408 / 3189) * 100 = 44.15%
-  const bannerAspectRatio = (1408 / 3189) * 100;
+  // Banner aspect ratio controls the slider height (padding-bottom trick).
+  // To make it a bit smaller WITHOUT stretching, we keep object-fit: cover
+  // and slightly reduce the height (it may crop a little vertically).
+  const actualBannerAspectRatio = (1600 / 2380) * 100;
+  const heightScale = 0.95; // 85% of the actual height (tweak: 0.8-0.95)
+  const bannerAspectRatio = actualBannerAspectRatio * heightScale;
 
   return (
     <div 

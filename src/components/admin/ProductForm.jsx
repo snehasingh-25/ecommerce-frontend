@@ -29,6 +29,7 @@ export default function ProductForm({
   product,
   categories,
   occasions = [],
+  relations = [],
   onSave,
   onCancel,
   /** Optimistic create: called after 1s with temp product to show in list */
@@ -63,6 +64,7 @@ export default function ProductForm({
   const [loadingLinkedReels, setLoadingLinkedReels] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedOccasions, setSelectedOccasions] = useState([]);
+  const [selectedRelations, setSelectedRelations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingSizeOptions, setLoadingSizeOptions] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
@@ -79,8 +81,9 @@ export default function ProductForm({
       imageItemsOrder: imageItems.map((i) => (i.type === "existing" ? i.url : i.id)),
       selectedCategories,
       selectedOccasions,
+      selectedRelations,
     });
-  }, [formData, sizes, imageItems, selectedCategories, selectedOccasions]);
+  }, [formData, sizes, imageItems, selectedCategories, selectedOccasions, selectedRelations]);
 
   const isDirty = initialSnapshotRef.current !== "" && snapshot !== initialSnapshotRef.current;
 
@@ -129,6 +132,11 @@ export default function ProductForm({
           ? product.occasions.map((o) => o.occasionId || o.occasion?.id || o.id)
           : []
       );
+      setSelectedRelations(
+        product.relations && product.relations.length > 0
+          ? product.relations.map((r) => r.relationId || r.relation?.id || r.id)
+          : []
+      );
     } else {
       // Reset form
       setFormData({
@@ -149,6 +157,7 @@ export default function ProductForm({
       setInstagramEmbeds([]);
       setSelectedCategories([]);
       setSelectedOccasions([]);
+      setSelectedRelations([]);
     }
 
     // snapshot after state settles
@@ -195,6 +204,10 @@ export default function ProductForm({
         selectedOccasions:
           product?.occasions && product.occasions.length > 0
             ? product.occasions.map((o) => o.occasionId || o.occasion?.id || o.id)
+            : [],
+        selectedRelations:
+          product?.relations && product.relations.length > 0
+            ? product.relations.map((r) => r.relationId || r.relation?.id || r.id)
             : [],
         imageItemsLength: product ? parseProductImages(product.images).length : 0,
         imageItemsOrder: product ? parseProductImages(product.images).join(",") : "",
@@ -328,6 +341,11 @@ export default function ProductForm({
             ? fullProduct.occasions.map((o) => o.occasionId || o.occasion?.id || o.id)
             : []
         );
+        setSelectedRelations(
+          fullProduct.relations && fullProduct.relations.length > 0
+            ? fullProduct.relations.map((r) => r.relationId || r.relation?.id || r.id)
+            : []
+        );
       })
       .catch(() => {})
       .finally(() => {
@@ -374,6 +392,7 @@ export default function ProductForm({
       );
     }
     formDataToSend.append("occasionIds", JSON.stringify(selectedOccasions));
+    formDataToSend.append("relationIds", JSON.stringify(selectedRelations));
     const orderedExisting = imageItems.filter((i) => i.type === "existing").map((i) => i.url);
     const orderedNewFiles = imageItems.filter((i) => i.type === "new").map((i) => i.file);
     const imageOrderPayload = imageItems.map((i) => (i.type === "existing" ? i.url : "NEW"));
@@ -957,6 +976,43 @@ export default function ProductForm({
                 })}
             </div>
             <p className="text-xs text-gray-500 mt-1">Select occasions this product is suitable for (optional)</p>
+          </div>
+        )}
+
+        {relations.length > 0 && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Relations (optional)</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-3 rounded-xl border-2 border-gray-200 bg-gray-50/50">
+              {[...relations]
+                .filter((r) => r.isActive !== false)
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((rel) => {
+                  const isSelected = selectedRelations.includes(rel.id);
+                  return (
+                    <label
+                      key={rel.id}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition ${
+                        isSelected ? "border-pink-500 bg-pink-50" : "border-gray-200 bg-white hover:border-pink-300"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {
+                          if (isSelected) {
+                            setSelectedRelations(selectedRelations.filter((id) => id !== rel.id));
+                          } else {
+                            setSelectedRelations([...selectedRelations, rel.id]);
+                          }
+                        }}
+                        className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500 shrink-0"
+                      />
+                      <span className="text-sm font-medium text-gray-700 truncate">{rel.name}</span>
+                    </label>
+                  );
+                })}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Select relations this product belongs to (optional)</p>
           </div>
         )}
 

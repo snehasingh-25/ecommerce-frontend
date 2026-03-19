@@ -13,6 +13,8 @@ import ReelForm from "../components/admin/ReelForm";
 import ReelList from "../components/admin/ReelList";
 import OccasionForm from "../components/admin/OccasionForm";
 import OccasionList from "../components/admin/OccasionList";
+import RelationForm from "../components/admin/RelationForm";
+import RelationList from "../components/admin/RelationList";
 import BannerForm from "../components/admin/BannerForm";
 import BannerList from "../components/admin/BannerList";
 import AdminSearchBar from "../components/admin/AdminSearchBar";
@@ -25,6 +27,7 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [occasions, setOccasions] = useState([]);
+  const [relations, setRelations] = useState([]);
   const [orders, setOrders] = useState([]);
   const [messages, setMessages] = useState([]);
   const [reels, setReels] = useState([]);
@@ -33,6 +36,7 @@ export default function AdminDashboard() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingOccasion, setEditingOccasion] = useState(null);
+  const [editingRelation, setEditingRelation] = useState(null);
   const [editingReel, setEditingReel] = useState(null);
   const [editingBanner, setEditingBanner] = useState(null);
 
@@ -55,12 +59,13 @@ export default function AdminDashboard() {
       const headers = { Authorization: `Bearer ${token}` };
 
       if (activeTab === "products") {
-        const [productsRes, occasionsRes, categoriesRes] = await Promise.all([
-          fetch(`${API}/products`), // Public endpoint, no auth needed
+        const [productsRes, occasionsRes, categoriesRes, relationsRes] = await Promise.all([
+          fetch(`${API}/products`),
           fetch(`${API}/occasions/all`, { headers }),
-          fetch(`${API}/categories`), // Public endpoint, no auth needed
+          fetch(`${API}/categories`),
+          fetch(`${API}/relations/all`, { headers }),
         ]);
-        
+
         if (!productsRes.ok) {
           const errorData = await productsRes.json();
           console.error("Error fetching products:", errorData);
@@ -70,7 +75,7 @@ export default function AdminDashboard() {
           const productsData = await productsRes.json();
           setProducts(Array.isArray(productsData) ? productsData : []);
         }
-        
+
         if (occasionsRes.ok) {
           const occasionsData = await occasionsRes.json();
           setOccasions(Array.isArray(occasionsData) ? occasionsData : []);
@@ -83,6 +88,14 @@ export default function AdminDashboard() {
           const categoriesData = await categoriesRes.json();
           setCategories(Array.isArray(categoriesData) ? categoriesData : []);
         }
+
+        if (relationsRes.ok) {
+          const relationsData = await relationsRes.json();
+          setRelations(Array.isArray(relationsData) ? relationsData : []);
+        } else if (relationsRes.status === 401) {
+          toast.error("Session expired. Please login again.");
+          logout();
+        }
       } else if (activeTab === "categories") {
         const res = await fetch(`${API}/categories`); // Public endpoint
         if (res.ok) {
@@ -94,6 +107,15 @@ export default function AdminDashboard() {
         if (res.ok) {
           const data = await res.json();
           setOccasions(data);
+        } else if (res.status === 401) {
+          toast.error("Session expired. Please login again.");
+          logout();
+        }
+      } else if (activeTab === "relations") {
+        const res = await fetch(`${API}/relations/all`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          setRelations(data);
         } else if (res.status === 401) {
           toast.error("Session expired. Please login again.");
           logout();
@@ -183,6 +205,11 @@ export default function AdminDashboard() {
     loadData();
   };
 
+  const handleRelationSave = () => {
+    setEditingRelation(null);
+    loadData();
+  };
+
   const handleReelSave = () => {
     setEditingReel(null);
     loadData();
@@ -197,6 +224,7 @@ export default function AdminDashboard() {
     { id: "products", label: "Products", icon: null },
     { id: "categories", label: "Categories", icon: null },
     { id: "occasions", label: "Occasions", icon: null },
+    { id: "relations", label: "Relations", icon: null },
     { id: "banners", label: "Banners", icon: null },
     { id: "reels", label: "Reels", icon: null },
     { id: "orders", label: "Orders", icon: null },
@@ -226,6 +254,7 @@ export default function AdminDashboard() {
                 setEditingProduct(null);
                 setEditingCategory(null);
                 setEditingOccasion(null);
+                setEditingRelation(null);
                 setEditingReel(null);
                 setEditingBanner(null);
               }}
@@ -290,6 +319,10 @@ export default function AdminDashboard() {
                     setActiveTab("occasions");
                     setEditingOccasion(occasion);
                   }}
+                  onSelectRelation={(relation) => {
+                    setActiveTab("relations");
+                    setEditingRelation(relation);
+                  }}
                   onViewAllResults={() => {
                     setActiveTab("products");
                     setEditingProduct(null);
@@ -328,6 +361,10 @@ export default function AdminDashboard() {
                   setActiveTab("occasions");
                   setEditingOccasion(occasion);
                 }}
+                onSelectRelation={(relation) => {
+                  setActiveTab("relations");
+                  setEditingRelation(relation);
+                }}
                 onViewAllResults={() => {
                   setActiveTab("products");
                   setEditingProduct(null);
@@ -346,6 +383,7 @@ export default function AdminDashboard() {
                       setEditingProduct(null);
                       setEditingCategory(null);
                       setEditingOccasion(null);
+                      setEditingRelation(null);
                       setEditingReel(null);
                       setEditingBanner(null);
                     }}
@@ -392,6 +430,7 @@ export default function AdminDashboard() {
                   product={editingProduct}
                   categories={categories}
                   occasions={occasions}
+                  relations={relations}
                   onSave={handleProductSave}
                   onCancel={() => setEditingProduct(null)}
                   onOptimisticAdd={handleOptimisticAdd}
@@ -431,6 +470,21 @@ export default function AdminDashboard() {
                 <OccasionList
                   occasions={occasions}
                   onEdit={setEditingOccasion}
+                  onDelete={loadData}
+                />
+              </div>
+            )}
+
+            {activeTab === "relations" && (
+              <div>
+                <RelationForm
+                  relation={editingRelation}
+                  onSave={handleRelationSave}
+                  onCancel={() => setEditingRelation(null)}
+                />
+                <RelationList
+                  relations={relations}
+                  onEdit={setEditingRelation}
                   onDelete={loadData}
                 />
               </div>

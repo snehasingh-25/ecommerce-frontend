@@ -10,20 +10,24 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [relations, setRelations] = useState([]);
   const [occasions, setOccasions] = useState([]);
   const [reels, setReels] = useState([]);
-  const [banners, setBanners] = useState([]);
+  const [_banners, setBanners] = useState([]);
   const [visibleProductsCount, setVisibleProductsCount] = useState(10);
   const [loading, setLoading] = useState({
     categories: true,
+    relations: true,
     occasions: true,
     products: true,
     reels: true,
     banners: true,
   });
   const scrollRef = useRef(null);
+  const relationScrollRef = useRef(null);
   const occasionScrollRef = useRef(null);
   const scrollEndTimerRef = useRef(null);
+  const relationScrollEndTimerRef = useRef(null);
   const occasionScrollEndTimerRef = useRef(null);
 
   useEffect(() => {
@@ -38,6 +42,17 @@ export default function Home() {
       })
       .catch(() => {
         setLoading((prev) => ({ ...prev, categories: false }));
+      });
+
+    // Fetch relations
+    fetch(`${API}/relations`, { signal: ac.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        setRelations(Array.isArray(data) ? data : []);
+        setLoading((prev) => ({ ...prev, relations: false }));
+      })
+      .catch(() => {
+        setLoading((prev) => ({ ...prev, relations: false }));
       });
 
     // Fetch occasions
@@ -95,6 +110,7 @@ export default function Home() {
   useEffect(() => {
     return () => {
       if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
+      if (relationScrollEndTimerRef.current) clearTimeout(relationScrollEndTimerRef.current);
       if (occasionScrollEndTimerRef.current) clearTimeout(occasionScrollEndTimerRef.current);
     };
   }, []);
@@ -119,11 +135,16 @@ export default function Home() {
     () => (categories.length > 0 ? [...categories, ...categories, ...categories] : []),
     [categories]
   );
+  const relationsTriple = useMemo(
+    () => (relations.length > 0 ? [...relations, ...relations, ...relations] : []),
+    [relations]
+  );
   const occasionsTriple = useMemo(
     () => (occasions.length > 0 ? [...occasions, ...occasions, ...occasions] : []),
     [occasions]
   );
   const categorySetWidthRef = useRef(0);
+  const relationSetWidthRef = useRef(0);
   const occasionSetWidthRef = useRef(0);
 
   // Initialize scroll position to middle set and handle loop reset (categories)
@@ -134,6 +155,14 @@ export default function Home() {
     categorySetWidthRef.current = setWidth;
     el.scrollLeft = setWidth;
   }, [categories]);
+
+  useEffect(() => {
+    const el = relationScrollRef.current;
+    if (!el || relations.length === 0) return;
+    const setWidth = el.scrollWidth / 3;
+    relationSetWidthRef.current = setWidth;
+    el.scrollLeft = setWidth;
+  }, [relations]);
 
   useEffect(() => {
     const el = occasionScrollRef.current;
@@ -154,6 +183,20 @@ export default function Home() {
       const sl = scrollRef.current.scrollLeft;
       if (sl >= setWidth * 2 - 50) scrollRef.current.scrollLeft = sl - setWidth;
       else if (sl <= 50) scrollRef.current.scrollLeft = sl + setWidth;
+    }, 350);
+  };
+
+  const scrollRelations = (direction) => {
+    const el = relationScrollRef.current;
+    if (!el || relations.length === 0) return;
+    const scrollAmount = 300;
+    el.scrollBy({ left: direction === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
+    const setWidth = relationSetWidthRef.current || el.scrollWidth / 3;
+    setTimeout(() => {
+      if (!relationScrollRef.current) return;
+      const sl = relationScrollRef.current.scrollLeft;
+      if (sl >= setWidth * 2 - 50) relationScrollRef.current.scrollLeft = sl - setWidth;
+      else if (sl <= 50) relationScrollRef.current.scrollLeft = sl + setWidth;
     }, 350);
   };
 
@@ -180,6 +223,15 @@ export default function Home() {
     if (sl >= setWidth * 2 - 50) el.scrollLeft = sl - setWidth;
     else if (sl <= 50) el.scrollLeft = sl + setWidth;
   };
+  const handleRelationScrollEnd = () => {
+    const el = relationScrollRef.current;
+    if (!el || relations.length === 0) return;
+    const setWidth = relationSetWidthRef.current || el.scrollWidth / 3;
+    const sl = el.scrollLeft;
+    if (sl >= setWidth * 2 - 50) el.scrollLeft = sl - setWidth;
+    else if (sl <= 50) el.scrollLeft = sl + setWidth;
+  };
+
   const handleOccasionScrollEnd = () => {
     const el = occasionScrollRef.current;
     if (!el || occasions.length === 0) return;
@@ -190,7 +242,7 @@ export default function Home() {
   };
 
   // Check if any data is still loading
-  const isInitialLoad = loading.categories || loading.occasions || loading.products || loading.reels || loading.banners;
+  const isInitialLoad = loading.categories || loading.relations || loading.occasions || loading.products || loading.reels || loading.banners;
 
   return (
     <div className="min-h-screen bg-white fade-in">
@@ -325,7 +377,7 @@ export default function Home() {
             </Link>
           </div>
           <div
-            className="flex gap-5 overflow-x-auto pb-4 px-1 snap-x snap-mandatory scrollbar-thin"
+            className="flex gap-5 overflow-x-auto pb-4 px-1 snap-x snap-mandatory scrollbar-hide"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             {trendingProducts.map((p) => (
@@ -336,6 +388,105 @@ export default function Home() {
                 <ProductCard product={p} />
               </div>
             ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Shop By Relation Section (above Occasions) */}
+      {relations.length > 0 ? (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-bold" style={{ color: "oklch(20% .02 340)" }}>Shop By Relation</h2>
+            <Link
+              to="/relation"
+              className="text-sm font-semibold inline-flex items-center gap-1 transition-all duration-300 hover:gap-2 group"
+              style={{ color: "oklch(20% .02 340)" }}
+              onMouseEnter={(e) => (e.target.style.color = "oklch(40% .02 340)")}
+              onMouseLeave={(e) => (e.target.style.color = "oklch(20% .02 340)")}
+            >
+              View All
+              <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+          <div className="relative">
+            <button
+              onClick={() => scrollRelations("left")}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+              style={{ borderColor: "oklch(92% .04 340)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "oklch(92% .04 340)";
+                e.currentTarget.style.backgroundColor = "oklch(92% .04 340)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "oklch(92% .04 340)";
+                e.currentTarget.style.backgroundColor = "white";
+              }}
+            >
+              <svg className="w-5 h-5" style={{ color: "oklch(40% .02 340)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div
+              ref={relationScrollRef}
+              className="flex gap-5 overflow-x-auto scrollbar-hide pb-4 px-2"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              onScroll={() => {
+                if (relationScrollEndTimerRef.current) clearTimeout(relationScrollEndTimerRef.current);
+                relationScrollEndTimerRef.current = setTimeout(handleRelationScrollEnd, 150);
+              }}
+            >
+              {relationsTriple.map((relation, i) => (
+                <Link
+                  key={`rel-${i}-${relation.id}`}
+                  to={`/relation/${relation.slug}`}
+                  className="flex-shrink-0 flex flex-col items-center min-w-[140px] sm:min-w-[160px] group"
+                >
+                  <div
+                    className="w-32 h-32 sm:w-36 sm:h-36 lg:w-40 lg:h-40 rounded-lg flex items-center justify-center text-4xl sm:text-5xl group-hover:shadow-lg group-hover:scale-110 transition-all duration-300 overflow-hidden cursor-pointer"
+                    style={{ backgroundColor: "oklch(92% .04 340)" }}
+                  >
+                    {relation.imageUrl ? (
+                      <img
+                        src={relation.imageUrl}
+                        alt={relation.name}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: "oklch(92% .04 340)" }}>
+                        <img src="/logo.png" alt="Gift Choice Logo" className="w-3/4 h-3/4 object-contain" />
+                      </div>
+                    )}
+                  </div>
+                  <span
+                    className="text-sm font-semibold text-center transition-colors mt-2"
+                    style={{ color: "oklch(40% .02 340)" }}
+                    onMouseEnter={(e) => (e.target.style.color = "oklch(92% .04 340)")}
+                    onMouseLeave={(e) => (e.target.style.color = "oklch(40% .02 340)")}
+                  >
+                    {relation.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <button
+              onClick={() => scrollRelations("right")}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+              style={{ borderColor: "oklch(92% .04 340)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "oklch(92% .04 340)";
+                e.currentTarget.style.backgroundColor = "oklch(92% .04 340)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "oklch(92% .04 340)";
+                e.currentTarget.style.backgroundColor = "white";
+              }}
+            >
+              <svg className="w-5 h-5" style={{ color: "oklch(40% .02 340)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         </div>
       ) : null}
