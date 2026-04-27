@@ -138,18 +138,15 @@ export default function Relation() {
   }
 
   return (
-    <div className="min-h-screen bg-white py-16">
+    <div className="min-h-screen bg-white py-4 sm:py-6">
       <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4" style={{ color: "oklch(20% .02 340)" }}>
+        <div className="text-left mb-4">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: "oklch(20% .02 340)" }}>
             Shop by Relation
           </h2>
-          <p className="text-lg" style={{ color: "oklch(60% .02 340)" }}>
-            Find the perfect gift for every relationship
-          </p>
         </div>
 
-        <div className="relative mb-12">
+        <div className="relative mb-6">
           <button
             onClick={() => scrollRelations("left")}
             className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
@@ -163,7 +160,7 @@ export default function Relation() {
 
           <div
             ref={relationScrollRef}
-            className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-4 px-1 sm:px-10"
+            className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 px-1 sm:px-6"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             {relations.map((relation) => (
@@ -209,7 +206,7 @@ export default function Relation() {
         {selectedRelation && slug && (
           <div className="mt-12">
             <div className="mb-8">
-              <h3 className="text-3xl font-bold mb-2" style={{ color: "oklch(20% .02 340)" }}>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
                 {selectedRelation.name}
               </h3>
               {selectedRelation.description && (
@@ -288,7 +285,7 @@ export default function Relation() {
         {!slug && (
           <div className="mt-12">
             <div className="mb-8">
-              <h3 className="text-3xl font-bold mb-2" style={{ color: "oklch(20% .02 340)" }}>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
                 All Products
               </h3>
 

@@ -5,7 +5,7 @@ export default function About() {
       <div className="bg-gradient-to-br from-white via-white to-pink-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h1 className="text-5xl font-bold mb-6" style={{ color: 'oklch(20% .02 340)' }}>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-4 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
               Leading Gift Distribution Partner
             </h1>
             <p className="text-xl max-w-3xl mx-auto leading-relaxed" style={{ color: 'oklch(60% .02 340)' }}>
@@ -19,7 +19,7 @@ export default function About() {
       {/* Leadership Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Leadership</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>Leadership</h2>
           <p className="text-lg" style={{ color: 'oklch(60% .02 340)' }}>
             Meet Our Director
           </p>
@@ -63,7 +63,7 @@ export default function About() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white rounded-xl shadow-lg p-8">
-              <h3 className="text-3xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Our Mission</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>Our Mission</h3>
               <p className="text-lg leading-relaxed" style={{ color: 'oklch(60% .02 340)' }}>
                 To provide customers with direct access to premium branded products at competitive prices, 
                 eliminating middlemen and ensuring maximum value. We strive to build long-term relationships 
@@ -71,7 +71,7 @@ export default function About() {
               </p>
             </div>
             <div className="bg-white rounded-xl shadow-lg p-8">
-              <h3 className="text-3xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Our Vision</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>Our Vision</h3>
               <p className="text-lg leading-relaxed" style={{ color: 'oklch(60% .02 340)' }}>
                 To become the leading gift distribution platform, connecting thousands of customers with 
                 authentic branded products. We envision a future where every customer, regardless of occasion, 
@@ -85,7 +85,7 @@ export default function About() {
       {/* Achievements */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Our Achievements</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>Our Achievements</h2>
           <p className="text-lg" style={{ color: 'oklch(60% .02 340)' }}>
             Numbers that reflect our commitment to excellence and customer satisfaction
           </p>
@@ -119,7 +119,7 @@ export default function About() {
       <div className="bg-gradient-to-br from-pink-50 to-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Our Core Values</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>Our Core Values</h2>
             <p className="text-lg" style={{ color: 'oklch(60% .02 340)' }}>
               The principles that guide our business and define our commitment to customers
             </p>
@@ -169,7 +169,7 @@ export default function About() {
       {/* Why Choose Us */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Why Choose GiftChoice</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>Why Choose GiftChoice</h2>
           <p className="text-lg" style={{ color: 'oklch(60% .02 340)' }}>
             We offer unique advantages that set us apart in the gift distribution industry
           </p>
@@ -177,19 +177,19 @@ export default function About() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="bg-white rounded-xl shadow-lg p-8">
-            <h3 className="text-2xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Direct Factory Connections</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-3 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>Direct Factory Connections</h3>
             <p className="leading-relaxed" style={{ color: 'oklch(60% .02 340)' }}>
               We work directly with manufacturers, eliminating middlemen and ensuring authentic products at the best prices.
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-lg p-8">
-            <h3 className="text-2xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Quality Guarantee</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-3 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>Quality Guarantee</h3>
             <p className="leading-relaxed" style={{ color: 'oklch(60% .02 340)' }}>
               Every product undergoes strict quality checks and comes with authenticity guarantee from our trusted partners.
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-lg p-8">
-            <h3 className="text-2xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>Dedicated Support</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-3 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>Dedicated Support</h3>
             <p className="leading-relaxed" style={{ color: 'oklch(60% .02 340)' }}>
               Our experienced team provides personalized support to help you find the right products for every occasion.
             </p>

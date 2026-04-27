@@ -144,22 +144,22 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 backdrop-blur-sm transition-all ${
+      className={`sticky top-0 z-50 transition-all ${
         scrolled
-          ? "bg-white shadow-lg border-b"
-          : "bg-white/95"
+          ? "bg-white/70 shadow-lg border-b backdrop-blur-xl"
+          : "bg-white/55 backdrop-blur-xl"
       }`}
-      style={{ borderColor: scrolled ? 'oklch(92% .04 340)' : 'transparent' }}
+      style={{ borderColor: scrolled ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.25)" }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-14 md:h-14 lg:h-20">
           
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <img 
               src="/logo.png" 
               alt="GiftChoice Logo" 
-              className="h-12 w-auto transform group-hover:scale-110 transition-all duration-300"
+              className="h-9 md:h-10 lg:h-12 w-auto object-contain transition-transform duration-300 lg:group-hover:scale-110"
             />
           </Link>
 
@@ -208,7 +208,7 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             
             {/* Search */}
-            <div className="relative hidden md:block">
+            <div className="relative hidden lg:block">
               <div className="relative">
                 <input
                   ref={searchInputRef}
@@ -382,13 +382,36 @@ export default function Navbar() {
               </div>
             </div>
 
+            {/* Mobile/Tablet Search Icon (replaces search bar) */}
+            <Link to="/search" className="relative lg:hidden group">
+              <button
+                type="button"
+                className="p-2 rounded-full hover:scale-110 transition-all duration-300 active:scale-95"
+                style={{ backgroundColor: "rgba(255,255,255,0.55)" }}
+                aria-label="Search"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  style={{ color: "oklch(20% .02 340)" }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </button>
+            </Link>
+
             {/* Cart */}
             <Link to="/cart" className="relative group">
               <button 
-                className="p-2.5 rounded-full hover:scale-110 transition-all duration-300 active:scale-95"
-                style={{ backgroundColor: 'oklch(92% .04 340)' }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = 'white'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'oklch(92% .04 340)'}
+                className="p-2 md:p-2 lg:p-2.5 rounded-full hover:scale-110 transition-all duration-300 active:scale-95"
+                style={{ backgroundColor: "rgba(255,255,255,0.55)" }}
               >
                 <svg className="w-6 h-6 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'oklch(20% .02 340)' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -420,188 +443,6 @@ export default function Navbar() {
                 )}
               </svg>
             </button>
-          </div>
-        </div>
-
-        {/* Mobile Search (Nykaa-style) */}
-        <div className="md:hidden pb-3">
-          <div className="relative">
-            <button
-              type="button"
-              aria-label="Search"
-              onClick={() => {
-                if (searchQuery.trim()) {
-                  navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-                  setShowSuggestions(false);
-                }
-              }}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-30"
-            >
-              <svg
-                className="w-4 h-4"
-                style={{ color: "oklch(60% .02 340)" }}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </button>
-
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                if (typedInstanceRef.current && e.target.value) {
-                  typedInstanceRef.current.stop();
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && searchQuery.trim()) {
-                  navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-                  setShowSuggestions(false);
-                } else if (e.key === "Escape") {
-                  setShowSuggestions(false);
-                }
-              }}
-              placeholder=""
-              className="w-full rounded-full pl-10 pr-4 py-2.5 text-sm border transition-all duration-300"
-              style={{
-                backgroundColor: "white",
-                borderColor: "oklch(92% .04 340)",
-                color: searchQuery ? "oklch(20% .02 340)" : "transparent",
-              }}
-              onFocus={() => {
-                // reveal text + pause typing
-                if (searchInputRef.current) {
-                  searchInputRef.current.style.color = "oklch(20% .02 340)";
-                }
-                if (typedInstanceRef.current) typedInstanceRef.current.stop();
-                if (searchSuggestions.length > 0) setShowSuggestions(true);
-              }}
-              onBlur={(e) => {
-                // Don't close if focus moved into the suggestions dropdown (so tap on suggestion works)
-                if (e.relatedTarget && suggestionsRef.current?.contains(e.relatedTarget)) {
-                  return;
-                }
-                setTimeout(() => {
-                  setShowSuggestions(false);
-                  if (!searchQuery) {
-                    if (typedInstanceRef.current) typedInstanceRef.current.start();
-                  }
-                }, 200);
-              }}
-            />
-
-            {!searchQuery && isMobile && (
-              <span
-                ref={typedElementRef}
-                className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none text-sm z-20"
-                style={{ color: "oklch(60% .02 340)" }}
-              ></span>
-            )}
-
-            {/* Mobile Suggestions */}
-            {showSuggestions && searchSuggestions.length > 0 && (
-              <div
-                ref={suggestionsRef}
-                className="absolute top-full left-0 mt-2 w-full bg-white rounded-lg shadow-xl border z-50 max-h-80 overflow-y-auto"
-                style={{ borderColor: "oklch(92% .04 340)" }}
-              >
-                <div className="p-2">
-                  <div
-                    className="text-xs font-semibold px-3 py-2"
-                    style={{ color: "oklch(60% .02 340)" }}
-                  >
-                    Suggestions
-                  </div>
-                  {searchSuggestions.map((product) => {
-                    const images = product.images
-                      ? Array.isArray(product.images)
-                        ? product.images
-                        : JSON.parse(product.images)
-                      : [];
-                    return (
-                      <Link
-                        key={product.id}
-                        to={`/product/${product.id}`}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setShowSuggestions(false);
-                          setSearchQuery("");
-                          navigate(`/product/${product.id}`);
-                        }}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
-                        style={{ backgroundColor: "transparent" }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor =
-                            "oklch(92% .04 340)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }}
-                      >
-                        {images.length > 0 ? (
-                          <img
-                            src={images[0]}
-                            alt={product.name}
-                            className="w-12 h-12 object-cover rounded-lg"
-                          />
-                        ) : (
-                          <div
-                            className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden"
-                            style={{ backgroundColor: "oklch(92% .04 340)" }}
-                          >
-                            <img src="/logo.png" alt="Gift Choice Logo" className="w-10 h-10 object-contain opacity-50" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div
-                            className="font-semibold text-sm truncate"
-                            style={{ color: "oklch(20% .02 340)" }}
-                          >
-                            {product.name}
-                          </div>
-                          {product.category && (
-                            <div
-                              className="text-xs truncate"
-                              style={{ color: "oklch(60% .02 340)" }}
-                            >
-                              {product.category.name}
-                            </div>
-                          )}
-                        </div>
-                      </Link>
-                    );
-                  })}
-                  <Link
-                    to={`/search?q=${encodeURIComponent(searchQuery.trim())}`}
-                    onClick={() => setShowSuggestions(false)}
-                    className="block px-3 py-2 rounded-lg text-sm font-semibold text-center transition-colors"
-                    style={{
-                      color: "oklch(20% .02 340)",
-                      backgroundColor: "oklch(92% .04 340)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "oklch(88% .06 340)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "oklch(92% .04 340)";
-                    }}
-                  >
-                    View all results for "{searchQuery}"
-                  </Link>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 

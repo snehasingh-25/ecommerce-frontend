@@ -47,7 +47,7 @@ export default function Cart() {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
             <img src="/logo.png" alt="Gift Choice Logo" className="w-20 h-20 mx-auto mb-6 object-contain opacity-50" />
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
               Your cart is empty
             </h2>
             <p className="text-gray-600 mb-8">
@@ -68,7 +68,7 @@ export default function Cart() {
   return (
     <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 tracking-tight">Shopping Cart</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
@@ -161,7 +161,7 @@ export default function Cart() {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg p-6 sticky top-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 tracking-tight">
                 Order Summary
               </h2>
 

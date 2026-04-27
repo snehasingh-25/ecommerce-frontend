@@ -12,11 +12,10 @@ export default function NewArrivals() {
   }, []);
 
   return (
-    <div className="min-h-screen py-16">
-      <div className="px-8 max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">New Arrivals</h2>
-          <p className="text-gray-600 text-lg">Discover our latest and most exciting gift collections</p>
+    <div className="min-h-screen py-4 sm:py-6">
+      <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+        <div className="text-left mb-4">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-1">New Arrivals</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {products.map(p => (

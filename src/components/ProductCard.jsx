@@ -121,24 +121,20 @@ function ProductCard({ product, compact = false }) {
             {product.name}
           </h3>
         </Link>
-        {!compact && <p className="text-sm mb-3 line-clamp-2 min-h-[2.5rem]" style={{ color: 'oklch(50% .02 340)' }}>{product.description}</p>}
 
-        {/* Price - Amazon-style: MRP struck through, selling price bold, optional discount % */}
+        {/* Price - MRP struck through, selling price bold, optional discount % */}
         {displayPrice != null && (
-          <div className={compact ? "mb-1.5 flex items-baseline gap-2" : "mb-3 flex flex-wrap items-baseline gap-2"}>
-            <span className={compact ? "text-sm font-bold" : "text-lg font-bold"} style={{ color: 'oklch(20% .02 340)' }}>
+          <div className={compact ? "mb-1.5 flex items-baseline gap-1.5 overflow-hidden" : "mb-3 flex items-baseline gap-1.5 overflow-hidden"}>
+            <span className={`shrink-0 ${compact ? "text-sm font-bold" : "text-lg font-bold"}`} style={{ color: 'oklch(20% .02 340)' }}>
               ₹{Number(displayPrice).toLocaleString('en-IN')}
-              {!product.hasSinglePrice && product.sizes && product.sizes.length > 1 && (
-                <span className="text-sm font-normal ml-1" style={{ color: 'oklch(50% .02 340)' }}>onwards</span>
-              )}
             </span>
             {displayMrp != null && displayMrp > displayPrice && (
               <>
-                <span className="text-sm line-through" style={{ color: 'oklch(55% .02 340)' }}>
+                <span className="text-sm line-through truncate min-w-0" style={{ color: 'oklch(55% .02 340)' }}>
                   ₹{Number(displayMrp).toLocaleString('en-IN')}
                 </span>
                 {discountPct != null && discountPct > 0 && (
-                  <span className="text-xs font-semibold text-green-600">
+                  <span className="shrink-0 text-xs font-semibold text-green-600">
                     {discountPct}% OFF
                   </span>
                 )}

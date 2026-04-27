@@ -47,7 +47,7 @@ export default function Contact() {
       <div className="bg-gradient-to-br from-white via-white to-pink-50 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-3 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
               Contact Us
             </h1>
             <p className="text-xl max-w-3xl mx-auto leading-relaxed" style={{ color: 'oklch(60% .02 340)' }}>
@@ -63,7 +63,7 @@ export default function Contact() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Form */}
           <div>
-            <h2 className="text-3xl font-bold mb-6" style={{ color: 'oklch(20% .02 340)' }}>
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
               Send us a Message
             </h2>
             <form onSubmit={submit} className="space-y-6">
@@ -196,7 +196,7 @@ export default function Contact() {
           {/* Contact Information */}
           <div className="space-y-8">
             <div>
-              <h3 className="text-2xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>
+              <h3 className="text-lg sm:text-xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
                 Our Address
               </h3>
               <p className="text-lg leading-relaxed" style={{ color: 'oklch(60% .02 340)' }}>
@@ -207,7 +207,7 @@ export default function Contact() {
             </div>
 
             <div>
-              <h3 className="text-2xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>
+              <h3 className="text-lg sm:text-xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
                 Phone Numbers
               </h3>
               <div className="space-y-2">
@@ -218,7 +218,7 @@ export default function Contact() {
             </div>
 
             <div>
-              <h3 className="text-2xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>
+              <h3 className="text-lg sm:text-xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
                 Email Address
               </h3>
               <p className="text-lg" style={{ color: 'oklch(60% .02 340)' }}>
@@ -227,7 +227,7 @@ export default function Contact() {
             </div>
 
             <div>
-              <h3 className="text-2xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>
+              <h3 className="text-lg sm:text-xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
                 Business Hours
               </h3>
               <div className="space-y-1" style={{ color: 'oklch(60% .02 340)' }}>
@@ -242,7 +242,7 @@ export default function Contact() {
       {/* Map Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
             Find Us on Map
           </h2>
           <p className="text-lg" style={{ color: 'oklch(60% .02 340)' }}>
@@ -267,7 +267,7 @@ export default function Contact() {
       <div className="bg-gradient-to-br from-pink-50 to-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4" style={{ color: 'oklch(20% .02 340)' }}>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
               Quick Contact Options
             </h2>
             <p className="text-lg" style={{ color: 'oklch(60% .02 340)' }}>
