@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
+import SearchBar from "../components/SearchBar";
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -113,6 +114,21 @@ export default function Search() {
   return (
     <div className="min-h-screen bg-white py-4 sm:py-6">
       <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+
+        {/* Mobile search bar — hidden on desktop where Navbar already has one */}
+        <div className="lg:hidden mb-5">
+          <SearchBar
+            initialValue={query}
+            showTyped={false}
+            onSearch={(q) => {
+              const params = new URLSearchParams(searchParams);
+              if (q) params.set("q", q);
+              else params.delete("q");
+              setSearchParams(params);
+            }}
+          />
+        </div>
+
         <div className="mb-8">
           <h2 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
             Search Results

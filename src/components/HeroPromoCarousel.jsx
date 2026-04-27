@@ -75,7 +75,6 @@ export default function HeroPromoCarousel({ banners }) {
                 const ctaText  = (b?.ctaText  || "Shop Now").toString();
                 const ctaLink  = (b?.ctaLink  || "/categories").toString();
                 const background = (b?.imageUrl || "").toString();
-                const product    = (b?.productImageUrl || b?.imageUrl || "").toString();
 
                 return (
                   <article
@@ -128,18 +127,7 @@ export default function HeroPromoCarousel({ banners }) {
                           </Link>
                         </div>
 
-                        {/* Product image — hidden on mobile */}
-                        {product && (
-                          <div className="hidden sm:flex shrink-0 items-end justify-center w-[38%] lg:w-[36%] px-4 pb-4 lg:pb-6 self-end">
-                            <img
-                              src={product}
-                              alt=""
-                              className="w-full max-h-[160px] sm:max-h-[200px] lg:max-h-[240px] object-contain drop-shadow-[0_18px_35px_rgba(0,0,0,0.35)]"
-                              decoding="async"
-                              loading={idx < perView ? "eager" : "lazy"}
-                            />
-                          </div>
-                        )}
+
                       </div>
                     </div>
                   </article>
