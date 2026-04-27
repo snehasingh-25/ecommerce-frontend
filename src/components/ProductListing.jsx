@@ -97,7 +97,7 @@ export default function ProductListing({
 
   return (
     <>
-      <div className="max-w-6xl mx-auto">
+      <div>
         {/* Main Content - same layout on all screen sizes (match mobile) */}
         <div className="flex-1 min-w-0 max-w-full">
           {/* Filters + Sort buttons (all screens, same as mobile) */}

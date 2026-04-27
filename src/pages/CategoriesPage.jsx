@@ -100,12 +100,42 @@ export default function CategoriesPage() {
   }), [selectedCategory, occasionFilter, searchParams]);
   
   if (loading && !selectedCategory) {
-    return null;
+    return (
+      <div className="min-h-screen bg-white py-4 sm:py-6">
+        <style>{`@keyframes sk-sweep{0%{background-position:-600px 0}100%{background-position:600px 0}}.sk{background:linear-gradient(90deg,oklch(93% .03 340) 25%,oklch(96% .02 340) 50%,oklch(93% .03 340) 75%);background-size:1200px 100%;animation:sk-sweep 1.5s ease-in-out infinite}`}</style>
+        <div className="px-4 sm:px-6 lg:px-8">
+          {/* Title */}
+          <div className="sk h-6 w-44 rounded mb-6" />
+          {/* Category pills */}
+          <div className="flex gap-4 overflow-hidden mb-8">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="flex-shrink-0 flex flex-col items-center gap-2">
+                <div className="sk w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full" />
+                <div className="sk h-3 w-12 rounded" />
+              </div>
+            ))}
+          </div>
+          {/* Product grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+            {[...Array(10)].map((_, i) => (
+              <div key={i}>
+                <div className="sk aspect-[4/5] w-full rounded" />
+                <div className="mt-2 space-y-2">
+                  <div className="sk h-3 w-3/4 rounded" />
+                  <div className="sk h-3 w-1/3 rounded" />
+                  <div className="sk h-9 w-full rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-white py-4 sm:py-6">
-      <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="text-left mb-4">
           <h2 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: 'oklch(20% .02 340)' }}>
             Shop by Category

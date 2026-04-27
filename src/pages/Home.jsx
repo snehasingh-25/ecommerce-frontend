@@ -300,7 +300,7 @@ export default function Home() {
           <div className="hm-sk w-full" style={{ height: "clamp(180px, 40vw, 420px)" }} />
 
           {/* Shop By Category */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center justify-between mb-4">
               <div className="hm-sk h-6 w-40 rounded" />
               <div className="hm-sk h-4 w-16 rounded" />
@@ -316,7 +316,7 @@ export default function Home() {
           </div>
 
           {/* Trending Products */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="px-4 sm:px-6 lg:px-8 pb-6">
             <div className="flex items-center justify-between mb-6">
               <div className="hm-sk h-6 w-44 rounded" />
               <div className="hm-sk h-4 w-16 rounded" />
@@ -336,7 +336,7 @@ export default function Home() {
           </div>
 
           {/* Shop By Relation */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="px-4 sm:px-6 lg:px-8 pb-6">
             <div className="flex items-center justify-between mb-6">
               <div className="hm-sk h-6 w-36 rounded" />
               <div className="hm-sk h-4 w-16 rounded" />
@@ -352,7 +352,7 @@ export default function Home() {
           </div>
 
           {/* Shop By Occasion */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="px-4 sm:px-6 lg:px-8 pb-6">
             <div className="flex items-center justify-between mb-6">
               <div className="hm-sk h-6 w-36 rounded" />
               <div className="hm-sk h-4 w-16 rounded" />
@@ -368,7 +368,7 @@ export default function Home() {
           </div>
 
           {/* Gifts */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+          <div className="px-4 sm:px-6 lg:px-8 pb-10">
             <div className="flex items-center justify-between mb-6">
               <div className="hm-sk h-6 w-16 rounded" />
               <div className="hm-sk h-4 w-16 rounded" />
@@ -397,7 +397,7 @@ export default function Home() {
 
       {/* Shop By Category Section */}
       {categories.length > 0 ? (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1 sm:py-2">
+        <div className="px-4 sm:px-6 lg:px-8 py-1 sm:py-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'oklch(20% .02 340)' }}>Shop By Category</h2>
             <Link 
@@ -502,7 +502,7 @@ export default function Home() {
       ) : null}
 
       {/* Trending Products Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="px-4 sm:px-6 lg:px-8">
         <HorizontalProductCarousel
           title="Trending Products"
           products={trendingProducts}
@@ -513,7 +513,7 @@ export default function Home() {
 
       {/* Shop By Relation Section (above Occasions) */}
       {relations.length > 0 ? (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: "oklch(20% .02 340)" }}>Shop By Relation</h2>
             <Link
@@ -612,7 +612,7 @@ export default function Home() {
 
       {/* Shop By Occasion Section */}
       {occasions.length > 0 ? (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>Shop By Occasion</h2>
             <Link 
@@ -710,7 +710,7 @@ export default function Home() {
       ) : null}
 
       {/* Gifts Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="px-4 sm:px-6 lg:px-8">
         <HorizontalProductCarousel
           title="Gifts"
           products={visibleProducts}
@@ -724,7 +724,7 @@ export default function Home() {
 
       {/* Reels Section */}
       {reels.length > 0 && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white">
+          <div className="px-4 sm:px-6 lg:px-8 py-6 bg-white">
             <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
               Follow Us{" "}
               <a

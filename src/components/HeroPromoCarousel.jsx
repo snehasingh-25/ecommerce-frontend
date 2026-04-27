@@ -58,7 +58,7 @@ export default function HeroPromoCarousel({ banners }) {
 
   return (
     <section className="bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-6 lg:pt-8">
+      <div className="px-4 sm:px-6 lg:px-8 pt-5 sm:pt-6 lg:pt-8">
         <div className="relative">
           {/* Scroll viewport */}
           <div

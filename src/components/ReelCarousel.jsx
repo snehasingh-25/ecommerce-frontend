@@ -318,7 +318,7 @@ export default function ReelCarousel({ reels }) {
         className={[
           "shrink-0 snap-center",
           isFeatured 
-            ? "basis-full lg:basis-[50%] xl:basis-[40%] mb-4 lg:mb-0" 
+            ? "basis-full lg:basis-[30%] xl:basis-[25%] mb-4 lg:mb-0" 
             : "basis-[72%] sm:basis-[34%] lg:basis-[22%] xl:basis-[18%]",
           "transition-transform duration-300",
           isFeatured 

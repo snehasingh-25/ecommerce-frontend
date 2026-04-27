@@ -56,7 +56,7 @@ export default function HorizontalProductCarousel({
   skeletonCount = 4,
   containerClassName = "",
   sectionClassName = "mt-12 lg:mt-14",
-  titleClassName = "pd-headline text-xl sm:text-2xl font-black uppercase tracking-tighter text-[#1a1c1d]",
+  titleClassName = "pd-headline text-xl sm:text-2xl font-bold",
   subtitleClassName = "text-sm mt-1 text-[#474747]",
   loadingSkeletonClassName = "shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] rounded-lg animate-pulse",
   loadingTrackClassName = "flex gap-1 overflow-x-auto scroll-smooth scrollbar-hide pb-1",

@@ -53,10 +53,10 @@ export default function Footer() {
 
     return (
     <footer className="text-white mt-20" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto p-4">
 
         {/* Brand Section - Left Side */}
-        <div className="mb-6">
+        <div className="mb-2">
           <div className="flex items-start gap-3">
             <img
               src="/logo.png"
@@ -84,12 +84,12 @@ export default function Footer() {
         </div>
 
         {/* 2-Column Grid - Works on Mobile Too */}
-        <div className="grid grid-cols-2 gap-6 md:gap-12 mb-6">
+        <div className="grid grid-cols-2 gap-6 md:gap-12 mb-1">
 
           {/* Quick Links - Left Side */}
           <div>
-            <h4 className="font-bold mb-4 text-lg" style={{ color: 'oklch(20% .02 340)' }}>Quick Links</h4>
-            <div className="space-y-2 text-sm">
+            <h4 className="font-bold mb-1 text-lg" style={{ color: 'oklch(20% .02 340)' }}>Quick Links</h4>
+            <div className="space-y-1 text-sm">
               {Object.entries(linkMap).map(([label, path]) => (
                 <Link
                   key={label}
@@ -107,9 +107,9 @@ export default function Footer() {
 
           {/* Connect With Us - Right Side */}
           <div>
-            <h4 className="font-bold mb-4 text-lg" style={{ color: 'oklch(20% .02 340)' }}>Connect With Us</h4>
+            <h4 className="font-bold mb-2 text-lg" style={{ color: 'oklch(20% .02 340)' }}>Connect With Us</h4>
 
-            <div className="space-y-2 text-sm" style={{ color: 'oklch(20% .02 340)' }}>
+            <div className="space-y-1 text-sm" style={{ color: 'oklch(20% .02 340)' }}>
               <p className="flex items-start gap-2">
                 <span className="mt-0.5">📍</span>
                 <span>Sewa Sadan Rd, near Sitaram Ji Ki Bawri, Bhopal Ganj, Bhilwara, Rajasthan 311001</span>
@@ -146,7 +146,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t pt-6 flex flex-col md:flex-row justify-between items-center gap-4" style={{ borderColor: 'oklch(96% .02 340)' }}>
+        <div className="border-t pt-2 flex flex-col md:flex-row justify-between items-center gap-4" style={{ borderColor: 'oklch(96% .02 340)' }}>
           <p className="text-sm" style={{ color: 'oklch(20% .02 340)' }}>
             © {new Date().getFullYear()} GiftChoice. All rights reserved.
           </p>

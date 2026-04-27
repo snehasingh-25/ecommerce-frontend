@@ -113,7 +113,7 @@ export default function Search() {
 
   return (
     <div className="min-h-screen bg-white py-4 sm:py-6">
-      <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-8">
 
         {/* Mobile search bar — hidden on desktop where Navbar already has one */}
         <div className="lg:hidden mb-5">

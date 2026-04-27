@@ -225,7 +225,7 @@ export default function ProductDetail() {
           }
         `}</style>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
+        <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-16">
           {/* Breadcrumb */}
           <div className="mb-5 flex items-center gap-2">
             <div className="pd-sk h-3 w-10 rounded" />
@@ -388,7 +388,7 @@ export default function ProductDetail() {
   return (
     <>
       <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto">
+      <div className="">
         {/* Top bar */}
         <div className="px-4 sm:px-6 lg:px-8 pt-6">
           <nav className="mb-5">
