@@ -305,7 +305,7 @@ export default function ProductDetail() {
                 </div>
 
                 {/* Continue shopping link */}
-                <div className="pd-sk h-4 w-36 rounded mx-auto mt-4" />
+                <div className="pd-sk h-4 w-36 rounded mt-4" />
               </div>
 
               {/* Accordion skeleton */}
@@ -803,7 +803,7 @@ export default function ProductDetail() {
                     </div>
                   </button>
                   {expanded.has("details") ? (
-                    <div className="px-5 pb-5 text-sm leading-relaxed" style={{ color: "oklch(55% .02 340)" }}>
+                    <div className="px-5 pb-5 text-sm leading-relaxed whitespace-pre-line" style={{ color: "oklch(55% .02 340)" }}>
                       {product.description}
                     </div>
                   ) : null}
