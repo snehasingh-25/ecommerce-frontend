@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import CarouselArrow from "./CarouselArrow";
 
 function usePerView() {
   const get = () => {
@@ -158,26 +159,20 @@ export default function HeroPromoCarousel({ banners }) {
           {/* Desktop prev / next arrows */}
           {pages > 1 && (
             <>
-              <button
-                type="button"
+              <CarouselArrow
+                direction="left"
                 onClick={() => scrollToPage(page - 1)}
-                className="hidden lg:grid absolute -left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 hover:bg-white shadow-lg ring-1 ring-black/5 place-items-center transition active:scale-95"
-                aria-label="Previous"
-              >
-                <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                type="button"
+                ariaLabel="Previous"
+                size="md"
+                className="hidden lg:grid absolute -left-3 top-1/2 -translate-y-1/2"
+              />
+              <CarouselArrow
+                direction="right"
                 onClick={() => scrollToPage(page + 1)}
-                className="hidden lg:grid absolute -right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 hover:bg-white shadow-lg ring-1 ring-black/5 place-items-center transition active:scale-95"
-                aria-label="Next"
-              >
-                <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+                ariaLabel="Next"
+                size="md"
+                className="hidden lg:grid absolute -right-3 top-1/2 -translate-y-1/2"
+              />
             </>
           )}
         </div>

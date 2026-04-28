@@ -174,7 +174,6 @@ export default function ReelCarousel({ reels }) {
             if (playPromise !== undefined) {
               playPromise
                 .then(() => {
-                  console.log(`Reel ${reel.id} playing successfully`);
                   markReady(reel.id);
                 })
                 .catch((err) => {
@@ -406,7 +405,6 @@ export default function ReelCarousel({ reels }) {
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                       onLoad={() => {
-                        console.log(`Reel ${reel.id} YouTube embed loaded`);
                         markReady(reel.id);
                       }}
                       onError={() => {
@@ -481,7 +479,6 @@ export default function ReelCarousel({ reels }) {
                       preload="auto"
                       onLoadedData={(e) => {
                         const video = e.target;
-                        console.log(`Reel ${reel.id} loaded data, readyState:`, video.readyState);
                         markReady(reel.id);
                         if (shouldPlay) {
                           requestAnimationFrame(() => {
@@ -494,7 +491,6 @@ export default function ReelCarousel({ reels }) {
                       onCanPlay={(e) => {
                         const video = e.target;
                         video.muted = isMutedState;
-                        console.log(`Reel ${reel.id} can play`);
                         markReady(reel.id);
                         if (shouldPlay) {
                           requestAnimationFrame(() => {
@@ -506,7 +502,6 @@ export default function ReelCarousel({ reels }) {
                       }}
                       onLoadedMetadata={(e) => {
                         const video = e.target;
-                        console.log(`Reel ${reel.id} metadata loaded, readyState:`, video.readyState);
                         markReady(reel.id);
                         if (shouldPlay && video.readyState >= 2) {
                           requestAnimationFrame(() => {
@@ -517,7 +512,6 @@ export default function ReelCarousel({ reels }) {
                         }
                       }}
                       onPlaying={() => {
-                        console.log(`Reel ${reel.id} is playing`);
                         markReady(reel.id);
                       }}
                       onError={(e) => {

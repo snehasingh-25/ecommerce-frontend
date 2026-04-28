@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
+import InfiniteScrollCarousel from "../components/InfiniteScrollCarousel";
+import { INFINITE_SCROLL_CAROUSEL_UI } from "../components/infiniteScrollCarouselPresets";
 
 export default function Relation() {
   const { slug } = useParams();
@@ -12,7 +14,6 @@ export default function Relation() {
   const [selectedRelation, setSelectedRelation] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const relationScrollRef = useRef(null);
 
   const fetchAllProducts = async (category = "") => {
     setLoading(true);
@@ -124,15 +125,6 @@ export default function Relation() {
     setSearchParams(params);
   };
 
-  const scrollRelations = (direction) => {
-    if (!relationScrollRef.current) return;
-    const scrollAmount = 320;
-    relationScrollRef.current.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-white py-4 sm:py-6">
@@ -169,67 +161,20 @@ export default function Relation() {
   return (
     <div className="min-h-screen bg-white py-4 sm:py-6">
       <div className="px-4 sm:px-6 lg:px-8">
-        <div className="text-left mb-4">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: "oklch(20% .02 340)" }}>
-            Shop by Relation
-          </h2>
-        </div>
 
-        <div className="relative mb-6">
-          <button
-            onClick={() => scrollRelations("left")}
-            className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
-            style={{ borderColor: "oklch(92% .04 340)" }}
-            aria-label="Scroll relations left"
-          >
-            <svg className="w-5 h-5" style={{ color: "oklch(40% .02 340)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          <div
-            ref={relationScrollRef}
-            className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 px-1 sm:px-6"
-            style={{ WebkitOverflowScrolling: "touch" }}
-          >
-            {relations.map((relation) => (
-              <Link
-                key={relation.id}
-                to={`/relation/${relation.slug}`}
-                onClick={() => handleRelationClick(relation)}
-                className="flex-shrink-0 flex flex-col items-center min-w-[140px] sm:min-w-[160px] group"
-              >
-                <div
-                  className="w-32 h-32 sm:w-36 sm:h-36 lg:w-40 lg:h-40 rounded-lg overflow-hidden flex items-center justify-center group-hover:shadow-lg group-hover:scale-110 transition-all duration-300"
-                  style={{ backgroundColor: "oklch(92% .04 340)" }}
-                >
-                  {relation.imageUrl ? (
-                    <img
-                      src={relation.imageUrl}
-                      alt={relation.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <img src="/logo.png" alt="Gift Choice Logo" className="w-3/4 h-3/4 object-contain" />
-                  )}
-                </div>
-                <h3 className="font-semibold text-sm text-center mt-2" style={{ color: "oklch(20% .02 340)" }}>
-                  {relation.name}
-                </h3>
-              </Link>
-            ))}
-          </div>
-
-          <button
-            onClick={() => scrollRelations("right")}
-            className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
-            style={{ borderColor: "oklch(92% .04 340)" }}
-            aria-label="Scroll relations right"
-          >
-            <svg className="w-5 h-5" style={{ color: "oklch(40% .02 340)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+        <div className="mb-6">
+          <InfiniteScrollCarousel
+            variant="relation"
+            items={relations}
+            ui={INFINITE_SCROLL_CAROUSEL_UI.relation}
+            autoScroll={true}
+            step={320}
+            hideArrowsOnMobile={false}
+            trackClassName="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 px-1 sm:px-6"
+            onItemClick={handleRelationClick}
+            showViewAll={false}
+            title="Shop by Relation"
+          />
         </div>
 
         {selectedRelation && slug && (

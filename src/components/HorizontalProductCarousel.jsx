@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../api";
 import { shuffleArray } from "../utils/shuffle";
 import ProductCard from "./ProductCard";
+import CarouselArrow from "./CarouselArrow";
 
 // Inject shimmer keyframe once
 if (typeof document !== "undefined" && !document.getElementById("hpc-shimmer-style")) {
@@ -220,17 +221,15 @@ export default function HorizontalProductCarousel({
           ))}
         </div>
       ) : list.length > 0 ? (
-        <div className={`ss-slider-shell ${containerClassName}`.trim()}>
+        <div className={`relative ss-slider-shell ${containerClassName}`.trim()}>
           {showControls && canScrollLeft ? (
-            <button
+            <CarouselArrow
+              direction="left"
               onClick={() => handleScroll("left")}
-              className="ss-slider-arrow ss-slider-arrow--left"
-              aria-label="Scroll left"
-            >
-              <svg className="ss-slider-arrow__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
+              ariaLabel="Scroll left"
+              size="md"
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10"
+            />
           ) : null}
 
           <div
@@ -251,15 +250,13 @@ export default function HorizontalProductCarousel({
           </div>
 
           {showControls && canScrollRight ? (
-            <button
+            <CarouselArrow
+              direction="right"
               onClick={() => handleScroll("right")}
-              className="ss-slider-arrow ss-slider-arrow--right"
-              aria-label="Scroll right"
-            >
-              <svg className="ss-slider-arrow__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
+              ariaLabel="Scroll right"
+              size="md"
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
+            />
           ) : null}
         </div>
       ) : null}
