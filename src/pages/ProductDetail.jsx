@@ -225,7 +225,7 @@ export default function ProductDetail() {
           }
         `}</style>
 
-        <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-16">
+        <div className="px-1 sm:px-2 lg:px-4 pt-6 pb-16">
           {/* Breadcrumb */}
           <div className="mb-5 flex items-center gap-2">
             <div className="pd-sk h-3 w-10 rounded" />
@@ -390,7 +390,7 @@ export default function ProductDetail() {
       <div className="min-h-screen bg-white">
       <div className="">
         {/* Top bar */}
-        <div className="px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="px-1 sm:px-2 lg:px-4 pt-6">
           <nav className="mb-5">
             <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm" style={{ color: "oklch(55% .02 340)" }}>
               <li>
@@ -431,7 +431,7 @@ export default function ProductDetail() {
           </nav>
         </div>
 
-        <div className="px-4 sm:px-6 lg:px-8 pb-16">
+        <div className="px-1 sm:px-2 lg:px-4 pb-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             {/* Left: Media gallery */}
             <section className="lg:col-span-7">
@@ -818,7 +818,7 @@ export default function ProductDetail() {
 
           {/* Product Reels Section */}
           {productReels.length > 0 && (
-            <section className="mt-16 px-4 sm:px-6 lg:px-8">
+            <section className="mt-16 px-1 sm:px-2 lg:px-4">
               <h2 className="text-xl sm:text-2xl font-extrabold mb-6" style={{ color: "oklch(20% .02 340)" }}>
                 Product Reels
               </h2>

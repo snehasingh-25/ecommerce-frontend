@@ -39,7 +39,7 @@ export default function Navbar() {
       }`}
       style={{ borderColor: scrolled ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.25)" }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-4">
         <div className="flex items-center justify-between h-14 md:h-14 lg:h-20">
           
           {/* Logo */}

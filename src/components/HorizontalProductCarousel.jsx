@@ -51,6 +51,7 @@ export default function HorizontalProductCarousel({
   excludeProductId = null,
   shuffleFetched = true,
   isLoading = false,
+  hideHeader = false,
   showCounter = false,
   showControls = true,
   cardWrapperClassName = "shrink-0 basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-2rem)/5)] overflow-hidden",
@@ -209,10 +210,12 @@ export default function HorizontalProductCarousel({
 
   return (
     <section className={`${sectionClassName} ${className}`.trim()}>
-      <div className="mb-6">
-        <h2 className={titleClassName}>{title}</h2>
-        {countText ? <p className={subtitleClassName}>{countText}</p> : null}
-      </div>
+      {!hideHeader ? (
+        <div className="mb-6">
+          <h2 className={titleClassName}>{title}</h2>
+          {countText ? <p className={subtitleClassName}>{countText}</p> : null}
+        </div>
+      ) : null}
 
       {resolvedLoading ? (
         <div className={loadingTrackClassName} style={{ WebkitOverflowScrolling: "touch" }}>

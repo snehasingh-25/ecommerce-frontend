@@ -45,7 +45,7 @@ export default function Contact() {
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-white via-white to-pink-50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-4">
           <div className="text-center mb-12">
             <h1 className="text-3xl sm:text-4xl font-bold mb-3 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
               Contact Us
@@ -59,7 +59,7 @@ export default function Contact() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-4 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Form */}
           <div>
@@ -240,7 +240,7 @@ export default function Contact() {
       </div>
 
       {/* Map Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-4 py-16">
         <div className="text-center mb-8">
           <h2 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
             Find Us on Map
@@ -265,7 +265,7 @@ export default function Contact() {
 
       {/* Quick Contact Options */}
       <div className="bg-gradient-to-br from-pink-50 to-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-4">
           <div className="text-center mb-12">
             <h2 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
               Quick Contact Options

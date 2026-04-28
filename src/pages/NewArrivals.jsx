@@ -19,7 +19,7 @@ export default function NewArrivals() {
     return (
       <div className="min-h-screen py-4 sm:py-6">
         <style>{`@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}`}</style>
-        <div className="px-4 sm:px-6 lg:px-8">
+        <div className="px-1 sm:px-2 lg:px-4">
           <div className={`${SK} h-7 w-40 rounded mb-6`} />
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
             {[...Array(10)].map((_, i) => (
@@ -40,7 +40,7 @@ export default function NewArrivals() {
 
   return (
     <div className="min-h-screen py-4 sm:py-6">
-      <div className="px-4 sm:px-6 lg:px-8">
+      <div className="px-1 sm:px-2 lg:px-4">
         <div className="text-left mb-4">
           <h2 className="text-xl sm:text-2xl font-bold mb-1">New Arrivals</h2>
         </div>

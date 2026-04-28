@@ -43,7 +43,7 @@ export default function Cart() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gray-50 py-6 px-1 sm:px-2 lg:px-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
             <img src="/logo.png" alt="Gift Choice Logo" className="w-20 h-20 mx-auto mb-6 object-contain opacity-50" />
@@ -66,7 +66,7 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-6 px-1 sm:px-2 lg:px-4">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 tracking-tight">Shopping Cart</h1>
 

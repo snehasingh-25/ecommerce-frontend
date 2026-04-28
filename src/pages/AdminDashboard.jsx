@@ -293,7 +293,7 @@ export default function AdminDashboard() {
       <main className="flex-1 min-w-0">
         {/* Top bar (mobile + page header) */}
         <div className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-4 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <img src="/logo.png" alt="GiftChoice" className="h-10 w-auto" />
@@ -415,7 +415,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 ">
+        <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-4 py-6 ">
           {/* Content */}
           {loading ? (
             <div className="bg-white rounded-lg shadow p-12 text-center">

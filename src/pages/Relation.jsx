@@ -129,7 +129,7 @@ export default function Relation() {
     return (
       <div className="min-h-screen bg-white py-4 sm:py-6">
         <style>{`@keyframes sk-sweep{0%{background-position:-600px 0}100%{background-position:600px 0}}.sk{background:linear-gradient(90deg,oklch(93% .03 340) 25%,oklch(96% .02 340) 50%,oklch(93% .03 340) 75%);background-size:1200px 100%;animation:sk-sweep 1.5s ease-in-out infinite}`}</style>
-        <div className="px-4 sm:px-6 lg:px-8">
+        <div className="px-1 sm:px-2 lg:px-4">
           <div className="sk h-6 w-44 rounded mb-6" />
           {/* Relation tiles */}
           <div className="flex gap-5 overflow-hidden mb-8">
@@ -160,7 +160,7 @@ export default function Relation() {
 
   return (
     <div className="min-h-screen bg-white py-4 sm:py-6">
-      <div className="px-4 sm:px-6 lg:px-8">
+      <div className="px-1 sm:px-2 lg:px-4">
 
         <div className="mb-6">
           <InfiniteScrollCarousel
