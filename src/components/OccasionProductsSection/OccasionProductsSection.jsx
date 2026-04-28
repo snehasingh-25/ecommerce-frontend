@@ -13,7 +13,7 @@ function clampInt(raw, { min = 0, max = 50 } = {}) {
 
 export default function OccasionProductsSection({
   occasions = [],
-  title = "Tailored For Your Occasions",
+  title,
   variant = "slider", // "slider" | "grid"
   limit = variant === "slider" ? 10 : undefined,
   defaultSlug,
@@ -85,21 +85,23 @@ export default function OccasionProductsSection({
 
   return (
     <section className={["py-6", className].join(" ").trim()}>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
-          {title}
-        </h2>
-        <Link
-          to={linkPrefix}
-          className="text-sm font-semibold inline-flex items-center gap-1 transition-all duration-300 hover:gap-2 group"
-          style={{ color: "oklch(20% .02 340)" }}
-        >
-          View All
-          <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-      </div>
+      {title ? (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
+            {title}
+          </h2>
+          <Link
+            to={linkPrefix}
+            className="text-sm font-semibold inline-flex items-center gap-1 transition-all duration-300 hover:gap-2 group"
+            style={{ color: "oklch(20% .02 340)" }}
+          >
+            View All
+            <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      ) : null}
 
       {/* Joined container (selector + products) like FNP */}
       <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "white" }}>

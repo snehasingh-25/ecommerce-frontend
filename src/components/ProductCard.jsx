@@ -69,12 +69,12 @@ function ProductCard({ product, compact = false }) {
     <div className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group ${compact ? "flex gap-3" : ""}`}>
       {/* Product Image */}
       <Link to={`/product/${product.id}`} className={compact ? "shrink-0" : "block"}>
-        <div className={`relative flex items-center justify-center overflow-hidden cursor-pointer bg-white ${compact ? "h-20 w-20 rounded-lg" : "h-64"}`}>
+        <div className={`relative flex items-center justify-center overflow-hidden cursor-pointer bg-white ${compact ? "h-20 w-20 rounded-lg" : "aspect-square w-full"}`}>
           {images.length > 0 ? (
             <img
               src={images[0]}
               alt={product.name}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${compact ? "rounded-lg" : ""}`}
+              className={`w-full h-full group-hover:scale-105 transition-transform duration-300 ${compact ? "rounded-lg object-cover" : "object-contain"}`}
               loading="lazy"
               decoding="async"
               width={320}

@@ -28,9 +28,15 @@ function OccasionTile({ occasion, isActive, onSelect, asLink = false, linkPrefix
         }}
       >
         <div className="flex flex-col items-center">
-          <div className="w-20 h-12 sm:w-24 sm:h-14 rounded-xl overflow-hidden flex items-center justify-center">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden flex items-center justify-center bg-white/60">
             {imageUrl ? (
-              <img src={imageUrl} alt={occasion.name} className="w-full h-full object-contain" loading="lazy" decoding="async" />
+              <img
+                src={imageUrl}
+                alt={occasion.name}
+                className="w-full h-full object-contain"
+                loading="lazy"
+                decoding="async"
+              />
             ) : (
               <img src="/logo.png" alt="Gift Choice Logo" className="w-10 h-10 object-contain opacity-70" />
             )}

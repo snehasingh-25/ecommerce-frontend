@@ -90,14 +90,12 @@ export default function Occasion() {
 
   return (
     <div className="min-h-screen bg-white py-4 sm:py-6">
-      <div className="">
-        <div className="text-left mb-4">
+      <div className="px-1 sm:px-2 lg:px-4">
+      <div className="text-left mb-4">
           <h2 className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: 'oklch(20% .02 340)' }}>
             Shop by Occasion
           </h2>
         </div>
-
-
         {/* Category Filter */}
         <div className="flex flex-wrap items-center gap-4 mt-4">
           <div className="flex items-center gap-2">
@@ -150,7 +148,6 @@ export default function Occasion() {
         <OccasionProductsSection
           occasions={occasions}
           variant="grid"
-          title="Pick an occasion"
           defaultSlug={slug}
           asLinks={true}
           linkPrefix="/occasion"
