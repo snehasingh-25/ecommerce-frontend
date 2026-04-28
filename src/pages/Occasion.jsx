@@ -1,30 +1,28 @@
-import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { API } from "../api";
-import OccasionProductsSection from "../components/OccasionProductsSection/OccasionProductsSection";
+import OccasionSelector from "../components/OccasionProductsSection/OccasionSelector";
+import ProductListing from "../components/ProductListing";
 
 export default function Occasion() {
   const { slug } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const categoryFilter = searchParams.get("category") || "";
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const categoryFromUrl = searchParams.get("category") || "";
   const [occasions, setOccasions] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSlug, setSelectedSlug] = useState("");
 
   useEffect(() => {
     let isMounted = true;
     
-    // Fetch all occasions and categories
-    Promise.all([
-      fetch(`${API}/occasions`).then(res => res.json()),
-      fetch(`${API}/categories`).then(res => res.json())
-    ])
-      .then(([occasionsData, categoriesData]) => {
+    // Fetch all occasions
+    fetch(`${API}/occasions`)
+      .then((res) => res.json())
+      .then((occasionsData) => {
         if (!isMounted) return;
         
         setOccasions(occasionsData);
-        setCategories(categoriesData);
-        
         setLoading(false);
       })
       .catch(error => {
@@ -38,22 +36,25 @@ export default function Occasion() {
     };
   }, [slug]);
 
-  const handleCategoryChange = (e) => {
-    const newCategory = e.target.value;
-    const params = new URLSearchParams(searchParams);
-    if (newCategory) {
-      params.set("category", newCategory);
-    } else {
-      params.delete("category");
-    }
-    setSearchParams(params);
-  };
+  const list = useMemo(() => (Array.isArray(occasions) ? occasions.filter(Boolean) : []), [occasions]);
+  const initialSlug = useMemo(() => slug || list[0]?.slug || "", [slug, list]);
 
-  const clearCategoryFilter = () => {
-    const params = new URLSearchParams(searchParams);
-    params.delete("category");
-    setSearchParams(params);
-  };
+  useEffect(() => {
+    setSelectedSlug(initialSlug);
+  }, [initialSlug]);
+
+  const selectedOccasion = useMemo(
+    () => (selectedSlug ? list.find((o) => o.slug === selectedSlug) || null : null),
+    [list, selectedSlug]
+  );
+
+  const initialFilters = useMemo(
+    () => ({
+      occasion: selectedSlug || undefined,
+      category: categoryFromUrl || undefined,
+    }),
+    [selectedSlug, categoryFromUrl]
+  );
 
   if (loading) {
     return (
@@ -96,70 +97,59 @@ export default function Occasion() {
             Shop by Occasion
           </h2>
         </div>
-        {/* Category Filter */}
-        <div className="flex flex-wrap items-center gap-4 mt-4">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-semibold" style={{ color: "oklch(40% .02 340)" }}>
-              Filter by Category:
-            </label>
-            <select
-              value={categoryFilter}
-              onChange={handleCategoryChange}
-              className="px-4 py-2 rounded-lg border-2 text-sm transition-all duration-300 focus:outline-none"
-              style={{
-                borderColor: "oklch(92% .04 340)",
-                backgroundColor: "white",
-                color: "oklch(20% .02 340)",
-              }}
-              onFocus={(e) => (e.target.style.borderColor = "oklch(88% .06 340)")}
-              onBlur={(e) => (e.target.style.borderColor = "oklch(92% .04 340)")}
-            >
-              <option value="">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.slug}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+        {list.length > 0 ? (
+          <div className="mt-6 rounded-2xl overflow-hidden" style={{ backgroundColor: "white" }}>
+            <div style={{ backgroundColor: "white", borderBottom: "1px solid oklch(88% .03 340)" }}>
+              <OccasionSelector
+                occasions={list}
+                selectedSlug={selectedSlug}
+                onSelect={(occ) => {
+                  setSelectedSlug(occ.slug);
+                  navigate(`/occasion/${occ.slug}`);
+                }}
+                asLinks={true}
+                linkPrefix="/occasion"
+              />
+            </div>
+            
+
+            <div className="p-3">
+              
+              {selectedOccasion ? (
+                <div className="mb-4">
+                  <h3 className="text-lg sm:text-xl font-bold" style={{ color: "oklch(20% .02 340)" }}>
+                    {selectedOccasion.name}
+                  </h3>
+                  {selectedOccasion.description ? (
+                    <p className="mt-1 text-sm" style={{ color: "oklch(60% .02 340)" }}>
+                      {selectedOccasion.description}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+             
+            </div>
           </div>
+        ) : (
+          <div className="text-center py-16">
+            <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: "oklch(92% .04 340)" }}>
+              <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 object-contain" />
+            </div>
+            <p className="font-medium" style={{ color: "oklch(60% .02 340)" }}>
+              No occasions available yet
+            </p>
+          </div>
+        )}
 
-          {categoryFilter ? (
-            <button
-              onClick={clearCategoryFilter}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
-              style={{
-                backgroundColor: "oklch(92% .04 340)",
-                color: "oklch(20% .02 340)",
-              }}
-              onMouseEnter={(e) => (e.target.style.backgroundColor = "oklch(88% .06 340)")}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = "oklch(92% .04 340)")}
-            >
-              Clear Filter
-            </button>
-          ) : null}
+        <div className="">
+          <ProductListing
+            initialFilters={initialFilters}
+            showFilters={true}
+            showSort={true}
+            gridCols="grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+          />
         </div>
-
-        {categoryFilter ? (
-          <p className="text-sm mt-3" style={{ color: "oklch(60% .02 340)" }}>
-            Showing products in {categories.find((c) => c.slug === categoryFilter)?.name || categoryFilter} category
-          </p>
-        ) : null}
-
-        <OccasionProductsSection
-          occasions={occasions}
-          variant="grid"
-          defaultSlug={slug}
-          asLinks={true}
-          linkPrefix="/occasion"
-          category={categoryFilter || undefined}
-          badgeTextBySlug={{
-            "mothers-day": "Celebrate Mom",
-            birthday: "Make a Wish",
-            anniversary: "Celebrate Love",
-            "love-n-romance": "Love Notes",
-          }}
-          className="mt-6"
-        />
       </div>
     </div>
   );

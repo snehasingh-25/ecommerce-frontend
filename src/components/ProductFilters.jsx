@@ -28,6 +28,204 @@ function FilterSection({ title, children, defaultOpen = true }) {
   );
 }
 
+function FilterContent({
+  filterOptions,
+  tempFilters,
+  priceRange,
+  onPriceChange,
+  onSizeToggle,
+  onBadgeToggle,
+  onAvailabilityToggle,
+  onCategoryToggle,
+  onOccasionToggle,
+}) {
+  return (
+    <div className="p-6">
+      {/* Categories */}
+      {filterOptions.categories && filterOptions.categories.length > 0 && (
+        <FilterSection title="Category" defaultOpen={true}>
+          <div className="space-y-2">
+            {filterOptions.categories.map((category) => (
+              <label key={category.id} className="flex items-center gap-3 cursor-pointer py-1">
+                <input
+                  type="radio"
+                  name="category"
+                  checked={tempFilters.category === category.slug}
+                  onChange={() => onCategoryToggle(category.slug)}
+                  className="w-4 h-4 text-gray-900"
+                />
+                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
+                  {category.name}
+                </span>
+              </label>
+            ))}
+          </div>
+        </FilterSection>
+      )}
+
+      {/* Occasions */}
+      {filterOptions.occasions && filterOptions.occasions.length > 0 && (
+        <FilterSection title="Occasion" defaultOpen={true}>
+          <div className="space-y-2">
+            {filterOptions.occasions.map((occasion) => (
+              <label key={occasion.id} className="flex items-center gap-3 cursor-pointer py-1">
+                <input
+                  type="radio"
+                  name="occasion"
+                  checked={tempFilters.occasion === occasion.slug}
+                  onChange={() => onOccasionToggle(occasion.slug)}
+                  className="w-4 h-4 text-gray-900"
+                />
+                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
+                  {occasion.name}
+                </span>
+              </label>
+            ))}
+          </div>
+        </FilterSection>
+      )}
+
+      {/* Price Range */}
+      {filterOptions.priceRange && (
+        <FilterSection title="Price" defaultOpen={true}>
+          <div className="space-y-3 space-x-2">
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                value={priceRange.min}
+                onChange={(e) => onPriceChange("min", e.target.value)}
+                className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                style={{ borderColor: "oklch(92% .04 340)" }}
+                min={filterOptions.priceRange.min}
+                max={filterOptions.priceRange.max}
+              />
+              <input
+                type="number"
+                placeholder="Max"
+                value={priceRange.max}
+                onChange={(e) => onPriceChange("max", e.target.value)}
+                className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                style={{ borderColor: "oklch(92% .04 340)" }}
+                min={filterOptions.priceRange.min}
+                max={filterOptions.priceRange.max}
+              />
+            </div>
+            <div className="text-xs" style={{ color: "oklch(55% .02 340)" }}>
+              ₹{filterOptions.priceRange.min} - ₹{filterOptions.priceRange.max}
+            </div>
+          </div>
+        </FilterSection>
+      )}
+
+      {/* Sizes */}
+      {filterOptions.sizes && filterOptions.sizes.length > 0 && (
+        <FilterSection title="Size" defaultOpen={true}>
+          <div className="flex flex-wrap gap-2">
+            {filterOptions.sizes.map((size) => (
+              <button
+                key={size}
+                onClick={() => onSizeToggle(size)}
+                className={`
+                  px-4 py-2 rounded border text-sm font-medium transition-all
+                  ${(tempFilters.size || []).includes(size)
+                    ? "bg-gray-900 text-white border-gray-900"
+                    : "bg-white text-gray-900 border-gray-300 hover:border-gray-400"
+                  }
+                `}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </FilterSection>
+      )}
+
+      {/* Badges */}
+      {filterOptions.badges && filterOptions.badges.length > 0 && (
+        <FilterSection title="Badge" defaultOpen={true}>
+          <div className="space-y-2">
+            {filterOptions.badges.map((badge) => (
+              <label key={badge} className="flex items-center gap-3 cursor-pointer py-1">
+                <input
+                  type="radio"
+                  name="badge"
+                  checked={tempFilters.badge === badge}
+                  onChange={() => onBadgeToggle(badge)}
+                  className="w-4 h-4 text-gray-900"
+                />
+                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
+                  {badge}
+                </span>
+              </label>
+            ))}
+          </div>
+        </FilterSection>
+      )}
+
+      {/* Availability */}
+      {filterOptions.availability && (
+        <FilterSection title="Availability" defaultOpen={true}>
+          <div className="space-y-2">
+            {filterOptions.availability.isNew && (
+              <label className="flex items-center gap-3 cursor-pointer py-1">
+                <input
+                  type="checkbox"
+                  checked={tempFilters.isNew || false}
+                  onChange={() => onAvailabilityToggle("isNew")}
+                  className="w-4 h-4 text-gray-900 rounded"
+                />
+                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
+                  New Arrivals
+                </span>
+              </label>
+            )}
+            {filterOptions.availability.isTrending && (
+              <label className="flex items-center gap-3 cursor-pointer py-1">
+                <input
+                  type="checkbox"
+                  checked={tempFilters.isTrending || false}
+                  onChange={() => onAvailabilityToggle("isTrending")}
+                  className="w-4 h-4 text-gray-900 rounded"
+                />
+                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
+                  Trending
+                </span>
+              </label>
+            )}
+            {filterOptions.availability.isFestival && (
+              <label className="flex items-center gap-3 cursor-pointer py-1">
+                <input
+                  type="checkbox"
+                  checked={tempFilters.isFestival || false}
+                  onChange={() => onAvailabilityToggle("isFestival")}
+                  className="w-4 h-4 text-gray-900 rounded"
+                />
+                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
+                  Festival
+                </span>
+              </label>
+            )}
+            {filterOptions.availability.isReady60Min && (
+              <label className="flex items-center gap-3 cursor-pointer py-1">
+                <input
+                  type="checkbox"
+                  checked={tempFilters.isReady60Min || false}
+                  onChange={() => onAvailabilityToggle("isReady60Min")}
+                  className="w-4 h-4 text-gray-900 rounded"
+                />
+                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
+                  60 Min Ready
+                </span>
+              </label>
+            )}
+          </div>
+        </FilterSection>
+      )}
+    </div>
+  );
+}
+
 export default function ProductFilters({ 
   filters, 
   onFiltersChange, 
@@ -44,20 +242,12 @@ export default function ProductFilters({
     max: filters.maxPrice || ""
   });
 
-  // Sync tempFilters when filters change externally
-  useEffect(() => {
-    setTempFilters(filters);
-    setPriceRange({
-      min: filters.minPrice || "",
-      max: filters.maxPrice || ""
-    });
-  }, [filters]);
-
   useEffect(() => {
     // Fetch filter options
     const params = new URLSearchParams();
     if (filters.category) params.append("category", filters.category);
     if (filters.occasion) params.append("occasion", filters.occasion);
+    if (filters.relation) params.append("relation", filters.relation);
     
     fetch(`${API}/products/filters?${params.toString()}`)
       .then(res => res.json())
@@ -72,7 +262,7 @@ export default function ProductFilters({
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [filters.category, filters.occasion]);
+  }, [filters.category, filters.occasion, filters.relation, filters.minPrice, filters.maxPrice]);
 
   const handlePriceChange = (type, value) => {
     const newRange = { ...priceRange, [type]: value };
@@ -197,192 +387,6 @@ export default function ProductFilters({
     }
   };
 
-  const FilterContent = () => (
-    <div className="p-6">
-      {/* Categories */}
-      {filterOptions.categories && filterOptions.categories.length > 0 && (
-        <FilterSection title="Category" defaultOpen={true}>
-          <div className="space-y-2">
-            {filterOptions.categories.map(category => (
-              <label key={category.id} className="flex items-center gap-3 cursor-pointer py-1">
-                <input
-                  type="radio"
-                  name="category"
-                  checked={tempFilters.category === category.slug}
-                  onChange={() => handleCategoryToggle(category.slug)}
-                  className="w-4 h-4 text-gray-900"
-                />
-                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  {category.name}
-                </span>
-              </label>
-            ))}
-          </div>
-        </FilterSection>
-      )}
-
-      {/* Occasions */}
-      {filterOptions.occasions && filterOptions.occasions.length > 0 && (
-        <FilterSection title="Occasion" defaultOpen={true}>
-          <div className="space-y-2">
-            {filterOptions.occasions.map(occasion => (
-              <label key={occasion.id} className="flex items-center gap-3 cursor-pointer py-1">
-                <input
-                  type="radio"
-                  name="occasion"
-                  checked={tempFilters.occasion === occasion.slug}
-                  onChange={() => handleOccasionToggle(occasion.slug)}
-                  className="w-4 h-4 text-gray-900"
-                />
-                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  {occasion.name}
-                </span>
-              </label>
-            ))}
-          </div>
-        </FilterSection>
-      )}
-
-      {/* Price Range */}
-      {filterOptions.priceRange && (
-        <FilterSection title="Price" defaultOpen={true}>
-          <div className="space-y-3 space-x-2">
-            <div className="flex gap-2">
-              <input
-                type="number"
-                placeholder="Min"
-                value={priceRange.min}
-                onChange={(e) => handlePriceChange("min", e.target.value)}
-                className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
-                style={{ borderColor: "oklch(92% .04 340)" }}
-                min={filterOptions.priceRange.min}
-                max={filterOptions.priceRange.max}
-              />
-              <input
-                type="number"
-                placeholder="Max"
-                value={priceRange.max}
-                onChange={(e) => handlePriceChange("max", e.target.value)}
-                className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
-                style={{ borderColor: "oklch(92% .04 340)" }}
-                min={filterOptions.priceRange.min}
-                max={filterOptions.priceRange.max}
-              />
-            </div>
-            <div className="text-xs" style={{ color: "oklch(55% .02 340)" }}>
-              ₹{filterOptions.priceRange.min} - ₹{filterOptions.priceRange.max}
-            </div>
-          </div>
-        </FilterSection>
-      )}
-
-      {/* Sizes */}
-      {filterOptions.sizes && filterOptions.sizes.length > 0 && (
-        <FilterSection title="Size" defaultOpen={true}>
-          <div className="flex flex-wrap gap-2">
-            {filterOptions.sizes.map(size => (
-              <button
-                key={size}
-                onClick={() => handleSizeToggle(size)}
-                className={`
-                  px-4 py-2 rounded border text-sm font-medium transition-all
-                  ${(tempFilters.size || []).includes(size)
-                    ? "bg-gray-900 text-white border-gray-900"
-                    : "bg-white text-gray-900 border-gray-300 hover:border-gray-400"
-                  }
-                `}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </FilterSection>
-      )}
-
-      {/* Badges */}
-      {filterOptions.badges && filterOptions.badges.length > 0 && (
-        <FilterSection title="Badge" defaultOpen={true}>
-          <div className="space-y-2">
-            {filterOptions.badges.map(badge => (
-              <label key={badge} className="flex items-center gap-3 cursor-pointer py-1">
-                <input
-                  type="radio"
-                  name="badge"
-                  checked={tempFilters.badge === badge}
-                  onChange={() => handleBadgeToggle(badge)}
-                  className="w-4 h-4 text-gray-900"
-                />
-                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  {badge}
-                </span>
-              </label>
-            ))}
-          </div>
-        </FilterSection>
-      )}
-
-      {/* Availability */}
-      {filterOptions.availability && (
-        <FilterSection title="Availability" defaultOpen={true}>
-          <div className="space-y-2">
-            {filterOptions.availability.isNew && (
-              <label className="flex items-center gap-3 cursor-pointer py-1">
-                <input
-                  type="checkbox"
-                  checked={tempFilters.isNew || false}
-                  onChange={() => handleAvailabilityToggle("isNew")}
-                  className="w-4 h-4 text-gray-900 rounded"
-                />
-                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  New Arrivals
-                </span>
-              </label>
-            )}
-            {filterOptions.availability.isTrending && (
-              <label className="flex items-center gap-3 cursor-pointer py-1">
-                <input
-                  type="checkbox"
-                  checked={tempFilters.isTrending || false}
-                  onChange={() => handleAvailabilityToggle("isTrending")}
-                  className="w-4 h-4 text-gray-900 rounded"
-                />
-                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  Trending
-                </span>
-              </label>
-            )}
-            {filterOptions.availability.isFestival && (
-              <label className="flex items-center gap-3 cursor-pointer py-1">
-                <input
-                  type="checkbox"
-                  checked={tempFilters.isFestival || false}
-                  onChange={() => handleAvailabilityToggle("isFestival")}
-                  className="w-4 h-4 text-gray-900 rounded"
-                />
-                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  Festival
-                </span>
-              </label>
-            )}
-            {filterOptions.availability.isReady60Min && (
-              <label className="flex items-center gap-3 cursor-pointer py-1">
-                <input
-                  type="checkbox"
-                  checked={tempFilters.isReady60Min || false}
-                  onChange={() => handleAvailabilityToggle("isReady60Min")}
-                  className="w-4 h-4 text-gray-900 rounded"
-                />
-                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  60 Min Ready
-                </span>
-              </label>
-            )}
-          </div>
-        </FilterSection>
-      )}
-    </div>
-  );
-
   return (
     <>
       {/* Overlay (all screen sizes – match mobile) */}
@@ -420,7 +424,17 @@ export default function ProductFilters({
           </div>
         </div>
         <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
-          <FilterContent />
+          <FilterContent
+            filterOptions={filterOptions}
+            tempFilters={tempFilters}
+            priceRange={priceRange}
+            onPriceChange={handlePriceChange}
+            onSizeToggle={handleSizeToggle}
+            onBadgeToggle={handleBadgeToggle}
+            onAvailabilityToggle={handleAvailabilityToggle}
+            onCategoryToggle={handleCategoryToggle}
+            onOccasionToggle={handleOccasionToggle}
+          />
         </div>
       </aside>
 
@@ -455,7 +469,17 @@ export default function ProductFilters({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          <FilterContent />
+          <FilterContent
+            filterOptions={filterOptions}
+            tempFilters={tempFilters}
+            priceRange={priceRange}
+            onPriceChange={handlePriceChange}
+            onSizeToggle={handleSizeToggle}
+            onBadgeToggle={handleBadgeToggle}
+            onAvailabilityToggle={handleAvailabilityToggle}
+            onCategoryToggle={handleCategoryToggle}
+            onOccasionToggle={handleOccasionToggle}
+          />
         </div>
 
         {/* Footer - Fixed at bottom */}

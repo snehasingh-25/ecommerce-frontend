@@ -29,11 +29,10 @@ export default function CategoriesPage() {
           const category = categoriesData.find(cat => cat.slug === slug);
           if (category) {
             setSelectedCategory(category);
-          } else if (categoriesData.length > 0) {
-            setSelectedCategory(categoriesData[0]);
           }
-        } else if (categoriesData.length > 0) {
-          setSelectedCategory(categoriesData[0]);
+        } else {
+          // No category selected by default — show All Products initially
+          setSelectedCategory(null);
         }
         setLoading(false);
       })
@@ -51,12 +50,12 @@ export default function CategoriesPage() {
 
   // Build filters based on selected category - MUST be called unconditionally
   const currentFilters = useMemo(() => ({
-    category: selectedCategory?.slug,
+    category: selectedCategory?.slug || undefined,
     occasion: occasionFilter || undefined,
     isTrending: searchParams.get("trending") === "true" || undefined,
   }), [selectedCategory, occasionFilter, searchParams]);
   
-  if (loading && !selectedCategory) {
+  if (loading && categories.length === 0) {
     return (
       <div className="min-h-screen bg-white py-4 sm:py-6">
         <style>{`@keyframes sk-sweep{0%{background-position:-600px 0}100%{background-position:600px 0}}.sk{background:linear-gradient(90deg,oklch(93% .03 340) 25%,oklch(96% .02 340) 50%,oklch(93% .03 340) 75%);background-size:1200px 100%;animation:sk-sweep 1.5s ease-in-out infinite}`}</style>
@@ -103,37 +102,33 @@ export default function CategoriesPage() {
         />
 
         {/* Products for Selected Category or All Products */}
-        {(selectedCategory || !slug) && (
-          <div className="mt-12">
-            {selectedCategory && slug && (
-              <div className="mb-8">
-                <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
-                  {selectedCategory.name}
-                </h3>
-                {selectedCategory.description && (
-                  <p className="text-lg mb-4" style={{ color: 'oklch(60% .02 340)' }}>
-                    {selectedCategory.description}
-                  </p>
-                )}
-              </div>
-            )}
-            
-            {!slug && (
-              <div className="mb-8">
-                <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
-                  {searchParams.get("trending") === "true" ? "Trending Products" : "All Products"}
-                </h3>
-              </div>
-            )}
+        <div className="mt-12">
+          {selectedCategory ? (
+            <div className="mb-8">
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
+                {selectedCategory.name}
+              </h3>
+              {selectedCategory.description ? (
+                <p className="text-lg mb-4" style={{ color: "oklch(60% .02 340)" }}>
+                  {selectedCategory.description}
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mb-8">
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
+                {searchParams.get("trending") === "true" ? "Trending Products" : "All Products"}
+              </h3>
+            </div>
+          )}
 
-            <ProductListing 
-              initialFilters={currentFilters}
-              showFilters={true}
-              showSort={true}
-              gridCols="grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
-            />
-          </div>
-        )}
+          <ProductListing
+            initialFilters={currentFilters}
+            showFilters={true}
+            showSort={true}
+            gridCols="grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+          />
+        </div>
 
         {/* Show all categories if none selected */}
         {!selectedCategory && categories.length === 0 && (

@@ -1,84 +1,27 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { API } from "../api";
-import ProductCard from "../components/ProductCard";
 import InfiniteScrollCarousel from "../components/InfiniteScrollCarousel";
 import { INFINITE_SCROLL_CAROUSEL_UI } from "../components/infiniteScrollCarouselPresets";
+import ProductListing from "../components/ProductListing";
 
 export default function Relation() {
   const { slug } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const categoryFilter = searchParams.get("category") || "";
+  const navigate = useNavigate();
   const [relations, setRelations] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [selectedRelation, setSelectedRelation] = useState(null);
-  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const fetchAllProducts = async (category = "") => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (category) {
-        params.append("category", category);
-      }
-      const qs = params.toString();
-      const res = await fetch(`${API}/products${qs ? `?${qs}` : ""}`);
-      const data = await res.json();
-      setProducts(data || []);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchRelationProducts = async (relationSlug, category = "") => {
-    try {
-      if (category) {
-        const params = new URLSearchParams();
-        params.append("relation", relationSlug);
-        params.append("category", category);
-        const res = await fetch(`${API}/products?${params.toString()}`);
-        const data = await res.json();
-        setProducts(data || []);
-
-        const relationRes = await fetch(`${API}/relations/${relationSlug}`);
-        const relationData = await relationRes.json();
-        setSelectedRelation(relationData);
-      } else {
-        const res = await fetch(`${API}/relations/${relationSlug}`);
-        const data = await res.json();
-        setSelectedRelation(data);
-        setProducts(data.products || []);
-      }
-    } catch (error) {
-      console.error("Error fetching relation products:", error);
-    }
-  };
 
   useEffect(() => {
     let isMounted = true;
 
     Promise.all([
       fetch(`${API}/relations`).then((res) => res.json()),
-      fetch(`${API}/categories`).then((res) => res.json()),
     ])
-      .then(([relationsData, categoriesData]) => {
+      .then(([relationsData]) => {
         if (!isMounted) return;
 
         setRelations(relationsData);
-        setCategories(categoriesData);
-
-        if (slug) {
-          const relation = relationsData.find((r) => r.slug === slug);
-          if (relation) {
-            setSelectedRelation(relation);
-          }
-        } else {
-          setSelectedRelation(null);
-        }
         setLoading(false);
       })
       .catch((error) => {
@@ -93,36 +36,26 @@ export default function Relation() {
   }, [slug]);
 
   useEffect(() => {
-    if (selectedRelation && slug) {
-      fetchRelationProducts(selectedRelation.slug, categoryFilter);
-      return;
-    }
-    if (!slug) {
-      fetchAllProducts(categoryFilter);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryFilter, slug, selectedRelation?.slug]);
+    if (!slug) return;
+    let cancelled = false;
+    fetch(`${API}/relations/${slug}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        setSelectedRelation(data);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSelectedRelation(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
 
   const handleRelationClick = (relation) => {
     setSelectedRelation(relation);
-    fetchRelationProducts(relation.slug, categoryFilter);
-  };
-
-  const handleCategoryChange = (e) => {
-    const newCategory = e.target.value;
-    const params = new URLSearchParams(searchParams);
-    if (newCategory) {
-      params.set("category", newCategory);
-    } else {
-      params.delete("category");
-    }
-    setSearchParams(params);
-  };
-
-  const clearCategoryFilter = () => {
-    const params = new URLSearchParams(searchParams);
-    params.delete("category");
-    setSearchParams(params);
+    navigate(`/relation/${relation.slug}`);
   };
 
   if (loading) {
@@ -177,159 +110,44 @@ export default function Relation() {
           />
         </div>
 
-        {selectedRelation && slug && (
+        {slug ? (
           <div className="mt-12">
             <div className="mb-8">
               <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
-                {selectedRelation.name}
+                {selectedRelation?.name || "Relation"}
               </h3>
-              {selectedRelation.description && (
+              {selectedRelation?.description ? (
                 <p className="text-lg mb-4" style={{ color: "oklch(60% .02 340)" }}>
                   {selectedRelation.description}
                 </p>
-              )}
-
-              <div className="flex flex-wrap items-center gap-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-semibold" style={{ color: "oklch(40% .02 340)" }}>
-                    Filter by Category:
-                  </label>
-                  <select
-                    value={categoryFilter}
-                    onChange={handleCategoryChange}
-                    className="px-4 py-2 rounded-lg border-2 text-sm transition-all duration-300 focus:outline-none"
-                    style={{
-                      borderColor: "oklch(92% .04 340)",
-                      backgroundColor: "white",
-                      color: "oklch(20% .02 340)",
-                    }}
-                    onFocus={(e) => (e.target.style.borderColor = "oklch(88% .06 340)")}
-                    onBlur={(e) => (e.target.style.borderColor = "oklch(92% .04 340)")}
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.slug}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {categoryFilter && (
-                  <button
-                    onClick={clearCategoryFilter}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
-                    style={{
-                      backgroundColor: "oklch(92% .04 340)",
-                      color: "oklch(20% .02 340)",
-                    }}
-                    onMouseEnter={(e) => (e.target.style.backgroundColor = "oklch(88% .06 340)")}
-                    onMouseLeave={(e) => (e.target.style.backgroundColor = "oklch(92% .04 340)")}
-                  >
-                    Clear Filter
-                  </button>
-                )}
-              </div>
-
-              {categoryFilter && (
-                <p className="text-sm mb-4" style={{ color: "oklch(60% .02 340)" }}>
-                  Showing products in {categories.find((c) => c.slug === categoryFilter)?.name || categoryFilter} category
-                </p>
-              )}
+              ) : null}
             </div>
-            {products.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: "oklch(92% .04 340)" }}>
-                  <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 object-contain" />
-                </div>
-                <p className="font-medium" style={{ color: "oklch(60% .02 340)" }}>
-                  No products available for this relation yet
-                </p>
-              </div>
-            )}
-          </div>
-        )}
 
-        {!slug && (
+            <ProductListing
+              initialFilters={{ relation: slug }}
+              showFilters={true}
+              showSort={true}
+              gridCols="grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+            />
+          </div>
+        ) : null}
+
+        {!slug ? (
           <div className="mt-12">
             <div className="mb-8">
               <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
                 All Products
               </h3>
-
-              <div className="flex flex-wrap items-center gap-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-semibold" style={{ color: "oklch(40% .02 340)" }}>
-                    Filter by Category:
-                  </label>
-                  <select
-                    value={categoryFilter}
-                    onChange={handleCategoryChange}
-                    className="px-4 py-2 rounded-lg border-2 text-sm transition-all duration-300 focus:outline-none"
-                    style={{
-                      borderColor: "oklch(92% .04 340)",
-                      backgroundColor: "white",
-                      color: "oklch(20% .02 340)",
-                    }}
-                    onFocus={(e) => (e.target.style.borderColor = "oklch(88% .06 340)")}
-                    onBlur={(e) => (e.target.style.borderColor = "oklch(92% .04 340)")}
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.slug}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {categoryFilter && (
-                  <button
-                    onClick={clearCategoryFilter}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
-                    style={{
-                      backgroundColor: "oklch(92% .04 340)",
-                      color: "oklch(20% .02 340)",
-                    }}
-                    onMouseEnter={(e) => (e.target.style.backgroundColor = "oklch(88% .06 340)")}
-                    onMouseLeave={(e) => (e.target.style.backgroundColor = "oklch(92% .04 340)")}
-                  >
-                    Clear Filter
-                  </button>
-                )}
-              </div>
-
-              {categoryFilter && (
-                <p className="text-sm mb-4" style={{ color: "oklch(60% .02 340)" }}>
-                  Showing products in {categories.find((c) => c.slug === categoryFilter)?.name || categoryFilter} category
-                </p>
-              )}
             </div>
 
-            {products.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: "oklch(92% .04 340)" }}>
-                  <img src="/logo.png" alt="Gift Choice Logo" className="w-16 h-16 object-contain" />
-                </div>
-                <p className="font-medium" style={{ color: "oklch(60% .02 340)" }}>
-                  No products available yet
-                </p>
-              </div>
-            )}
+            <ProductListing
+              initialFilters={{}}
+              showFilters={true}
+              showSort={true}
+              gridCols="grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+            />
           </div>
-        )}
+        ) : null}
 
         {!selectedRelation && relations.length === 0 && (
           <div className="text-center py-16">

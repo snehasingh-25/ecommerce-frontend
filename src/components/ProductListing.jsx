@@ -4,7 +4,7 @@ import ProductCard from "./ProductCard";
 import ProductFilters from "./ProductFilters";
 import SortDropdown from "./SortDropdown";
 
-export default function ProductListing({ 
+function ProductListingInner({
   initialFilters = {},
   showFilters = true,
   showSort = true,
@@ -17,16 +17,6 @@ export default function ProductListing({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
-  // Sync initialFilters changes (e.g., when category changes via navigation)
-  useEffect(() => {
-    setFilters(prev => ({
-      ...prev,
-      category: initialFilters.category,
-      occasion: initialFilters.occasion,
-      isTrending: initialFilters.isTrending,
-    }));
-  }, [initialFilters.category, initialFilters.occasion, initialFilters.isTrending]);
-
   // Build API URL with filters and sort
   const apiUrl = useMemo(() => {
     const params = new URLSearchParams();
@@ -34,6 +24,7 @@ export default function ProductListing({
     // Add filters
     if (filters.category) params.append("category", filters.category);
     if (filters.occasion) params.append("occasion", filters.occasion);
+    if (filters.relation) params.append("relation", filters.relation);
     if (filters.search) params.append("search", filters.search);
     if (filters.isNew) params.append("isNew", "true");
     if (filters.isTrending) params.append("isTrending", "true");
@@ -56,7 +47,6 @@ export default function ProductListing({
   }, [filters, sort]);
 
   useEffect(() => {
-    setLoading(true);
     const ac = new AbortController();
     
     fetch(apiUrl, { signal: ac.signal })
@@ -77,10 +67,12 @@ export default function ProductListing({
   }, [apiUrl]);
 
   const handleFiltersChange = (newFilters) => {
+    setLoading(true);
     setFilters(newFilters);
   };
 
   const handleSortChange = (newSort) => {
+    setLoading(true);
     setSort(newSort);
   };
 
@@ -133,6 +125,7 @@ export default function ProductListing({
           {/* Filters overlay/sheet (all screens) */}
           {showFilters && (
             <ProductFilters
+              key={JSON.stringify(filters)}
               filters={filters}
               onFiltersChange={handleFiltersChange}
               isOpen={filtersOpen}
@@ -180,4 +173,18 @@ export default function ProductListing({
       </div>
     </>
   );
+}
+
+export default function ProductListing(props) {
+  const resetKey = useMemo(() => {
+    const f = props.initialFilters || {};
+    return [
+      f.category || "",
+      f.occasion || "",
+      f.relation || "",
+      f.isTrending ? "1" : "0",
+    ].join("::");
+  }, [props.initialFilters]);
+
+  return <ProductListingInner key={resetKey} {...props} />;
 }
