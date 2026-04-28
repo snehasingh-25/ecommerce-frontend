@@ -21,6 +21,7 @@ export default function InfiniteScrollCarousel({
   ui,
   hideArrowsOnMobile = false,
   rows = 1, // 1 or 2 (two-row horizontal scroller)
+  desktopRows, // optional override at lg+
 }) {
   const scrollRef = useRef(null);
   const scrollEndTimerRef = useRef(null);
@@ -113,16 +114,26 @@ export default function InfiniteScrollCarousel({
   const resolvedTrackClassName = useMemo(() => {
     if (trackClassName) return trackClassName;
     const base = resolvedUi.trackClassName;
-    if (rows <= 1) return base;
 
-    // Two-row horizontal scroller: fill down then across.
-    // Items already have fixed widths via `tileWidthClass`.
-    // Keep the same padding as the preset.
-    if (variant === "relation") return base; // default: keep relations single-row unless explicitly overridden
-    return base
-      .replace(/^flex\s+/, "grid ")
-      .replace(/\boverflow-x-auto\b/, "overflow-x-auto grid-flow-col auto-cols-max grid-rows-2");
-  }, [rows, trackClassName, resolvedUi.trackClassName, variant]);
+    const wantsTwoRows = rows >= 2;
+    const wantsDesktopOneRow = desktopRows === 1;
+
+    // Default: keep existing preset behavior
+    if (!wantsTwoRows) return base;
+
+    // If caller requests rows=2 for relations, they must pass an explicit trackClassName
+    // (relations tiles are much wider; default is single row).
+    if (variant === "relation") return base;
+
+    // Convert the base "flex ..." track into a responsive 2-row grid that becomes flex at lg.
+    // Example output:
+    // "grid grid-flow-col auto-cols-max grid-rows-2 lg:flex gap-1 ... overflow-x-auto ..."
+    const rest = base.replace(/^flex\s+/, "");
+    const desktopDisplay = wantsDesktopOneRow ? " lg:flex" : "";
+    const desktopRowsClass = wantsDesktopOneRow ? " lg:grid-rows-1" : "";
+
+    return `grid grid-flow-col auto-cols-max grid-rows-2${desktopRowsClass}${desktopDisplay} ${rest}`.trim();
+  }, [desktopRows, rows, trackClassName, resolvedUi.trackClassName, variant]);
   const arrowClassPrefix = hideArrowsOnMobile ? "hidden sm:grid " : "";
 
   if (baseItems.length === 0) return null;

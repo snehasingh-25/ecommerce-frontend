@@ -295,6 +295,7 @@ export default function Home() {
         variant="category"
         autoScroll={false}
         rows={2}
+        desktopRows={1}
         ui={INFINITE_SCROLL_CAROUSEL_UI.category}
         showViewAll={true}
         viewAllTo="/categories"
