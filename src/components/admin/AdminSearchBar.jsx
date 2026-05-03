@@ -67,6 +67,22 @@ export default function AdminSearchBar({
     };
   }, [searchQuery, allProducts, allCategories, allOccasions, allRelations]);
 
+  // Full (un-sliced) results for the "View all results" action
+  const fullResults = useMemo(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) return { products: [], categories: [], occasions: [], relations: [] };
+    const productFuse = new Fuse(allProducts, { keys: ["name", "description", "keywords"], ...FUSE_OPTIONS });
+    const categoryFuse = new Fuse(allCategories, { keys: ["name", "slug", "description"], ...FUSE_OPTIONS });
+    const occasionFuse = new Fuse(allOccasions, { keys: ["name", "slug", "description"], ...FUSE_OPTIONS });
+    const relationFuse = new Fuse(allRelations, { keys: ["name", "slug", "description"], ...FUSE_OPTIONS });
+    return {
+      products: productFuse.search(q).map((r) => r.item),
+      categories: categoryFuse.search(q).map((r) => r.item),
+      occasions: occasionFuse.search(q).map((r) => r.item),
+      relations: relationFuse.search(q).map((r) => r.item),
+    };
+  }, [searchQuery, allProducts, allCategories, allOccasions, allRelations]);
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -116,8 +132,9 @@ export default function AdminSearchBar({
   };
 
   const handleViewAllResults = () => {
+    const q = searchQuery.trim();
     dismissSuggestions();
-    onViewAllResults?.();
+    onViewAllResults?.(q, fullResults);
   };
 
   return (
@@ -330,7 +347,7 @@ export default function AdminSearchBar({
               }}
               className="mt-2 block w-full rounded-lg bg-gray-100 px-3 py-2 text-center text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-200"
             >
-              View all products
+              View all results
             </button>
           </div>
         </div>

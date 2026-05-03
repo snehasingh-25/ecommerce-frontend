@@ -1,42 +1,7 @@
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import OrderableList from "./OrderableList";
-
-// Build a clone for "Duplicate" (no id so form treats as new product)
-function cloneProductForDuplicate(product) {
-  const images = product.images
-    ? Array.isArray(product.images)
-      ? product.images
-      : typeof product.images === "string"
-        ? (() => {
-            try {
-              const parsed = JSON.parse(product.images);
-              return Array.isArray(parsed) ? parsed : [];
-            } catch {
-              return [];
-            }
-          })()
-        : []
-    : [];
-  const videos = product.videos && Array.isArray(product.videos) ? product.videos : [];
-  return {
-    ...product,
-    id: null,
-    name: (product.name || "").trim() + " (Copy)",
-    images,
-    videos,
-    sizes:
-      product.sizes && product.sizes.length > 0
-        ? product.sizes.map((s) => ({
-            label: s.label,
-            price: s.price,
-            originalPrice: s.originalPrice ?? null,
-          }))
-        : [],
-    categories: product.categories || [],
-    occasions: product.occasions || [],
-  };
-}
+import { cloneProductForDuplicate } from "./productUtils";
 
 export default function ProductList({ products, onEdit, onDelete }) {
   const toast = useToast();

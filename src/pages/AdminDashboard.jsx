@@ -18,6 +18,7 @@ import RelationList from "../components/admin/RelationList";
 import BannerForm from "../components/admin/BannerForm";
 import BannerList from "../components/admin/BannerList";
 import AdminSearchBar from "../components/admin/AdminSearchBar";
+import AdminSearchResults from "../components/admin/AdminSearchResults";
 
 export default function AdminDashboard() {
   const { logout, user } = useAuth();
@@ -39,6 +40,8 @@ export default function AdminDashboard() {
   const [editingRelation, setEditingRelation] = useState(null);
   const [editingReel, setEditingReel] = useState(null);
   const [editingBanner, setEditingBanner] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -323,8 +326,10 @@ export default function AdminDashboard() {
                     setActiveTab("relations");
                     setEditingRelation(relation);
                   }}
-                  onViewAllResults={() => {
-                    setActiveTab("products");
+                  onViewAllResults={(query, results) => {
+                    setSearchQuery(query);
+                    setSearchResults(results);
+                    setActiveTab("search");
                     setEditingProduct(null);
                   }}
                 />
@@ -365,8 +370,10 @@ export default function AdminDashboard() {
                   setActiveTab("relations");
                   setEditingRelation(relation);
                 }}
-                onViewAllResults={() => {
-                  setActiveTab("products");
+                onViewAllResults={(query, results) => {
+                  setSearchQuery(query);
+                  setSearchResults(results);
+                  setActiveTab("search");
                   setEditingProduct(null);
                 }}
               />
@@ -526,6 +533,35 @@ export default function AdminDashboard() {
 
             {activeTab === "messages" && (
               <MessageList messages={messages} onUpdate={loadData} />
+            )}
+
+            {activeTab === "search" && (
+              <AdminSearchResults
+                query={searchQuery}
+                results={searchResults}
+                onEditProduct={(product) => {
+                  setActiveTab("products");
+                  setEditingProduct(product);
+                }}
+                onEditCategory={(category) => {
+                  setActiveTab("categories");
+                  setEditingCategory(category);
+                }}
+                onEditOccasion={(occasion) => {
+                  setActiveTab("occasions");
+                  setEditingOccasion(occasion);
+                }}
+                onEditRelation={(relation) => {
+                  setActiveTab("relations");
+                  setEditingRelation(relation);
+                }}
+                onClearSearch={() => {
+                  setSearchQuery("");
+                  setSearchResults(null);
+                  setActiveTab("products");
+                }}
+                onRefresh={loadData}
+              />
             )}
             </>
           )}
