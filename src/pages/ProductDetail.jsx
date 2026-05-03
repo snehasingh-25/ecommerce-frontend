@@ -28,7 +28,7 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [expanded, setExpanded] = useState(() => new Set(["details"]));
+  const [expanded, setExpanded] = useState(() => new Set());
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [recommendedProducts, setRecommendedProducts] = useState([]);

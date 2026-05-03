@@ -67,10 +67,10 @@ export default function HorizontalProductCarousel({
   className = "",
 }) {
   const scrollContainerRef = useRef(null);
-  const autoScrollTimeoutRef = useRef(null);
   const [fetchedByKey, setFetchedByKey] = useState({});
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const hasProvidedProducts = Array.isArray(products);
   const idsToFetch = useMemo(
@@ -130,7 +130,7 @@ export default function HorizontalProductCarousel({
   }, [list]);
 
   useEffect(() => {
-    if (!showControls || !scrollContainerRef.current || list.length === 0) return;
+    if (!showControls || !scrollContainerRef.current || list.length <= 1 || isHovered) return;
 
     const getScrollAmount = () => {
       const container = scrollContainerRef.current;
@@ -152,19 +152,17 @@ export default function HorizontalProductCarousel({
       const maxScroll = scrollWidth - clientWidth;
       const scrollAmount = getScrollAmount();
 
-      if (scrollLeft >= maxScroll) {
+      if (scrollLeft >= maxScroll - 10) {
         container.scrollTo({ left: 0, behavior: "smooth" });
       } else {
         container.scrollBy({ left: scrollAmount, behavior: "smooth" });
       }
     };
 
-    autoScrollTimeoutRef.current = setInterval(autoScroll, 5000);
+    const intervalId = setInterval(autoScroll, 3000);
 
-    return () => {
-      if (autoScrollTimeoutRef.current) clearInterval(autoScrollTimeoutRef.current);
-    };
-  }, [list.length, showControls]);
+    return () => clearInterval(intervalId);
+  }, [list.length, showControls, isHovered]);
 
   if (list.length === 0 && !resolvedLoading) return null;
 
@@ -183,29 +181,11 @@ export default function HorizontalProductCarousel({
       return Math.max(200, Math.round(cardWidth + gap));
     };
 
-    if (autoScrollTimeoutRef.current) {
-      clearInterval(autoScrollTimeoutRef.current);
-    }
-
     const scrollAmount = getScrollAmount();
     scrollContainerRef.current.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
       behavior: "smooth",
     });
-
-    setTimeout(() => {
-      autoScrollTimeoutRef.current = setInterval(() => {
-        if (!scrollContainerRef.current) return;
-        const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-        const maxScroll = scrollWidth - clientWidth;
-        const scrollAmount = getScrollAmount();
-        if (scrollLeft >= maxScroll) {
-          scrollContainerRef.current.scrollTo({ left: 0, behavior: "smooth" });
-        } else {
-          scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
-        }
-      }, 5000);
-    }, 500);
   };
 
   return (
@@ -224,7 +204,13 @@ export default function HorizontalProductCarousel({
           ))}
         </div>
       ) : list.length > 0 ? (
-        <div className={`relative ss-slider-shell ${containerClassName}`.trim()}>
+        <div 
+          className={`relative ss-slider-shell ${containerClassName}`.trim()}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onTouchStart={() => setIsHovered(true)}
+          onTouchEnd={() => setIsHovered(false)}
+        >
           {showControls && canScrollLeft ? (
             <CarouselArrow
               direction="left"

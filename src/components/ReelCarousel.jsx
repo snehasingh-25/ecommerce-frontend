@@ -317,17 +317,17 @@ export default function ReelCarousel({ reels }) {
         className={[
           "shrink-0 snap-center",
           isFeatured 
-            ? "basis-full lg:basis-[30%] xl:basis-[25%] mb-4 lg:mb-0" 
-            : "basis-[72%] sm:basis-[34%] lg:basis-[22%] xl:basis-[18%]",
-          "transition-transform duration-300",
+            ? "basis-[85%] sm:basis-[60%] md:basis-[45%] lg:basis-[25%] xl:basis-[20%] max-w-[400px] mb-4 lg:mb-0" 
+            : "basis-[55%] sm:basis-[32%] md:basis-[28%] lg:basis-[18%] xl:basis-[14%]",
+          "transition-opacity duration-300",
           isFeatured 
-            ? "scale-100" 
+            ? "opacity-100" 
             : (isActive 
-                ? "scale-[1.04] md:scale-100" 
-                : "scale-[0.94] opacity-90 md:scale-100 md:opacity-100"),
+                ? "opacity-100" 
+                : "opacity-75 md:opacity-100"),
         ].join(" ")}
       >
-        <div className="relative overflow-hidden shadow-md bg-black">
+        <div className="relative overflow-hidden rounded-2xl shadow-lg bg-black">
           {/* Instagram Reels: 1080 x 1920 pixels = 9:16 aspect ratio = 177.78% */}
           <div className="relative w-full" style={{ paddingBottom: "177.78%" }}>
             {videoUrl ? (
@@ -654,7 +654,7 @@ export default function ReelCarousel({ reels }) {
       {baseCount > 0 && (
         <div
           ref={scrollerRef}
-          className="flex gap-4 overflow-x-auto pb-4 px-2 snap-x snap-mandatory"
+          className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 px-2 snap-x snap-mandatory scroll-smooth"
           style={{
             WebkitOverflowScrolling: "touch",
             scrollbarWidth: "none",

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
 import SearchBar from "../components/SearchBar";
+import { shuffleArray } from "../utils/shuffle";
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -47,7 +48,7 @@ export default function Search() {
       try {
         const res = await fetch(url);
         const data = await res.json();
-        const safeData = Array.isArray(data) ? data : [];
+        const safeData = shuffleArray(Array.isArray(data) ? data : []);
         setProducts(safeData);
         
         // If no results and we have a query, fall back to all products in selected category (and other active filters).
@@ -62,9 +63,9 @@ export default function Search() {
           if (categoryFilter || occasionFilter) {
             const fallbackRes = await fetch(fallbackUrl);
             const fallbackJson = await fallbackRes.json();
-            fallbackProducts = Array.isArray(fallbackJson) ? fallbackJson : [];
+            fallbackProducts = shuffleArray(Array.isArray(fallbackJson) ? fallbackJson : []);
           } else {
-            fallbackProducts = Array.isArray(allProducts) ? allProducts : [];
+            fallbackProducts = shuffleArray(Array.isArray(allProducts) ? allProducts : []);
           }
 
           setSuggestedProducts(fallbackProducts);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API } from "../api";
+import { shuffleArray } from "../utils/shuffle";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -10,7 +11,7 @@ export default function Products() {
     fetch(`${API}/products`)
       .then(res => res.json())
       .then(data => {
-        setProducts(data);
+        setProducts(shuffleArray(data));
         setLoading(false);
       })
       .catch(() => {

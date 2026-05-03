@@ -4,6 +4,7 @@ import { API } from "../../api";
 import OccasionSelector from "./OccasionSelector";
 import ProductCard from "../ProductCard";
 import HorizontalProductCarousel from "../HorizontalProductCarousel";
+import { shuffleArray } from "../../utils/shuffle";
 
 function clampInt(raw, { min = 0, max = 50 } = {}) {
   const n = typeof raw === "string" ? parseInt(raw, 10) : typeof raw === "number" ? raw : NaN;
@@ -64,7 +65,7 @@ export default function OccasionProductsSection({
 
         const res = await fetch(`${API}/products?${params.toString()}`, { signal: ac.signal });
         const data = await res.json();
-        const items = Array.isArray(data) ? data : [];
+        const items = shuffleArray(Array.isArray(data) ? data : []);
 
         cacheRef.current.set(`${selectedSlug}::${category || ""}::${limit || ""}`, items);
         setProducts(items);

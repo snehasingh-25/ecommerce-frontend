@@ -25,6 +25,7 @@ export default function HeroPromoCarousel({ banners }) {
   const viewportRef = useRef(null);
   const rafRef = useRef(0);
   const [page, setPage] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
   const pages = useMemo(
     () => (list.length <= 0 ? 0 : Math.max(1, Math.ceil(list.length / perView))),
@@ -55,12 +56,33 @@ export default function HeroPromoCarousel({ banners }) {
 
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
+  useEffect(() => {
+    if (pages <= 1 || isHovered) return;
+    const interval = setInterval(() => {
+      setPage((curr) => {
+        const next = (curr + 1) % pages;
+        const el = viewportRef.current;
+        if (el) {
+          el.scrollTo({ left: el.clientWidth * next, behavior: "smooth" });
+        }
+        return next;
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [pages, isHovered]);
+
   if (list.length === 0) return null;
 
   return (
     <section className="bg-white">
       <div className="px-1 sm:px-2 lg:px-4 pt-5 sm:pt-6 lg:pt-8">
-        <div className="relative">
+        <div 
+          className="relative"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onTouchStart={() => setIsHovered(true)}
+          onTouchEnd={() => setIsHovered(false)}
+        >
           {/* Scroll viewport */}
           <div
             ref={viewportRef}

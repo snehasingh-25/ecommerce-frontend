@@ -26,7 +26,7 @@ export default function InfiniteScrollCarousel({
   const scrollRef = useRef(null);
   const scrollEndTimerRef = useRef(null);
   const setWidthRef = useRef(0);
-  const autoScrollIntervalRef = useRef(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const baseItems = useMemo(() => (Array.isArray(items) ? items.filter(Boolean) : []), [items]);
   const list = useMemo(() => (baseItems.length ? [...baseItems, ...baseItems, ...baseItems] : []), [baseItems]);
@@ -74,26 +74,15 @@ export default function InfiniteScrollCarousel({
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (!autoScroll) return;
-    if (!el || baseItems.length === 0) return;
+    if (!autoScroll || !el || baseItems.length <= 1 || isHovered) return;
 
-    if (autoScrollIntervalRef.current) {
-      clearInterval(autoScrollIntervalRef.current);
-      autoScrollIntervalRef.current = null;
-    }
-
-    autoScrollIntervalRef.current = setInterval(() => {
+    const interval = setInterval(() => {
       if (document.visibilityState && document.visibilityState !== "visible") return;
       scroll("right");
     }, 3000);
 
-    return () => {
-      if (autoScrollIntervalRef.current) {
-        clearInterval(autoScrollIntervalRef.current);
-        autoScrollIntervalRef.current = null;
-      }
-    };
-  }, [autoScroll, baseItems.length, scroll]);
+    return () => clearInterval(interval);
+  }, [autoScroll, baseItems.length, scroll, isHovered]);
 
   useEffect(() => {
     return () => {
@@ -160,7 +149,13 @@ export default function InfiniteScrollCarousel({
         )}
       </div>
 
-      <div className="relative">
+      <div 
+        className="relative"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onTouchStart={() => setIsHovered(true)}
+        onTouchEnd={() => setIsHovered(false)}
+      >
         <CarouselArrow
           direction="left"
           onClick={() => scroll("left")}

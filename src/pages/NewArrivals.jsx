@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
+import { shuffleArray } from "../utils/shuffle";
 
 const SK = "inline-block bg-gradient-to-r from-[oklch(93%_.03_340)] via-[oklch(96%_.02_340)] to-[oklch(93%_.03_340)] bg-[length:800px_100%] animate-[shimmer_1.5s_ease-in-out_infinite]";
 
@@ -11,7 +12,7 @@ export default function NewArrivals() {
   useEffect(() => {
     fetch(`${API}/products`)
       .then(res => res.json())
-      .then(data => { setProducts(data.filter(p => p.isNew)); setLoading(false); })
+      .then(data => { setProducts(shuffleArray(data.filter(p => p.isNew))); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 

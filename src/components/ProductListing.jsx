@@ -3,6 +3,7 @@ import { API } from "../api";
 import ProductCard from "./ProductCard";
 import ProductFilters from "./ProductFilters";
 import SortDropdown from "./SortDropdown";
+import { shuffleArray } from "../utils/shuffle";
 
 function ProductListingInner({
   initialFilters = {},
@@ -52,7 +53,9 @@ function ProductListingInner({
     fetch(apiUrl, { signal: ac.signal })
       .then(res => res.json())
       .then(data => {
-        setProducts(Array.isArray(data) ? data : []);
+        const arr = Array.isArray(data) ? data : [];
+        const isDefaultSort = !sort || sort === "relevance";
+        setProducts(isDefaultSort ? shuffleArray(arr) : arr);
         setLoading(false);
       })
       .catch((error) => {

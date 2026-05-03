@@ -7,6 +7,7 @@ import HorizontalProductCarousel from "../components/HorizontalProductCarousel";
 import InfiniteScrollCarousel from "../components/InfiniteScrollCarousel";
 import { INFINITE_SCROLL_CAROUSEL_UI } from "../components/infiniteScrollCarouselPresets";
 import OccasionProductsSection from "../components/OccasionProductsSection/OccasionProductsSection";
+import { shuffleArray } from "../utils/shuffle";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -67,7 +68,7 @@ export default function Home() {
     fetch(`${API}/products`, { signal: ac.signal })
       .then((res) => res.json())
       .then((data) => {
-        const list = Array.isArray(data) ? data : [];
+        const list = shuffleArray(Array.isArray(data) ? data : []);
         setProducts(list);
         setTrendingProducts(list.filter((p) => p.isTrending));
         setLoading((prev) => ({ ...prev, products: false }));
