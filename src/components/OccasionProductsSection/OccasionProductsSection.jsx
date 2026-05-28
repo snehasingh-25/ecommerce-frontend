@@ -85,7 +85,7 @@ export default function OccasionProductsSection({
   if (list.length === 0) return null;
 
   return (
-    <section className={["py-6", className].join(" ").trim()}>
+    <section className={["py-2", className].join(" ").trim()}>
       {title ? (
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: "oklch(20% .02 340)" }}>

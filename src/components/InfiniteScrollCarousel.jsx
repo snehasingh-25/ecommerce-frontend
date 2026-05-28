@@ -181,17 +181,17 @@ export default function InfiniteScrollCarousel({
               className={`flex-shrink-0 flex flex-col items-center ${tileWidthClass} group`}
             >
               <div
-                className={`${mediaClass} flex items-center justify-center ${variant === "relation" ? "text-4xl sm:text-5xl" : "text-2xl sm:text-3xl"} ${variant === "relation" ? "" : "border-2"} group-hover:shadow-lg group-hover:scale-110 transition-all duration-300 overflow-hidden cursor-pointer`}
+                className={`${mediaClass} flex items-center justify-center ${variant === "relation" ? "text-4xl sm:text-5xl" : "text-2xl sm:text-3xl"} group-hover:shadow-lg group-hover:scale-110 transition-all duration-300 overflow-hidden cursor-pointer`}
                 style={{
                   backgroundColor: "oklch(92% .04 340)",
-                  ...(variant === "relation" ? {} : { borderColor: "oklch(92% .04 340)" }),
+                  // ...(variant === "relation" ? {} : { borderColor: "oklch(92% .04 340)" }),
                 }}
-                onMouseEnter={(e) => {
-                  if (variant !== "relation") e.currentTarget.style.borderColor = "oklch(88% .06 340)";
-                }}
-                onMouseLeave={(e) => {
-                  if (variant !== "relation") e.currentTarget.style.borderColor = "oklch(92% .04 340)";
-                }}
+                // onMouseEnter={(e) => {
+                //   if (variant !== "relation") e.currentTarget.style.borderColor = "oklch(88% .06 340)";
+                // }}
+                // onMouseLeave={(e) => {
+                //   if (variant !== "relation") e.currentTarget.style.borderColor = "oklch(92% .04 340)";
+                // }}
               >
                 {item?.imageUrl ? (
                   <img src={item.imageUrl} alt={item?.name ?? ""} className={`w-full h-full object-cover ${mediaInnerRounding}`} />

@@ -145,19 +145,28 @@ export default function ProductDetail() {
             setProductReels([]);
           });
 
-        // Fetch recommendations using the recommendation engine
-        setLoadingRecommendations(true);
-        fetch(`${API}/recommendations/${data.id}?limit=10`, { signal: ac.signal })
-          .then((res) => res.json())
-          .then((products) => {
-            setRecommendedProducts(Array.isArray(products) ? products : []);
-            setLoadingRecommendations(false);
-          })
-          .catch((error) => {
-            if (error?.name === "AbortError") return;
-            console.error("Error fetching recommendations:", error);
-            setLoadingRecommendations(false);
-          });
+        // Fetch products from the same occasion as the current product
+        const firstOccasion = data?.occasions && data.occasions.length > 0 ? data.occasions[0] : null;
+        if (firstOccasion?.slug) {
+          setLoadingRecommendations(true);
+          fetch(`${API}/products?occasion=${encodeURIComponent(firstOccasion.slug)}&limit=10`, { signal: ac.signal })
+            .then((res) => res.json())
+            .then((products) => {
+              const sameOccasionProducts = Array.isArray(products)
+                ? products.filter((p) => Number(p.id) !== Number(data.id))
+                : [];
+              setRecommendedProducts(sameOccasionProducts);
+              setLoadingRecommendations(false);
+            })
+            .catch((error) => {
+              if (error?.name === "AbortError") return;
+              console.error("Error fetching occasion products:", error);
+              setLoadingRecommendations(false);
+            });
+        } else {
+          setRecommendedProducts([]);
+          setLoadingRecommendations(false);
+        }
 
         // Fetch similar products from the same category (use first category if multiple)
         const firstCategory = data?.categories && data.categories.length > 0 ? data.categories[0] : data?.category;
@@ -837,7 +846,7 @@ export default function ProductDetail() {
 
           {/* Recommendation Carousel Section */}
           <HorizontalProductCarousel
-            title="You May Also Like"
+            title="More from This Occasion"
             products={recommendedProducts}
             isLoading={loadingRecommendations}
             excludeProductId={id}

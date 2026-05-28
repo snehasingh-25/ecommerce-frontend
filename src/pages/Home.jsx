@@ -284,7 +284,7 @@ export default function Home() {
           variant="slider"
           title="Tailored For Your Occasions"
           linkPrefix="/occasion"
-          className="mt-6 lg:mt-8"
+          className=""
           badgeTextBySlug={{
             "mothers-day": "Celebrate Mom",
             birthday: "Make a Wish",
