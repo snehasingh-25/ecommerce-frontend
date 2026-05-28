@@ -34,6 +34,8 @@ export default function ProductDetail() {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [productReels, setProductReels] = useState([]);
+  const [globalReels, setGlobalReels] = useState([]);
+
 
   const images = useMemo(() => {
     if (!product?.images) return [];
@@ -145,6 +147,18 @@ export default function ProductDetail() {
             setProductReels([]);
           });
 
+        // Also fetch global "Follow Us" reels (separate state)
+        fetch(`${API}/reels`, { signal: ac.signal })
+          .then((res) => res.json())
+          .then((all) => {
+            setGlobalReels(Array.isArray(all) ? all : []);
+            
+          })
+          .catch((error) => {
+            if (error?.name === "AbortError") return;
+            setGlobalReels([]);
+            
+          });
         // Fetch products from the same occasion as the current product
         const firstOccasion = data?.occasions && data.occasions.length > 0 ? data.occasions[0] : null;
         if (firstOccasion?.slug) {
@@ -851,6 +865,26 @@ export default function ProductDetail() {
             isLoading={loadingRecommendations}
             excludeProductId={id}
           />
+
+          {globalReels.length > 0 && (
+          <div className="py-6 bg-white">
+            <div className="px-1 sm:px-2 lg:px-4">
+            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
+              Follow Us{" "}
+              <a
+                href="https://www.instagram.com/giftchoicebhl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline transition-all"
+                style={{ color: 'oklch(92% .04 340)' }}
+              >
+                @giftchoicebhl
+              </a>
+            </h2>
+            <ReelCarousel reels={globalReels} />
+            </div>
+          </div>
+      )}
         </div>
       </div>
     </div>

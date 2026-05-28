@@ -398,7 +398,7 @@ export default function ProductForm({
     const imageOrderPayload = imageItems.map((i) => (i.type === "existing" ? i.url : "NEW"));
     if (product && (orderedExisting.length > 0 || orderedNewFiles.length > 0)) {
       formDataToSend.append("existingImages", JSON.stringify(orderedExisting));
-      if (isEdit && imageOrderPayload.length > 0) {
+      if (imageOrderPayload.length > 0) {
         formDataToSend.append("imageOrder", JSON.stringify(imageOrderPayload));
       }
     }
