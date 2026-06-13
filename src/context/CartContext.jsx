@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useToast } from "./ToastContext";
+import { getProductThumbnailUrl } from "../utils/imageUrl";
 
 const CartContext = createContext();
 const CART_STORAGE_KEY = "giftchoice_cart";
@@ -65,7 +66,7 @@ export function CartProvider({ children }) {
       id: `${product.id}-${selectedSize.id}`,
       productId: product.id,
       productName: product.name,
-      productImage: product.images ? (Array.isArray(product.images) ? product.images[0] : JSON.parse(product.images)[0]) : null,
+      productImage: getProductThumbnailUrl(product),
       sizeId: selectedSize.id,
       sizeLabel: selectedSize.label,
       price: parseFloat(selectedSize.price),

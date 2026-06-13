@@ -9,6 +9,7 @@ import ProductList from "../components/admin/ProductList";
 import CategoryList from "../components/admin/CategoryList";
 import OrderList from "../components/admin/OrderList";
 import MessageList from "../components/admin/MessageList";
+import ReviewList from "../components/admin/ReviewList";
 import ReelForm from "../components/admin/ReelForm";
 import ReelList from "../components/admin/ReelList";
 import OccasionForm from "../components/admin/OccasionForm";
@@ -31,6 +32,7 @@ export default function AdminDashboard() {
   const [relations, setRelations] = useState([]);
   const [orders, setOrders] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [reels, setReels] = useState([]);
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -141,6 +143,15 @@ export default function AdminDashboard() {
           toast.error("Session expired. Please login again.");
           logout();
         }
+      } else if (activeTab === "reviews") {
+        const res = await fetch(`${API}/reviews`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          setReviews(Array.isArray(data) ? data : []);
+        } else if (res.status === 401) {
+          toast.error("Session expired. Please login again.");
+          logout();
+        }
       } else if (activeTab === "reels") {
         const res = await fetch(`${API}/reels/all`, { headers });
         if (res.ok) {
@@ -232,6 +243,7 @@ export default function AdminDashboard() {
     { id: "reels", label: "Reels", icon: null },
     { id: "orders", label: "Orders", icon: null },
     { id: "messages", label: "Messages", icon: null },
+    { id: "reviews", label: "Reviews", icon: null },
   ];
 
   return (
@@ -533,6 +545,10 @@ export default function AdminDashboard() {
 
             {activeTab === "messages" && (
               <MessageList messages={messages} onUpdate={loadData} />
+            )}
+
+            {activeTab === "reviews" && (
+              <ReviewList reviews={reviews} onUpdate={loadData} />
             )}
 
             {activeTab === "search" && (

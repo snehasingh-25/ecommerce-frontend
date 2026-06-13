@@ -2,6 +2,8 @@ import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import OrderableList from "./OrderableList";
 import { cloneProductForDuplicate } from "./productUtils";
+import OptimizedProductImage from "../OptimizedProductImage";
+import { getProductImageList, IMAGE_SIZES } from "../../utils/imageUrl";
 
 export default function ProductList({ products, onEdit, onDelete }) {
   const toast = useToast();
@@ -43,11 +45,7 @@ export default function ProductList({ products, onEdit, onDelete }) {
   const sortedProducts = [...safeProducts].sort((a, b) => (a.order || 0) - (b.order || 0));
 
   const renderRow = (product, order, dragHandle, orderInput, isDragging) => {
-    const images = product.images
-      ? Array.isArray(product.images)
-        ? product.images
-        : JSON.parse(product.images)
-      : [];
+    const imageList = getProductImageList(product);
 
     return (
       <div
@@ -71,11 +69,15 @@ export default function ProductList({ products, onEdit, onDelete }) {
 
         {/* Image */}
         <div className="flex-shrink-0">
-          {images.length > 0 ? (
-            <img
-              src={images[0]}
+          {imageList.length > 0 ? (
+            <OptimizedProductImage
+              meta={imageList[0]}
+              variant="thumb"
+              sizes={IMAGE_SIZES.admin}
               alt={product.name}
               className="w-14 h-14 object-cover rounded-lg"
+              width={56}
+              height={56}
             />
           ) : (
             <div className="w-14 h-14 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'oklch(92% .04 340)' }}>

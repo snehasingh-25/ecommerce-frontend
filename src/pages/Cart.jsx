@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
+import { resolveAssetUrl } from "../utils/imageUrl";
 
 export default function Cart() {
   const {
@@ -82,9 +83,13 @@ export default function Cart() {
                 <div className="w-full sm:w-32 h-32 bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg overflow-hidden flex-shrink-0">
                   {item.productImage ? (
                     <img
-                      src={item.productImage}
+                      src={resolveAssetUrl(item.productImage)}
                       alt={item.productName}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      width={128}
+                      height={128}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

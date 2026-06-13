@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import Typed from "typed.js";
 import Fuse from "fuse.js";
 import { API } from "../api";
+import OptimizedProductImage from "./OptimizedProductImage";
+import { getProductImageList, IMAGE_SIZES } from "../utils/imageUrl";
 
 /**
  * Reusable search bar with Fuse.js suggestions and Typed.js animated placeholder.
@@ -213,11 +215,7 @@ export default function SearchBar({
             </div>
 
             {searchSuggestions.map((product) => {
-              const images = product.images
-                ? Array.isArray(product.images)
-                  ? product.images
-                  : JSON.parse(product.images)
-                : [];
+              const imageList = getProductImageList(product);
               return (
                 <Link
                   key={product.id}
@@ -233,11 +231,16 @@ export default function SearchBar({
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "oklch(92% .04 340)")}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                 >
-                  {images.length > 0 ? (
-                    <img
-                      src={images[0]}
+                  {imageList.length > 0 ? (
+                    <OptimizedProductImage
+                      meta={imageList[0]}
+                      variant="thumb"
+                      sizes={IMAGE_SIZES.search}
                       alt={product.name}
                       className="w-12 h-12 object-cover rounded-lg"
+                      loading="lazy"
+                      width={48}
+                      height={48}
                     />
                   ) : (
                     <div

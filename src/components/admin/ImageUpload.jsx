@@ -18,7 +18,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 const IMAGE_MAX = 10;
-const MAX_SIZE_MB = 5;
+const MAX_SIZE_MB = 10;
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 // Stable id for new files (one-time when added)
 function makeNewId() {
@@ -132,6 +133,17 @@ export default function ImageUpload({
     onImageItemsChange(next);
   };
 
+  const filterValidFiles = useCallback((files) => {
+    return Array.from(files).filter((f) => {
+      if (!f.type.startsWith("image/")) return false;
+      if (f.size > MAX_SIZE_BYTES) {
+        alert(`${f.name} exceeds ${MAX_SIZE_MB}MB. Images are auto-optimized to WebP on upload.`);
+        return false;
+      }
+      return true;
+    });
+  }, []);
+
   const handleDrop = useCallback(
     (e) => {
       e.preventDefault();
@@ -139,27 +151,23 @@ export default function ImageUpload({
       setDragActive(false);
       if (!canAdd) return;
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        const newFiles = Array.from(e.dataTransfer.files).filter((f) =>
-          f.type.startsWith("image/")
-        );
-  const toAdd = newFiles.slice(0, IMAGE_MAX - items.length).map((file) => ({
-        type: "new",
-        id: makeNewId(),
-        file,
-        objectURL: URL.createObjectURL(file),
-      }));
-      if (toAdd.length) onImageItemsChange([...items, ...toAdd]);
-    }
-  },
-  [canAdd, items, onImageItemsChange]
-);
+        const newFiles = filterValidFiles(e.dataTransfer.files);
+        const toAdd = newFiles.slice(0, IMAGE_MAX - items.length).map((file) => ({
+          type: "new",
+          id: makeNewId(),
+          file,
+          objectURL: URL.createObjectURL(file),
+        }));
+        if (toAdd.length) onImageItemsChange([...items, ...toAdd]);
+      }
+    },
+    [canAdd, filterValidFiles, items, onImageItemsChange]
+  );
 
   const handleChange = useCallback(
     (e) => {
       if (!e.target.files?.length || !canAdd) return;
-      const newFiles = Array.from(e.target.files).filter((f) =>
-        f.type.startsWith("image/")
-      );
+      const newFiles = filterValidFiles(e.target.files);
       const toAdd = newFiles.slice(0, IMAGE_MAX - items.length).map((file) => ({
         type: "new",
         id: makeNewId(),
@@ -169,7 +177,7 @@ export default function ImageUpload({
       if (toAdd.length) onImageItemsChange([...items, ...toAdd]);
       e.target.value = "";
     },
-    [canAdd, items, onImageItemsChange]
+    [canAdd, filterValidFiles, items, onImageItemsChange]
   );
 
   const handleDrag = (e) => {
@@ -273,7 +281,7 @@ export default function ImageUpload({
             </button>
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            JPG, PNG, WebP · max {MAX_SIZE_MB}MB each
+            JPG, PNG, WebP · max {MAX_SIZE_MB}MB each · auto-optimized to WebP
           </p>
         </div>
       )}
@@ -310,7 +318,7 @@ export default function ImageUpload({
             </button>
           </p>
           <p className="text-sm text-gray-500">
-            JPG, PNG, WebP · max {MAX_SIZE_MB}MB each · first image = featured
+            JPG, PNG, WebP · max {MAX_SIZE_MB}MB each · auto-optimized to WebP · first image = featured
           </p>
         </div>
       )}

@@ -5,17 +5,16 @@ import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import HorizontalProductCarousel from "../components/HorizontalProductCarousel";
 import { MemoReelCarousel as ReelCarousel } from "../components/ReelCarousel";
-import InstagramThumbnail from "../components/InstagramThumbnail";
-
-function getInstagramEmbedUrl(url) {
-  if (!url || typeof url !== "string") return null;
-  const trimmed = url.trim();
-  const reelMatch = trimmed.match(/instagram\.com\/reel\/([A-Za-z0-9_-]+)/);
-  const postMatch = trimmed.match(/instagram\.com\/p\/([A-Za-z0-9_-]+)/);
-  const postId = reelMatch?.[1] || postMatch?.[1];
-  if (!postId) return null;
-  return `https://www.instagram.com/p/${postId}/embed/`;
-}
+import ProductGallery from "../components/productDetail/ProductGallery";
+import TrustBadges from "../components/productDetail/TrustBadges";
+import DeliveryAssurance from "../components/productDetail/DeliveryAssurance";
+import QuantitySelector from "../components/productDetail/QuantitySelector";
+import StickyPurchaseBar from "../components/productDetail/StickyPurchaseBar";
+import ProductAccordion from "../components/productDetail/ProductAccordion";
+import ProductReviews from "../components/productDetail/ProductReviews";
+import PriceDisplay, { getPriceInfo } from "../components/productDetail/PriceDisplay";
+import WhatsAppButton from "../components/productDetail/WhatsAppButton";
+import { getProductImageList, getVariantUrl } from "../utils/imageUrl";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -37,16 +36,7 @@ export default function ProductDetail() {
   const [globalReels, setGlobalReels] = useState([]);
 
 
-  const images = useMemo(() => {
-    if (!product?.images) return [];
-    if (Array.isArray(product.images)) return product.images;
-    try {
-      const parsed = JSON.parse(product.images);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }, [product?.images]);
+  const imageList = useMemo(() => (product ? getProductImageList(product) : []), [product]);
 
   const videos = useMemo(() => {
     if (!product?.videos || !Array.isArray(product.videos)) return [];
@@ -64,18 +54,20 @@ export default function ProductDetail() {
     }
   }, [product?.instagramEmbeds]);
 
-  // Combined media: images, videos, and Instagram embeds
   const media = useMemo(() => {
-    const imgItems = images.map((url) => ({ type: "image", url }));
+    const imgItems = imageList.map((meta) => ({
+      type: "image",
+      meta,
+      url: getVariantUrl(meta, "large"),
+      zoomUrl: getVariantUrl(meta, "original"),
+    }));
     const vidItems = videos.map((url) => ({ type: "video", url }));
     const instaItems = instagramEmbeds.map((embed) => ({ type: "instagram", url: embed.url }));
     return [...imgItems, ...vidItems, ...instaItems];
-  }, [images, videos, instagramEmbeds]);
+  }, [imageList, videos, instagramEmbeds]);
 
-  const activeMedia = media[activeImageIndex] || media[0] || null;
-  const activeImage = activeMedia?.type === "image" ? activeMedia.url : null;
-  const activeInstagram = activeMedia?.type === "instagram" ? activeMedia.url : null;
-  const activeInstagramEmbedUrl = activeInstagram ? getInstagramEmbedUrl(activeInstagram) : null;
+  const priceInfo = useMemo(() => getPriceInfo(selectedSize, product), [selectedSize, product]);
+  const canPurchase = Boolean(selectedSize || (product?.hasSinglePrice && product?.singlePrice));
 
   const toggleSection = (key) => {
     setExpanded((prev) => {
@@ -219,8 +211,7 @@ export default function ProductDetail() {
   }, [id]);
 
   const handleAddToCart = () => {
-    // For single price products, selectedSize is auto-set, so we can proceed
-    if (!selectedSize && !(product?.hasSinglePrice && product?.singlePrice)) {
+    if (!canPurchase) {
       toast.error("Please select a size");
       return;
     }
@@ -228,9 +219,30 @@ export default function ProductDetail() {
     const success = addToCart(product, selectedSize, quantity);
     if (success) {
       toast.success("Added to cart");
-      // Optionally navigate to cart
-      // navigate("/cart");
     }
+  };
+
+  const handleBuyNow = () => {
+    if (!canPurchase) {
+      toast.error("Please select a size");
+      return;
+    }
+
+    const success = addToCart(product, selectedSize, quantity);
+    if (success) {
+      navigate("/cart");
+    }
+  };
+
+  const handleWhatsApp = () => {
+    if (!canPurchase) {
+      toast.error("Please select a size");
+      return;
+    }
+    const sizeLabel = product.hasSinglePrice ? "Standard" : selectedSize.label;
+    const price = product.hasSinglePrice ? product.singlePrice : selectedSize.price;
+    const message = `Hi! I'm interested in:\n\nProduct: ${product.name}\n${product.hasSinglePrice ? "" : `Size: ${sizeLabel}\n`}Quantity: ${quantity}\nPrice: ₹${price}\nTotal: ₹${(Number(price) * quantity).toFixed(2)}`;
+    window.open(`https://wa.me/917976948872?text=${encodeURIComponent(message)}`);
   };
 
   if (loading) {
@@ -248,7 +260,7 @@ export default function ProductDetail() {
           }
         `}</style>
 
-        <div className="px-1 sm:px-2 lg:px-4 pt-6 pb-16">
+        <div className="px-3 sm:px-4 lg:px-4 pt-6 pb-24 lg:pb-16">
           {/* Breadcrumb */}
           <div className="mb-5 flex items-center gap-2">
             <div className="pd-sk h-3 w-10 rounded" />
@@ -454,253 +466,54 @@ export default function ProductDetail() {
           </nav>
         </div>
 
-        <div className="px-1 sm:px-2 lg:px-4 pb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="px-3 sm:px-4 lg:px-4 pb-24 lg:pb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
             {/* Left: Media gallery */}
             <section className="lg:col-span-7">
-              <div className="lg:flex lg:gap-4">
-                {/* Thumbnails (desktop vertical) */}
-                {media.length > 1 ? (
-                  <div className="hidden lg:flex flex-col gap-3 w-20 shrink-0">
-                    {media.slice(0, 8).map((item, idx) => {
-                      const active = idx === activeImageIndex;
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setActiveImageIndex(idx)}
-                          onMouseEnter={() => setActiveImageIndex(idx)}
-                          className={[
-                            "relative rounded-xl overflow-hidden border transition-transform duration-200",
-                            active ? "ring-2 ring-offset-2" : "hover:scale-[1.02]",
-                          ].join(" ")}
-                          style={{
-                            borderColor: active ? "oklch(88% .06 340)" : "oklch(92% .04 340)",
-                            ringColor: "oklch(88% .06 340)",
-                          }}
-                        >
-                          <div className="aspect-square bg-white">
-                            {item.type === "instagram" ? (
-                              <InstagramThumbnail
-                                url={item.url}
-                                onClick={() => setActiveImageIndex(idx)}
-                              />
-                            ) : item.type === "video" ? (
-                              <video
-                                src={item.url}
-                                className="w-full h-full object-cover"
-                                muted
-                                playsInline
-                                preload="metadata"
-                              />
-                            ) : (
-                              <img
-                                src={item.url}
-                                alt={`${product.name} ${idx + 1}`}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                                decoding="async"
-                                width={96}
-                                height={96}
-                              />
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
-
-                {/* Primary image, video, or Instagram embed */}
-                <div className="flex-1">
-                  <div className="relative overflow-hidden bg-white ">
-                    <div className="relative w-full" style={{ paddingBottom: activeMedia?.type === "instagram" ? "125%" : activeMedia?.type === "video" ? "56.25%" : "100%" }}>
-                      {activeMedia?.type === "instagram" ? (
-                        <div className="absolute inset-0 w-full h-full bg-gray-50 flex items-center justify-center p-4">
-                          {activeInstagramEmbedUrl ? (
-                            <iframe
-                              title="Instagram embed"
-                              src={activeInstagramEmbedUrl}
-                              className="w-full h-full rounded-xl"
-                              frameBorder="0"
-                              scrolling="no"
-                              allow="encrypted-media"
-                              loading="lazy"
-                              style={{ maxWidth: "540px" }}
-                            />
-                          ) : (
-                            <a
-                              href={activeInstagram || "#"}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-sm font-semibold underline"
-                              style={{ color: "oklch(40% .02 340)" }}
-                            >
-                              Open Instagram post
-                            </a>
-                          )}
-                        </div>
-                      ) : activeMedia?.type === "video" ? (
-                        <video
-                          src={activeMedia.url}
-                          className="absolute inset-0 w-full h-full object-contain bg-black"
-                          controls
-                          playsInline
-                          preload="metadata"
-                        />
-                      ) : activeImage ? (
-                        <img
-                          src={activeImage}
-                          alt={product.name}
-                          className="absolute inset-0 w-full h-full object-cover"
-                          decoding="async"
-                          loading="eager"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "oklch(92% .04 340)" }}>
-                          <img src="/logo.png" alt="Gift Choice Logo" className="w-24 h-24 object-contain opacity-50" />
-                        </div>
-                      )}
-
-                      {/* Badges */}
-                      <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                        {product.isReady60Min ? (
-                          <span className="px-3 py-1 text-xs font-bold rounded-full bg-white/90 shadow" style={{ color: "oklch(20% .02 340)" }}>
-                            60 Min
-                          </span>
-                        ) : null}
-                        {product.isFestival ? (
-                          <span className="px-3 py-1 text-xs font-bold rounded-full bg-white/90 shadow" style={{ color: "oklch(20% .02 340)" }}>
-                            Festival
-                          </span>
-                        ) : null}
-                        {product.isNew ? (
-                          <span className="px-3 py-1 text-xs font-bold rounded-full bg-white/90 shadow" style={{ color: "oklch(20% .02 340)" }}>
-                            New
-                          </span>
-                        ) : null}
-                        {product.badge ? (
-                          <span className="px-3 py-1 text-xs font-bold rounded-full bg-pink-500 text-white shadow">
-                            {product.badge}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Thumbnails (mobile horizontal) */}
-                  {media.length > 1 ? (
-                    <div className="mt-4 flex gap-3 overflow-x-auto pb-2 lg:hidden" style={{ WebkitOverflowScrolling: "touch" }}>
-                      {media.slice(0, 10).map((item, idx) => {
-                        const active = idx === activeImageIndex;
-                        return (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => setActiveImageIndex(idx)}
-                            className={[
-                              "shrink-0 w-20 rounded-2xl overflow-hidden border transition-transform duration-200",
-                              active ? "ring-2 ring-offset-2" : "active:scale-95",
-                            ].join(" ")}
-                            style={{ borderColor: "oklch(92% .04 340)" }}
-                          >
-                            <div className="aspect-square bg-white">
-                              {item.type === "instagram" ? (
-                                <InstagramThumbnail
-                                  url={item.url}
-                                  onClick={() => setActiveImageIndex(idx)}
-                                />
-                              ) : item.type === "video" ? (
-                                <video
-                                  src={item.url}
-                                  className="w-full h-full object-cover"
-                                  muted
-                                  playsInline
-                                  preload="metadata"
-                                />
-                              ) : (
-                                <img
-                                  src={item.url}
-                                  alt={`${product.name} ${idx + 1}`}
-                                  className="w-full h-full object-cover"
-                                  loading="lazy"
-                                  decoding="async"
-                                  width={96}
-                                  height={96}
-                                />
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
+              <ProductGallery
+                media={media}
+                productName={product.name}
+                badges={{
+                  isReady60Min: product.isReady60Min,
+                  isFestival: product.isFestival,
+                  isNew: product.isNew,
+                  badge: product.badge,
+                }}
+                activeIndex={activeImageIndex}
+                onIndexChange={setActiveImageIndex}
+              />
             </section>
 
             {/* Right: Sticky buy box */}
             <aside className="lg:col-span-5">
-              <div className="lg:sticky lg:top-6">
+              <div className="lg:sticky lg:top-6 space-y-4">
+                <TrustBadges />
+
                 <div className="bg-white">
-                  <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
+                  <h1
+                    className="text-2xl sm:text-[1.75rem] font-extrabold tracking-tight leading-tight"
+                    style={{ color: "oklch(20% .02 340)" }}
+                  >
                     {product.name}
                   </h1>
 
-                  {/* Price Display - Show once at the top */}
-                  <div className="mt-4 flex flex-wrap items-baseline gap-2">
-                    {selectedSize ? (
-                      <>
-                        <div className="text-2xl font-extrabold" style={{ color: "oklch(20% .02 340)" }}>
-                          ₹{Number(selectedSize.price).toLocaleString("en-IN")}
-                        </div>
-                        {(() => {
-                          const mrp = selectedSize.originalPrice ?? (product?.hasSinglePrice ? product?.originalPrice : null);
-                          if (mrp == null || Number(mrp) <= Number(selectedSize.price)) return null;
-                          return (
-                            <>
-                              <span className="text-lg line-through" style={{ color: "oklch(55% .02 340)" }}>
-                                ₹{Number(mrp).toLocaleString("en-IN")}
-                              </span>
-                              <span className="text-sm font-semibold text-green-600">
-                                {Math.round(((mrp - selectedSize.price) / mrp) * 100)}% OFF
-                              </span>
-                            </>
-                          );
-                        })()}
-                      </>
-                    ) : product?.hasSinglePrice && product?.singlePrice != null ? (
-                      <>
-                        <div className="text-2xl font-extrabold" style={{ color: "oklch(20% .02 340)" }}>
-                          ₹{Number(product.singlePrice).toLocaleString("en-IN")}
-                        </div>
-                        {product.originalPrice != null && Number(product.originalPrice) > Number(product.singlePrice) && (
-                          <>
-                            <span className="text-lg line-through" style={{ color: "oklch(55% .02 340)" }}>
-                              ₹{Number(product.originalPrice).toLocaleString("en-IN")}
-                            </span>
-                            <span className="text-sm font-semibold text-green-600">
-                              {Math.round(((product.originalPrice - product.singlePrice) / product.originalPrice) * 100)}% OFF
-                            </span>
-                          </>
-                        )}
-                      </>
-                    ) : product.sizes?.length ? (
-                      <div className="text-base font-medium" style={{ color: "oklch(55% .02 340)" }}>
-                        Select a size to see price
-                      </div>
-                    ) : null}
+                  <div className="mt-3">
+                    <PriceDisplay selectedSize={selectedSize} product={product} />
                   </div>
 
-                  {/* Size selector - only show for products with multiple sizes */}
+                  <DeliveryAssurance />
+
+                  {/* Size selector */}
                   {product.sizes?.length ? (
-                    <div className="mt-6 sm:mt-7">
-                      <div className="text-sm font-semibold mb-2.5 sm:mb-3" style={{ color: "oklch(20% .02 340)" }}>
+                    <div className="mt-5">
+                      <div className="text-sm font-semibold mb-2.5" style={{ color: "oklch(20% .02 340)" }}>
                         Select Size
                       </div>
-                      {/* Mobile: Horizontal scroll, Desktop: Grid */}
-                      <div className="overflow-x-auto -mx-1 px-1 sm:overflow-x-visible sm:mx-0 sm:px-0" style={{ WebkitOverflowScrolling: "touch" }}>
-                        <div className="flex sm:grid sm:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-2.5 min-w-max sm:min-w-0 sm:max-w-2xl">
+                      <div
+                        className="overflow-x-auto -mx-1 px-1 sm:overflow-x-visible sm:mx-0 sm:px-0 scrollbar-hide"
+                        style={{ WebkitOverflowScrolling: "touch" }}
+                      >
+                        <div className="flex sm:grid sm:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 min-w-max sm:min-w-0 sm:max-w-2xl">
                           {product.sizes.map((size) => {
                             const active = selectedSize?.id === size.id;
                             return (
@@ -709,21 +522,19 @@ export default function ProductDetail() {
                                 type="button"
                                 onClick={() => setSelectedSize(size)}
                                 className={[
-                                  "relative aspect-square rounded-md border text-center transition-all duration-200",
+                                  "relative rounded-xl border text-center transition-all duration-200",
                                   "flex items-center justify-center shrink-0",
-                                  "w-12 h-12 sm:w-full",
-                                  "hover:border-gray-400 active:scale-95",
-                                  active 
-                                    ? "border-gray-900 bg-gray-900 text-white font-medium shadow-sm" 
-                                    : "bg-white text-gray-900 font-medium hover:bg-gray-50",
+                                  "w-12 h-12 sm:w-full aspect-square",
+                                  "active:scale-95",
+                                  active
+                                    ? "border-[oklch(55%_.08_340)] bg-[oklch(55%_.08_340)] text-white font-semibold shadow-sm"
+                                    : "bg-white font-medium hover:bg-[oklch(98%_.01_340)]",
                                 ].join(" ")}
-                                style={!active ? { borderColor: "rgb(229, 231, 235)" } : {}}
+                                style={!active ? { borderColor: "oklch(92% .04 340)", color: "oklch(30% .03 340)" } : {}}
                                 aria-pressed={active}
                                 aria-label={`Select size ${size.label}`}
                               >
-                                <span className="text-xs sm:text-sm leading-tight font-medium">
-                                  {size.label}
-                                </span>
+                                <span className="text-xs sm:text-sm leading-tight">{size.label}</span>
                               </button>
                             );
                           })}
@@ -733,108 +544,75 @@ export default function ProductDetail() {
                   ) : null}
 
                   {/* Quantity */}
-                  <div className="mt-6">
-                    <div className="text-sm font-bold" style={{ color: "oklch(20% .02 340)" }}>
+                  <div className="mt-5">
+                    <div className="text-sm font-semibold mb-2.5" style={{ color: "oklch(20% .02 340)" }}>
                       Quantity
                     </div>
-                    <div className="mt-3 inline-flex items-center gap-3 rounded-2xl border px-3 py-2" style={{ borderColor: "oklch(92% .04 340)" }}>
-                      <button
-                        type="button"
-                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                        className="font-black"
-                      >
-                        −
-                      </button>
-                      <div className="w-10 text-center text-lg font-extrabold" style={{ color: "oklch(20% .02 340)" }}>
-                        {quantity}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setQuantity((q) => q + 1)}
-                        className="font-black"
-                      >
-                        +
-                      </button>
-                    </div>
+                    <QuantitySelector quantity={quantity} onChange={setQuantity} />
                   </div>
 
                   {/* Total */}
-                  {selectedSize ? (
-                    <div className="mt-6 rounded-2xl border px-4 py-4" style={{ borderColor: "oklch(92% .04 340)" }}>
+                  {selectedSize && priceInfo ? (
+                    <div
+                      className="mt-5 rounded-xl border px-4 py-3.5 shadow-[0_2px_8px_rgba(17,24,39,0.04)]"
+                      style={{ borderColor: "oklch(92% .04 340)", backgroundColor: "oklch(98% .01 340)" }}
+                    >
                       <div className="flex items-center justify-between">
                         <div className="text-sm font-semibold" style={{ color: "oklch(55% .02 340)" }}>
-                          Total
+                          Total ({quantity} {quantity === 1 ? "item" : "items"})
                         </div>
-                        <div className="text-2xl font-extrabold" style={{ color: "oklch(20% .02 340)" }}>
-                          ₹{(Number(selectedSize.price) * quantity).toFixed(0)}
+                        <div className="text-xl sm:text-2xl font-extrabold" style={{ color: "oklch(20% .02 340)" }}>
+                          ₹{(priceInfo.price * quantity).toLocaleString("en-IN")}
                         </div>
                       </div>
                     </div>
                   ) : null}
 
-                  {/* CTAs */}
-                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Desktop CTAs */}
+                  <div className="mt-5 hidden lg:grid grid-cols-2 gap-3">
                     <button
+                      type="button"
                       onClick={handleAddToCart}
-                      disabled={!selectedSize && !(product?.hasSinglePrice && product?.singlePrice)}
-                      className="w-full py-3 rounded-2xl font-bold transition-transform duration-200 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!canPurchase}
+                      className="w-full py-3.5 rounded-xl font-bold transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                       style={{ backgroundColor: "oklch(92% .04 340)", color: "oklch(20% .02 340)" }}
                     >
-                      Add to cart
+                      Add to Cart
                     </button>
                     <button
-                      onClick={() => {
-                        if (!selectedSize && !(product?.hasSinglePrice && product?.singlePrice)) {
-                          toast.error("Please select a size");
-                          return;
-                        }
-                        const sizeLabel = product.hasSinglePrice ? "Standard" : selectedSize.label;
-                        const price = product.hasSinglePrice ? product.singlePrice : selectedSize.price;
-                        const message = `Hi! I'm interested in:\n\nProduct: ${product.name}\n${product.hasSinglePrice ? '' : `Size: ${sizeLabel}\n`}Quantity: ${quantity}\nPrice: ₹${price}\nTotal: ₹${(Number(price) * quantity).toFixed(2)}`;
-                        window.open(`https://wa.me/917976948872?text=${encodeURIComponent(message)}`);
-                      }}
-                      disabled={!selectedSize && !(product?.hasSinglePrice && product?.singlePrice)}
-                      className="w-full py-3 rounded-2xl font-bold transition-transform duration-200 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ backgroundColor: "oklch(55% .18 145)", color: "white" }}
+                      type="button"
+                      onClick={handleBuyNow}
+                      disabled={!canPurchase}
+                      className="w-full py-3.5 rounded-xl font-bold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                      style={{ backgroundColor: "oklch(55% .08 340)" }}
                     >
-                      WhatsApp
+                      Buy Now
                     </button>
+                  </div>
+
+                  <div className="mt-4">
+                    <WhatsAppButton onClick={handleWhatsApp} disabled={!canPurchase} />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => navigate(-1)}
-                    className="mt-4 w-full text-sm font-semibold underline"
+                    className="mt-4 w-full text-sm font-semibold hover:underline transition-colors"
                     style={{ color: "oklch(40% .02 340)" }}
                   >
                     Continue shopping
                   </button>
                 </div>
 
-                {/* Accordions */}
-                <div className="mt-4 rounded-3xl border bg-white overflow-hidden" style={{ borderColor: "oklch(92% .04 340)" }}>
-                  <button
-                    type="button"
-                    onClick={() => toggleSection("details")}
-                    className="w-full flex items-center justify-between px-5 py-4 text-left"
-                  >
-                    <div className="font-bold" style={{ color: "oklch(20% .02 340)" }}>
-                      Product details
-                    </div>
-                    <div className="text-xl font-black" style={{ color: "oklch(40% .02 340)" }}>
-                      {expanded.has("details") ? "−" : "+"}
-                    </div>
-                  </button>
-                  {expanded.has("details") ? (
-                    <div className="px-5 pb-5 text-sm leading-relaxed whitespace-pre-line" style={{ color: "oklch(55% .02 340)" }}>
-                      {product.description}
-                    </div>
-                  ) : null}
+                <ProductAccordion
+                  title="Product Details"
+                  expanded={expanded.has("details")}
+                  onToggle={() => toggleSection("details")}
+                >
+                  {product.description || "No description available."}
+                </ProductAccordion>
 
-                  <div className="h-px" style={{ backgroundColor: "oklch(92% .04 340)" }} />
-
-                  
-                </div>
+                <ProductReviews productId={product.id} />
               </div>
             </aside>
           </div>
@@ -849,22 +627,29 @@ export default function ProductDetail() {
             </section>
           )}
 
-          {/* Similar Products Section */}
-          <HorizontalProductCarousel
-            title="Products from the same category"
-            products={similarProducts}
-            isLoading={loadingSimilar}
-            excludeProductId={id}
-            
-          />
+          {/* You May Also Like */}
+          <div className="px-3 sm:px-4 lg:px-4">
+            <HorizontalProductCarousel
+              title="You May Also Like"
+              products={recommendedProducts}
+              isLoading={loadingRecommendations}
+              excludeProductId={id}
+              sectionClassName="mt-8 lg:mt-10"
+              showControls={false}
+            />
+          </div>
 
-          {/* Recommendation Carousel Section */}
-          <HorizontalProductCarousel
-            title="More from This Occasion"
-            products={recommendedProducts}
-            isLoading={loadingRecommendations}
-            excludeProductId={id}
-          />
+          {/* Similar Products Section */}
+          <div className="px-3 sm:px-4 lg:px-4">
+            <HorizontalProductCarousel
+              title="Products from the Same Category"
+              products={similarProducts}
+              isLoading={loadingSimilar}
+              excludeProductId={id}
+              sectionClassName="mt-8 lg:mt-10"
+              showControls={false}
+            />
+          </div>
 
           {globalReels.length > 0 && (
           <div className="py-6 bg-white">
@@ -888,6 +673,14 @@ export default function ProductDetail() {
         </div>
       </div>
     </div>
+
+      <StickyPurchaseBar
+        price={priceInfo?.price}
+        formattedPrice={priceInfo ? `₹${priceInfo.price.toLocaleString("en-IN")}` : "—"}
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+        disabled={!canPurchase}
+      />
     </>
   );
 }

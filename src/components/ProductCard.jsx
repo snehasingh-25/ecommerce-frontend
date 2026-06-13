@@ -2,20 +2,13 @@ import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { memo, useMemo } from "react";
 import { useToast } from "../context/ToastContext";
+import OptimizedProductImage from "./OptimizedProductImage";
+import { getProductImageList, IMAGE_SIZES } from "../utils/imageUrl";
 
 function ProductCard({ product, compact = false }) {
   const { addToCart } = useCart();
   const toast = useToast();
-  const images = useMemo(() => {
-    if (!product?.images) return [];
-    if (Array.isArray(product.images)) return product.images;
-    try {
-      const parsed = JSON.parse(product.images);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }, [product?.images]);
+  const imageList = useMemo(() => getProductImageList(product), [product]);
 
   const handleAddToCart = () => {
     // Handle single price products
@@ -70,13 +63,14 @@ function ProductCard({ product, compact = false }) {
       {/* Product Image */}
       <Link to={`/product/${product.id}`} className={compact ? "shrink-0" : "block"}>
         <div className={`relative flex items-center justify-center overflow-hidden cursor-pointer bg-white ${compact ? "h-20 w-20 rounded-lg" : "aspect-square w-full"}`}>
-          {images.length > 0 ? (
-            <img
-              src={images[0]}
+          {imageList.length > 0 ? (
+            <OptimizedProductImage
+              meta={imageList[0]}
+              variant="medium"
+              sizes={IMAGE_SIZES.card}
               alt={product.name}
               className={`w-full h-full group-hover:scale-105 transition-transform duration-300 ${compact ? "rounded-lg object-cover" : "object-contain"}`}
               loading="lazy"
-              decoding="async"
               width={320}
               height={320}
             />
