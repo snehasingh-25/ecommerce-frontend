@@ -25,6 +25,7 @@ export default function Cart() {
     
     cartItems.forEach((item, index) => {
       message += `${index + 1}. ${item.productName}\n`;
+      message += `   Link: https://www.giftchoice.net/product/${item.productId}\n`;
       message += `   Size: ${item.sizeLabel}\n`;
       message += `   Quantity: ${item.quantity}\n`;
       message += `   Price: ₹${item.price}\n`;
@@ -77,7 +78,8 @@ export default function Cart() {
             {cartItems.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row gap-6 hover:shadow-lg transition-all duration-300 fade-in"
+                onClick={() => navigate(`/product/${item.productId}`)}
+                className="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row gap-6 hover:shadow-lg hover:bg-gray-50/50 cursor-pointer transition-all duration-300 fade-in"
               >
                 {/* Product Image */}
                 <div className="w-full sm:w-32 h-32 bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg overflow-hidden flex-shrink-0">
@@ -102,13 +104,16 @@ export default function Cart() {
                 <div className="flex-1 space-y-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900">
+                      <h3 className="text-xl font-bold text-gray-900 hover:text-pink-600 transition-colors">
                         {item.productName}
                       </h3>
                       <p className="text-gray-600 mt-1">Size: {item.sizeLabel}</p>
                     </div>
                     <button
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFromCart(item.id);
+                      }}
                       className="text-red-500 hover:text-red-700 transition-all duration-300 hover:scale-110 active:scale-95"
                       title="Remove item"
                     >
@@ -132,16 +137,22 @@ export default function Cart() {
                     {/* Quantity Controls */}
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateQuantity(item.id, item.quantity - 1);
+                        }}
                         className="w-8 h-8 rounded-lg border-2 border-gray-200 hover:border-pink-500 flex items-center justify-center font-bold text-gray-700 hover:text-pink-600 transition-all duration-300 hover:bg-pink-50 active:scale-95"
                       >
                         −
                       </button>
-                      <span className="text-lg font-semibold text-gray-900 w-8 text-center transition-all duration-300">
+                      <span className="text-lg font-semibold text-gray-900 w-8 text-center transition-all duration-300" onClick={(e) => e.stopPropagation()}>
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateQuantity(item.id, item.quantity + 1);
+                        }}
                         className="w-8 h-8 rounded-lg border-2 border-gray-200 hover:border-pink-500 flex items-center justify-center font-bold text-gray-700 hover:text-pink-600 transition-all duration-300 hover:bg-pink-50 active:scale-95"
                       >
                         +
@@ -149,7 +160,7 @@ export default function Cart() {
                     </div>
 
                     {/* Price */}
-                    <div className="text-right">
+                    <div className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="text-sm text-gray-600">
                         ₹{item.price} × {item.quantity}
                       </div>

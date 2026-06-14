@@ -235,25 +235,12 @@ export default function ProductGallery({
   const aspectRatio =
     activeMedia?.type === "instagram" ? "125%" : activeMedia?.type === "video" ? "56.25%" : "100%";
 
-  return (
-    <div className="lg:flex lg:gap-4">
-      {/* Desktop vertical thumbnails */}
-      {media.length > 1 && (
-        <div className="hidden lg:flex flex-col gap-2.5 w-[4.5rem] shrink-0">
-          {media.slice(0, 10).map((item, idx) => (
-            <MediaThumbnail
-              key={idx}
-              item={item}
-              productName={productName}
-              idx={idx}
-              active={idx === activeIndex}
-              onSelect={onIndexChange}
-            />
-          ))}
-        </div>
-      )}
+  const goToPrev = () => onIndexChange((activeIndex - 1 + media.length) % media.length);
+  const goToNext = () => onIndexChange((activeIndex + 1) % media.length);
 
-      <div className="flex-1 min-w-0">
+  return (
+    <div>
+      <div>
         {/* Main viewer */}
         <div className="relative overflow-hidden rounded-2xl bg-white shadow-[0_4px_24px_rgba(17,24,39,0.06)]">
           <div className="relative w-full" style={{ paddingBottom: aspectRatio }}>
@@ -335,13 +322,39 @@ export default function ProductGallery({
                 </span>
               )}
             </div>
+
+            {/* Carousel prev / next arrows */}
+            {media.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={goToPrev}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/80 shadow-md hover:bg-white transition-colors backdrop-blur-sm"
+                  aria-label="Previous image"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={goToNext}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-white/80 shadow-md hover:bg-white transition-colors backdrop-blur-sm"
+                  aria-label="Next image"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Mobile & tablet thumbnails */}
+        {/* Thumbnails below main image */}
         {media.length > 1 && (
           <div
-            className="mt-3 flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide lg:hidden"
+            className="mt-3 flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             {media.slice(0, 10).map((item, idx) => (
