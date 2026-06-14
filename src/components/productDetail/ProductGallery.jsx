@@ -302,8 +302,12 @@ export default function ProductGallery({
                 </span>
               )}
               {badges?.isReadySameDay && (
-                <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-white/95 shadow-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  Same Day
+                <span className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-full bg-green-100 text-green-800 shadow-sm">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+                  </span>
+                  Same Day Ready
                 </span>
               )}
               {badges?.isFestival && (

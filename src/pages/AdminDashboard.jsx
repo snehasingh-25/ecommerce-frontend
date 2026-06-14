@@ -20,6 +20,7 @@ import BannerForm from "../components/admin/BannerForm";
 import BannerList from "../components/admin/BannerList";
 import AdminSearchBar from "../components/admin/AdminSearchBar";
 import AdminSearchResults from "../components/admin/AdminSearchResults";
+import SameDayReadyManager from "../components/admin/SameDayReadyManager";
 
 export default function AdminDashboard() {
   const { logout, user } = useAuth();
@@ -63,7 +64,7 @@ export default function AdminDashboard() {
       
       const headers = { Authorization: `Bearer ${token}` };
 
-      if (activeTab === "products") {
+      if (activeTab === "products" || activeTab === "sameday") {
         const [productsRes, occasionsRes, categoriesRes, relationsRes] = await Promise.all([
           fetch(`${API}/products`),
           fetch(`${API}/occasions/all`, { headers }),
@@ -236,6 +237,7 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: "products", label: "Products", icon: null },
+    { id: "sameday", label: "Same Day Ready", icon: null },
     { id: "categories", label: "Categories", icon: null },
     { id: "occasions", label: "Occasions", icon: null },
     { id: "relations", label: "Relations", icon: null },
@@ -462,6 +464,17 @@ export default function AdminDashboard() {
                   onDelete={handleProductDelete}
                 />
               </div>
+            )}
+
+            {activeTab === "sameday" && (
+              <SameDayReadyManager
+                products={products}
+                onProductUpdate={(updatedProduct) =>
+                  setProducts((prev) =>
+                    prev.map((p) => (p.id === updatedProduct.id ? { ...p, ...updatedProduct } : p))
+                  )
+                }
+              />
             )}
 
             {activeTab === "categories" && (

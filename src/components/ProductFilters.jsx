@@ -228,7 +228,7 @@ function FilterContent({
                   className="w-4 h-4 text-gray-900 rounded"
                 />
                 <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  Same Day Delivery
+                  Same Day Ready
                 </span>
               </label>
             )}

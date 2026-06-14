@@ -634,7 +634,12 @@ export default function ProductDetail() {
               isLoading={loadingRecommendations}
               excludeProductId={id}
               sectionClassName="mt-8 lg:mt-10"
-              showControls={false}
+              showControls={true}
+              exploreLink={
+                product?.occasions?.[0]?.slug
+                  ? `/occasion/${product.occasions[0].slug}`
+                  : null
+              }
             />
           </div>
 
@@ -646,7 +651,12 @@ export default function ProductDetail() {
               isLoading={loadingSimilar}
               excludeProductId={id}
               sectionClassName="mt-8 lg:mt-10"
-              showControls={false}
+              showControls={true}
+              exploreLink={
+                (product?.categories?.[0]?.slug || product?.category?.slug)
+                  ? `/category/${product?.categories?.[0]?.slug || product?.category?.slug}`
+                  : null
+              }
             />
           </div>
 

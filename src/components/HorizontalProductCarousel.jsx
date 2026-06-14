@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { API } from "../api";
 import { shuffleArray } from "../utils/shuffle";
 import ProductCard from "./ProductCard";
@@ -65,6 +66,7 @@ export default function HorizontalProductCarousel({
   renderTrackClassName = "flex gap-1 overflow-x-auto scroll-smooth scrollbar-hide pb-1",
   hideScrollbar = true,
   className = "",
+  exploreLink = null,
 }) {
   const scrollContainerRef = useRef(null);
   const [fetchedByKey, setFetchedByKey] = useState({});
@@ -191,9 +193,23 @@ export default function HorizontalProductCarousel({
   return (
     <section className={`${sectionClassName} ${className}`.trim()}>
       {!hideHeader ? (
-        <div className="mb-6">
-          <h2 className={titleClassName}>{title}</h2>
-          {countText ? <p className={subtitleClassName}>{countText}</p> : null}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className={titleClassName}>{title}</h2>
+            {countText ? <p className={subtitleClassName}>{countText}</p> : null}
+          </div>
+          {exploreLink ? (
+            <Link
+              to={exploreLink}
+              className="text-sm font-semibold inline-flex items-center gap-1 transition-all duration-300 hover:gap-2 group shrink-0"
+              style={{ color: "oklch(20% .02 340)" }}
+            >
+              Explore More
+              <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          ) : null}
         </div>
       ) : null}
 
