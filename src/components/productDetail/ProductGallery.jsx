@@ -314,6 +314,11 @@ export default function ProductGallery({
                   60 Min
                 </span>
               )}
+              {badges?.isReadySameDay && (
+                <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-white/95 shadow-sm" style={{ color: "oklch(20% .02 340)" }}>
+                  Same Day
+                </span>
+              )}
               {badges?.isFestival && (
                 <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-white/95 shadow-sm" style={{ color: "oklch(20% .02 340)" }}>
                   Festival

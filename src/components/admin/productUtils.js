@@ -22,11 +22,26 @@ export function cloneProductForDuplicate(product) {
         : []
     : [];
   const videos = product.videos && Array.isArray(product.videos) ? product.videos : [];
+  const imagesMeta = product.imagesMeta
+    ? Array.isArray(product.imagesMeta)
+      ? product.imagesMeta
+      : typeof product.imagesMeta === "string"
+        ? (() => {
+            try {
+              const parsed = JSON.parse(product.imagesMeta);
+              return Array.isArray(parsed) ? parsed : null;
+            } catch {
+              return null;
+            }
+          })()
+        : null
+    : null;
   return {
     ...product,
     id: null,
     name: (product.name || "").trim() + " (Copy)",
     images,
+    imagesMeta,
     videos,
     sizes:
       product.sizes && product.sizes.length > 0

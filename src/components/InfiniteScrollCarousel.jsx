@@ -22,14 +22,21 @@ export default function InfiniteScrollCarousel({
   hideArrowsOnMobile = false,
   rows = 1, // 1 or 2 (two-row horizontal scroller)
   desktopRows, // optional override at lg+
+  infinite = true,
 }) {
   const scrollRef = useRef(null);
   const scrollEndTimerRef = useRef(null);
   const setWidthRef = useRef(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isScrollable, setIsScrollable] = useState(false);
 
   const baseItems = useMemo(() => (Array.isArray(items) ? items.filter(Boolean) : []), [items]);
-  const list = useMemo(() => (baseItems.length ? [...baseItems, ...baseItems, ...baseItems] : []), [baseItems]);
+  const list = useMemo(() => {
+    if (!baseItems.length) return [];
+    return infinite ? [...baseItems, ...baseItems, ...baseItems] : baseItems;
+  }, [baseItems, infinite]);
 
   const resolvedStep = useMemo(() => {
     if (typeof step === "number") return step;
@@ -38,38 +45,64 @@ export default function InfiniteScrollCarousel({
     return window.innerWidth >= 1024 ? 260 : window.innerWidth >= 640 ? 220 : 180;
   }, [step, variant]);
 
-  // Initialize scroll position to middle set
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setIsScrollable(scrollWidth > clientWidth);
+    if (!infinite) {
+      setCanScrollLeft(scrollLeft > 5);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
+    }
+  }, [infinite]);
+
+  // Initialize scroll position
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || baseItems.length === 0) return;
-    const setWidth = el.scrollWidth / 3;
-    setWidthRef.current = setWidth;
-    el.scrollLeft = setWidth;
-  }, [baseItems]);
+    if (infinite) {
+      const setWidth = el.scrollWidth / 3;
+      setWidthRef.current = setWidth;
+      el.scrollLeft = setWidth;
+    } else {
+      el.scrollLeft = 0;
+      checkScroll();
+    }
+  }, [baseItems, infinite, checkScroll]);
+
+  // Handle window resizing and non-infinite scrolling bounds
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener("resize", checkScroll);
+    return () => window.removeEventListener("resize", checkScroll);
+  }, [baseItems, infinite, checkScroll]);
 
   const normalizeLoopPosition = useCallback(() => {
+    if (!infinite) return;
     const el = scrollRef.current;
     if (!el || baseItems.length === 0) return;
     const setWidth = setWidthRef.current || el.scrollWidth / 3;
     const sl = el.scrollLeft;
     if (sl >= setWidth * 2 - 50) el.scrollLeft = sl - setWidth;
     else if (sl <= 50) el.scrollLeft = sl + setWidth;
-  }, [baseItems.length]);
+  }, [baseItems.length, infinite]);
 
   const scroll = useCallback(
     (direction) => {
       const el = scrollRef.current;
       if (!el || baseItems.length === 0) return;
       el.scrollBy({ left: direction === "left" ? -resolvedStep : resolvedStep, behavior: "smooth" });
-      const setWidth = setWidthRef.current || el.scrollWidth / 3;
-      setTimeout(() => {
-        if (!scrollRef.current) return;
-        const sl = scrollRef.current.scrollLeft;
-        if (sl >= setWidth * 2 - 50) scrollRef.current.scrollLeft = sl - setWidth;
-        else if (sl <= 50) scrollRef.current.scrollLeft = sl + setWidth;
-      }, 350);
+      if (infinite) {
+        const setWidth = setWidthRef.current || el.scrollWidth / 3;
+        setTimeout(() => {
+          if (!scrollRef.current) return;
+          const sl = scrollRef.current.scrollLeft;
+          if (sl >= setWidth * 2 - 50) scrollRef.current.scrollLeft = sl - setWidth;
+          else if (sl <= 50) scrollRef.current.scrollLeft = sl + setWidth;
+        }, 350);
+      }
     },
-    [baseItems.length, resolvedStep]
+    [baseItems.length, resolvedStep, infinite]
   );
 
   useEffect(() => {
@@ -156,21 +189,27 @@ export default function InfiniteScrollCarousel({
         onTouchStart={() => setIsHovered(true)}
         onTouchEnd={() => setIsHovered(false)}
       >
-        <CarouselArrow
-          direction="left"
-          onClick={() => scroll("left")}
-          ariaLabel={`Scroll ${variant === "relation" ? "relations" : "categories"} left`}
-          size="sm"
-          className={`${arrowClassPrefix}absolute left-0 top-1/2 -translate-y-1/2 z-10`}
-        />
+        {(infinite || isScrollable) && (
+          <CarouselArrow
+            direction="left"
+            onClick={() => scroll("left")}
+            disabled={!infinite && !canScrollLeft}
+            ariaLabel={`Scroll ${variant === "relation" ? "relations" : "categories"} left`}
+            size="sm"
+            className={`${arrowClassPrefix}absolute left-0 top-1/2 -translate-y-1/2 z-10`}
+          />
+        )}
 
         <div
           ref={scrollRef}
           className={resolvedTrackClassName}
           style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
           onScroll={() => {
-            if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
-            scrollEndTimerRef.current = setTimeout(normalizeLoopPosition, 150);
+            checkScroll();
+            if (infinite) {
+              if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
+              scrollEndTimerRef.current = setTimeout(normalizeLoopPosition, 150);
+            }
           }}
         >
           {list.map((item, i) => (
@@ -184,14 +223,7 @@ export default function InfiniteScrollCarousel({
                 className={`${mediaClass} flex items-center justify-center ${variant === "relation" ? "text-4xl sm:text-5xl" : "text-2xl sm:text-3xl"} group-hover:shadow-lg group-hover:scale-110 transition-all duration-300 overflow-hidden cursor-pointer`}
                 style={{
                   backgroundColor: "oklch(92% .04 340)",
-                  // ...(variant === "relation" ? {} : { borderColor: "oklch(92% .04 340)" }),
                 }}
-                // onMouseEnter={(e) => {
-                //   if (variant !== "relation") e.currentTarget.style.borderColor = "oklch(88% .06 340)";
-                // }}
-                // onMouseLeave={(e) => {
-                //   if (variant !== "relation") e.currentTarget.style.borderColor = "oklch(92% .04 340)";
-                // }}
               >
                 {item?.imageUrl ? (
                   <img src={item.imageUrl} alt={item?.name ?? ""} className={`w-full h-full object-cover ${mediaInnerRounding}`} />
@@ -222,13 +254,16 @@ export default function InfiniteScrollCarousel({
           ))}
         </div>
 
-        <CarouselArrow
-          direction="right"
-          onClick={() => scroll("right")}
-          ariaLabel={`Scroll ${variant === "relation" ? "relations" : "categories"} right`}
-          size="sm"
-          className={`${arrowClassPrefix}absolute right-0 top-1/2 -translate-y-1/2 z-10`}
-        />
+        {(infinite || isScrollable) && (
+          <CarouselArrow
+            direction="right"
+            onClick={() => scroll("right")}
+            disabled={!infinite && !canScrollRight}
+            ariaLabel={`Scroll ${variant === "relation" ? "relations" : "categories"} right`}
+            size="sm"
+            className={`${arrowClassPrefix}absolute right-0 top-1/2 -translate-y-1/2 z-10`}
+          />
+        )}
       </div>
     </div>
   );

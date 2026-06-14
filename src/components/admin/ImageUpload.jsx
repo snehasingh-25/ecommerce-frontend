@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -34,6 +34,7 @@ export function getImageItemId(item) {
 function SortableImageCard({ item, index, onRemove, isOverlay }) {
   const isFeatured = index === 0;
   const id = getImageItemId(item);
+  const [imgError, setImgError] = useState(false);
   const {
     attributes,
     listeners,
@@ -54,6 +55,9 @@ function SortableImageCard({ item, index, onRemove, isOverlay }) {
       ? item.url
       : item.objectURL || (item.file && URL.createObjectURL(item.file));
 
+  // Reset error state when item changes
+  useEffect(() => { setImgError(false); }, [item]);
+
   return (
     <div
       ref={setNodeRef}
@@ -63,11 +67,25 @@ function SortableImageCard({ item, index, onRemove, isOverlay }) {
       } ${isOverlay ? "shadow-xl cursor-grabbing" : ""}`}
     >
       <div className="aspect-square w-full">
-        <img
-          src={src}
-          alt={item.type === "existing" ? "Product" : item.file?.name || "Upload"}
-          className="w-full h-full object-cover"
-        />
+        {imgError ? (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-400 p-2">
+            <svg className="w-8 h-8 mb-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="text-[10px] text-center break-all leading-tight px-1">
+              {item.file?.name || "No preview"}
+            </span>
+            <span className="text-[9px] text-gray-300 mt-0.5">Will convert on upload</span>
+          </div>
+        ) : (
+          <img
+            src={src}
+            alt={item.type === "existing" ? "Product" : item.file?.name || "Upload"}
+            className="w-full h-full object-cover"
+            draggable="false"
+            onError={() => setImgError(true)}
+          />
+        )}
       </div>
       {isFeatured && (
         <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-pink-500 text-white shadow">
@@ -134,8 +152,11 @@ export default function ImageUpload({
   };
 
   const filterValidFiles = useCallback((files) => {
+    // HEIC/HEIF and some formats get type:"" on Linux — fall back to extension check
+    const IMAGE_EXTENSIONS = /\.(jpe?g|png|gif|webp|avif|heic|heif|bmp|tiff?)$/i;
     return Array.from(files).filter((f) => {
-      if (!f.type.startsWith("image/")) return false;
+      const typeOk = f.type.startsWith("image/") || (f.type === "" && IMAGE_EXTENSIONS.test(f.name));
+      if (!typeOk) return false;
       if (f.size > MAX_SIZE_BYTES) {
         alert(`${f.name} exceeds ${MAX_SIZE_MB}MB. Images are auto-optimized to WebP on upload.`);
         return false;
@@ -201,6 +222,16 @@ export default function ImageUpload({
 
   return (
     <div className="space-y-4">
+      {/* Single stable file input — keeps ref valid regardless of which drop zone is visible */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={handleChange}
+        className="hidden"
+      />
+
       <div className="flex items-center justify-between">
         <label className="block text-sm font-semibold text-gray-700">
           Product Images
@@ -261,14 +292,6 @@ export default function ImageUpload({
               : "border-gray-300 hover:border-pink-400 bg-gray-50"
           }`}
         >
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleChange}
-            className="hidden"
-          />
           <div className="text-3xl mb-2">📸</div>
           <p className="text-gray-600 text-sm">
             Drag images here or{" "}
@@ -298,14 +321,6 @@ export default function ImageUpload({
               : "border-gray-300 hover:border-pink-400 bg-gray-50"
           }`}
         >
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleChange}
-            className="hidden"
-          />
           <div className="text-4xl mb-3">📸</div>
           <p className="text-gray-600 mb-2">
             Drag and drop images here, or{" "}

@@ -88,6 +88,11 @@ function ProductCard({ product, compact = false }) {
                 60 Min
               </span>
             )}
+            {product.isReadySameDay && (
+              <span className="px-2 py-0.5 text-xs rounded-full font-semibold shadow-sm" style={{ backgroundColor: 'oklch(92% .04 340)', color: 'oklch(20% .02 340)' }}>
+                Same Day
+              </span>
+            )}
             {product.isFestival && (
               <span className="px-2 py-0.5 text-xs rounded-full font-semibold shadow-sm" style={{ backgroundColor: 'oklch(92% .04 340)', color: 'oklch(20% .02 340)' }}>
                 Festival

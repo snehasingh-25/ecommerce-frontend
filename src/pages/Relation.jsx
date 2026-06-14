@@ -107,6 +107,7 @@ export default function Relation() {
             onItemClick={handleRelationClick}
             showViewAll={false}
             title="Shop by Relation"
+            infinite={false}
           />
         </div>
 

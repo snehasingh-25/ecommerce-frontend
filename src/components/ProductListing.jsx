@@ -31,6 +31,7 @@ function ProductListingInner({
     if (filters.isTrending) params.append("isTrending", "true");
     if (filters.isFestival) params.append("isFestival", "true");
     if (filters.isReady60Min) params.append("isReady60Min", "true");
+    if (filters.isReadySameDay) params.append("isReadySameDay", "true");
     if (filters.badge) params.append("badge", filters.badge);
     if (filters.minPrice) params.append("minPrice", filters.minPrice);
     if (filters.maxPrice) params.append("maxPrice", filters.maxPrice);

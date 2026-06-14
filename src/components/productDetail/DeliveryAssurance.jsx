@@ -1,8 +1,8 @@
 const ITEMS = [
-  { emoji: "🚚", label: "Delivery in 2-5 Days" },
-  { emoji: "🔒", label: "Secure Checkout" },
-  { emoji: "🎁", label: "Perfect Gift Choice" },
-  { emoji: "💯", label: "Quality Checked" },
+  { emoji: "😄", label: "Loved By 20,000+ Customers" },
+  { emoji: "⭐", label: "Premium Quality Guaranteed" },
+  { emoji: "❤️", label: "Gift That Feels Personal" },
+  { emoji: "🚛", label: "On-Time Delivery" },
 ];
 
 export default function DeliveryAssurance() {

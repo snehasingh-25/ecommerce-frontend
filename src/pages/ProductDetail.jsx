@@ -475,6 +475,7 @@ export default function ProductDetail() {
                 productName={product.name}
                 badges={{
                   isReady60Min: product.isReady60Min,
+                  isReadySameDay: product.isReadySameDay,
                   isFestival: product.isFestival,
                   isNew: product.isNew,
                   badge: product.badge,
@@ -500,8 +501,6 @@ export default function ProductDetail() {
                   <div className="mt-3">
                     <PriceDisplay selectedSize={selectedSize} product={product} />
                   </div>
-
-                  <DeliveryAssurance />
 
                   {/* Size selector */}
                   {product.sizes?.length ? (
@@ -550,7 +549,7 @@ export default function ProductDetail() {
                     </div>
                     <QuantitySelector quantity={quantity} onChange={setQuantity} />
                   </div>
-
+                   <DeliveryAssurance />
                   {/* Total */}
                   {selectedSize && priceInfo ? (
                     <div

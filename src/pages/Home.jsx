@@ -272,9 +272,10 @@ export default function Home() {
         variant="relation"
         items={relations}
         ui={INFINITE_SCROLL_CAROUSEL_UI.relation}
-        autoScroll={true}
+        autoScroll={false}
         showViewAll={true}
         viewAllTo="/relation"
+        infinite={false}
       />
 
       {/* Shop By Occasion (dynamic selector + live preview slider) */}
