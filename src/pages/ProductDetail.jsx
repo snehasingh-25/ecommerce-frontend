@@ -241,7 +241,7 @@ export default function ProductDetail() {
     }
     const sizeLabel = product.hasSinglePrice ? "Standard" : selectedSize.label;
     const price = product.hasSinglePrice ? product.singlePrice : selectedSize.price;
-    const message = `Hi! I'm interested in:\n\nProduct: ${product.name}\n${product.hasSinglePrice ? "" : `Size: ${sizeLabel}\n`}Quantity: ${quantity}\nPrice: ₹${price}\nTotal: ₹${(Number(price) * quantity).toFixed(2)}`;
+    const message = `Hi! I'm interested in:\n\nProduct: ${product.name}\nLink: https://www.giftchoice.net/product/${id}\n${product.hasSinglePrice ? "" : `Size: ${sizeLabel}\n`}Quantity: ${quantity}\nPrice: ₹${price}\nTotal: ₹${(Number(price) * quantity).toFixed(2)}`;
     window.open(`https://wa.me/917976948872?text=${encodeURIComponent(message)}`);
   };
 

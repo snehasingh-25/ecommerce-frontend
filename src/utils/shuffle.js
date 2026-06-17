@@ -12,3 +12,24 @@ export function shuffleArray(arr) {
   }
   return out;
 }
+
+/**
+ * Like shuffleArray but persists the shuffled order in sessionStorage under
+ * `cacheKey` so that navigating back to the same listing restores the same
+ * order rather than re-shuffling.  The cache is invalidated when the array
+ * length changes (e.g. a product was added/removed).  sessionStorage is
+ * cleared automatically when the browser tab is closed.
+ */
+export function shuffleWithCache(arr, cacheKey) {
+  if (!arr || arr.length === 0) return [];
+  try {
+    const raw = sessionStorage.getItem(cacheKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length === arr.length) return parsed;
+    }
+  } catch (_) {}
+  const shuffled = shuffleArray(arr);
+  try { sessionStorage.setItem(cacheKey, JSON.stringify(shuffled)); } catch (_) {}
+  return shuffled;
+}

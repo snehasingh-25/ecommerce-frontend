@@ -3,7 +3,7 @@ import { API } from "../api";
 import ProductCard from "./ProductCard";
 import ProductFilters from "./ProductFilters";
 import SortDropdown from "./SortDropdown";
-import { shuffleArray } from "../utils/shuffle";
+import { shuffleArray, shuffleWithCache } from "../utils/shuffle";
 
 function ProductListingInner({
   initialFilters = {},
@@ -56,7 +56,7 @@ function ProductListingInner({
       .then(data => {
         const arr = Array.isArray(data) ? data : [];
         const isDefaultSort = !sort || sort === "relevance";
-        setProducts(isDefaultSort ? shuffleArray(arr) : arr);
+        setProducts(isDefaultSort ? shuffleWithCache(arr, apiUrl) : arr);
         setLoading(false);
       })
       .catch((error) => {
