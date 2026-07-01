@@ -9,14 +9,60 @@ export const IMAGE_SIZES = {
   admin: "48px",
 };
 
+const VARIANT_WIDTHS = {
+  thumb: 320,
+  medium: 800,
+  large: 1200,
+  original: 1200,
+};
+
+/**
+ * Inject Cloudinary delivery transforms: f_auto, q_auto, w_*, c_fill
+ */
+export function injectCloudinaryTransforms(url, width = 600) {
+  if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com")) {
+    return url;
+  }
+
+  const marker = "/image/upload/";
+  const markerIndex = url.indexOf(marker);
+  if (markerIndex === -1) return url;
+
+  const prefix = url.slice(0, markerIndex + marker.length);
+  const rest = url.slice(markerIndex + marker.length);
+  const slashIndex = rest.indexOf("/");
+  const firstSegment = slashIndex === -1 ? rest : rest.slice(0, slashIndex);
+  const afterFirstSegment = slashIndex === -1 ? "" : rest.slice(slashIndex + 1);
+
+  if (firstSegment.includes("f_auto")) return url;
+
+  const transform = `f_auto,q_auto,w_${width},c_fill`;
+
+  if (firstSegment.includes(",")) {
+    return `${prefix}${transform}${afterFirstSegment ? `/${afterFirstSegment}` : ""}`;
+  }
+
+  return `${prefix}${transform}/${rest}`;
+}
+
 /**
  * Resolve a stored path or absolute URL to a full fetchable URL.
  */
-export function resolveAssetUrl(url) {
+export function resolveAssetUrl(url, { width } = {}) {
   if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/")) return `${API}${url}`;
-  return url;
+
+  let resolved = url;
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    resolved = url;
+  } else if (url.startsWith("/")) {
+    resolved = `${API}${url}`;
+  }
+
+  if (resolved.includes("res.cloudinary.com")) {
+    return injectCloudinaryTransforms(resolved, width ?? 600);
+  }
+
+  return resolved;
 }
 
 export function parseProductImagesMeta(imagesMeta) {
@@ -60,21 +106,30 @@ export function getProductImageList(product) {
 }
 
 export function getVariantUrl(metaOrUrl, variant = "medium") {
+  const width = VARIANT_WIDTHS[variant] || VARIANT_WIDTHS.medium;
+
   if (!metaOrUrl) return "";
-  if (typeof metaOrUrl === "string") return resolveAssetUrl(metaOrUrl);
-  if (metaOrUrl.variants?.[variant]) return resolveAssetUrl(metaOrUrl.variants[variant]);
-  if (metaOrUrl.legacyUrl) return resolveAssetUrl(metaOrUrl.legacyUrl);
-  if (metaOrUrl.canonical) return resolveAssetUrl(metaOrUrl.canonical);
+  if (typeof metaOrUrl === "string") {
+    return injectCloudinaryTransforms(resolveAssetUrl(metaOrUrl), width);
+  }
+  if (metaOrUrl.variants?.[variant]) {
+    return resolveAssetUrl(metaOrUrl.variants[variant]);
+  }
+  if (metaOrUrl.legacyUrl) {
+    return injectCloudinaryTransforms(resolveAssetUrl(metaOrUrl.legacyUrl), width);
+  }
+  if (metaOrUrl.canonical) {
+    return injectCloudinaryTransforms(resolveAssetUrl(metaOrUrl.canonical), width);
+  }
   return "";
 }
 
 export function getProductImageSrcSet(meta) {
   if (!meta?.variants || meta.legacy || meta.format === "legacy") return undefined;
 
-  const widths = { thumb: 320, medium: 800, large: 1200, original: 2000 };
   const parts = [];
 
-  for (const [name, w] of Object.entries(widths)) {
+  for (const [name, w] of Object.entries(VARIANT_WIDTHS)) {
     if (meta.variants[name]) {
       parts.push(`${resolveAssetUrl(meta.variants[name])} ${w}w`);
     }

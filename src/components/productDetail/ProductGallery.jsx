@@ -296,11 +296,6 @@ export default function ProductGallery({
 
             {/* Product badges */}
             <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10 pointer-events-none">
-              {badges?.isReady60Min && (
-                <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-white/95 shadow-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  60 Min
-                </span>
-              )}
               {badges?.isReadySameDay && (
                 <span className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-full bg-green-100 text-green-800 shadow-sm">
                   <span className="relative flex h-1.5 w-1.5">

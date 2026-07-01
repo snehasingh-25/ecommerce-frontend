@@ -474,7 +474,6 @@ export default function ProductDetail() {
                 media={media}
                 productName={product.name}
                 badges={{
-                  isReady60Min: product.isReady60Min,
                   isReadySameDay: product.isReadySameDay,
                   isFestival: product.isFestival,
                   isNew: product.isNew,

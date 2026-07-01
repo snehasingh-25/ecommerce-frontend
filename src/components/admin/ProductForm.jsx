@@ -1033,15 +1033,6 @@ export default function ProductForm({
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={formData.isReady60Min}
-                  onChange={(e) => setFormData({ ...formData, isReady60Min: e.target.checked })}
-                  className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
-                />
-                <span className="text-sm text-gray-700">60 Minutes Ready</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
                   checked={formData.isReadySameDay}
                   onChange={(e) => setFormData({ ...formData, isReadySameDay: e.target.checked })}
                   className="w-4 h-4 text-pink-600 rounded focus:ring-pink-500"

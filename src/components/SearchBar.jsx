@@ -33,6 +33,8 @@ export default function SearchBar({
   const suggestionsRef = useRef(null);
   const typedElementRef = useRef(null);
   const typedInstanceRef = useRef(null);
+  const fuseTimeoutRef = useRef(null);
+  const suppressSuggestionsRef = useRef(false);
 
   // Keep input in sync when initialValue changes (e.g. browser back/forward on Search page)
   useEffect(() => {
@@ -49,6 +51,8 @@ export default function SearchBar({
 
   // Fuse.js suggestions
   useEffect(() => {
+    if (fuseTimeoutRef.current) clearTimeout(fuseTimeoutRef.current);
+
     if (searchQuery.trim().length > 0 && allProducts.length > 0) {
       const fuse = new Fuse(allProducts, {
         keys: ["name", "description", "keywords"],
@@ -57,16 +61,21 @@ export default function SearchBar({
         minMatchCharLength: 2,
       });
       const results = fuse.search(searchQuery).slice(0, 5).map((r) => r.item);
-      setTimeout(() => {
+      fuseTimeoutRef.current = setTimeout(() => {
+        if (suppressSuggestionsRef.current) return;
         setSearchSuggestions(results);
         setShowSuggestions(results.length > 0);
       }, 0);
     } else {
-      setTimeout(() => {
+      fuseTimeoutRef.current = setTimeout(() => {
         setSearchSuggestions([]);
         setShowSuggestions(false);
       }, 0);
     }
+
+    return () => {
+      if (fuseTimeoutRef.current) clearTimeout(fuseTimeoutRef.current);
+    };
   }, [searchQuery, allProducts]);
 
   // Typed.js animated placeholder
@@ -115,10 +124,13 @@ export default function SearchBar({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = (e) => {
+    e?.preventDefault?.();
     const q = searchQuery.trim();
     if (!q) return;
+    suppressSuggestionsRef.current = true;
     setShowSuggestions(false);
+    inputRef.current?.blur();
     if (onSearch) {
       onSearch(q);
     } else {
@@ -128,17 +140,24 @@ export default function SearchBar({
 
   return (
     <div className={`relative ${className}`}>
-      <div className="relative">
+      <form
+        className="relative"
+        onSubmit={handleSubmit}
+      >
         <input
           ref={inputRef}
-          type="text"
+          type="search"
+          enterKeyHint="search"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            suppressSuggestionsRef.current = false;
+            setSearchQuery(e.target.value);
+          }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") handleSubmit();
-            else if (e.key === "Escape") setShowSuggestions(false);
+            if (e.key === "Escape") setShowSuggestions(false);
           }}
           onFocus={(e) => {
+            suppressSuggestionsRef.current = false;
             e.target.style.borderColor = "oklch(92% .04 340)";
             e.target.style.backgroundColor = "white";
             e.target.style.color = "oklch(20% .02 340)";
@@ -177,8 +196,7 @@ export default function SearchBar({
 
         {/* Search icon / submit button */}
         <button
-          type="button"
-          onClick={handleSubmit}
+          type="submit"
           className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer z-30"
           aria-label="Search"
         >
@@ -197,7 +215,7 @@ export default function SearchBar({
             />
           </svg>
         </button>
-      </div>
+      </form>
 
       {/* Suggestions dropdown */}
       {showSuggestions && searchSuggestions.length > 0 && (
@@ -269,7 +287,12 @@ export default function SearchBar({
             {/* View all results */}
             <Link
               to={`/search?q=${encodeURIComponent(searchQuery.trim())}`}
-              onClick={() => setShowSuggestions(false)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                suppressSuggestionsRef.current = true;
+                setShowSuggestions(false);
+                inputRef.current?.blur();
+              }}
               className="block px-3 py-2 rounded-lg text-sm font-semibold text-center transition-colors mt-1"
               style={{ color: "oklch(20% .02 340)", backgroundColor: "oklch(92% .04 340)" }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "oklch(88% .06 340)")}

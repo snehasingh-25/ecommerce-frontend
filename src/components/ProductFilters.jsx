@@ -206,19 +206,6 @@ function FilterContent({
                 </span>
               </label>
             )}
-            {filterOptions.availability.isReady60Min && (
-              <label className="flex items-center gap-3 cursor-pointer py-1">
-                <input
-                  type="checkbox"
-                  checked={tempFilters.isReady60Min || false}
-                  onChange={() => onAvailabilityToggle("isReady60Min")}
-                  className="w-4 h-4 text-gray-900 rounded"
-                />
-                <span className="text-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  60 Min Ready
-                </span>
-              </label>
-            )}
             {filterOptions.availability.isReadySameDay && (
               <label className="flex items-center gap-3 cursor-pointer py-1">
                 <input
@@ -359,7 +346,7 @@ export default function ProductFilters({
 
   const hasActiveFilters = tempFilters.minPrice || tempFilters.maxPrice || 
     (tempFilters.size && tempFilters.size.length > 0) || tempFilters.badge ||
-    tempFilters.isNew || tempFilters.isTrending || tempFilters.isFestival || tempFilters.isReady60Min || tempFilters.isReadySameDay ||
+    tempFilters.isNew || tempFilters.isTrending || tempFilters.isFestival || tempFilters.isReadySameDay ||
     (tempFilters.category && tempFilters.category !== filters.category) ||
     (tempFilters.occasion && tempFilters.occasion !== filters.occasion);
 

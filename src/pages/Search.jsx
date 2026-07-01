@@ -1,9 +1,32 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import Fuse from "fuse.js";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
 import SearchBar from "../components/SearchBar";
 import { shuffleArray } from "../utils/shuffle";
+
+function filterProductsClientSide(products, { query, categoryFilter, occasionFilter }) {
+  let filtered = Array.isArray(products) ? products : [];
+  if (categoryFilter) {
+    filtered = filtered.filter((p) =>
+      p.categories?.some((c) => (c.slug || c.category?.slug) === categoryFilter)
+    );
+  }
+  if (occasionFilter) {
+    filtered = filtered.filter((p) =>
+      p.occasions?.some((o) => (o.slug || o.occasion?.slug) === occasionFilter)
+    );
+  }
+  if (!query) return filtered;
+  const fuse = new Fuse(filtered, {
+    keys: ["name", "description", "keywords"],
+    threshold: 0.4,
+    includeScore: true,
+    minMatchCharLength: 2,
+  });
+  return fuse.search(query).map((r) => r.item);
+}
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,7 +51,7 @@ export default function Search() {
       .then(([categoriesData, occasionsData, productsData]) => {
         setCategories(categoriesData);
         setOccasions(occasionsData);
-        setAllProducts(productsData);
+        setAllProducts(Array.isArray(productsData) ? productsData : []);
       })
       .catch(error => {
         console.error("Error fetching data:", error);
@@ -48,7 +71,14 @@ export default function Search() {
       try {
         const res = await fetch(url);
         const data = await res.json();
-        const safeData = shuffleArray(Array.isArray(data) ? data : []);
+        const apiProducts = Array.isArray(data) ? data : [];
+        let safeData = shuffleArray(apiProducts);
+
+        if (safeData.length === 0 && query && Array.isArray(allProducts) && allProducts.length > 0) {
+          const fuseResults = filterProductsClientSide(allProducts, { query, categoryFilter, occasionFilter });
+          safeData = shuffleArray(fuseResults);
+        }
+
         setProducts(safeData);
         
         // If no results and we have a query, fall back to all products in selected category (and other active filters).
