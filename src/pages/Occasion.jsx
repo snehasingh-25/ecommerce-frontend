@@ -72,7 +72,7 @@ export default function Occasion() {
             ))}
           </div>
           {/* Product grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
             {[...Array(10)].map((_, i) => (
               <div key={i}>
                 <div className="sk aspect-[4/5] w-full rounded" />
@@ -117,11 +117,11 @@ export default function Occasion() {
               
               {selectedOccasion ? (
                 <div className="mb-4">
-                  <h3 className="text-lg sm:text-xl font-bold" style={{ color: "oklch(20% .02 340)" }}>
+                  <h3 className="gc-heading text-lg sm:text-xl font-bold">
                     {selectedOccasion.name}
                   </h3>
                   {selectedOccasion.description ? (
-                    <p className="mt-1 text-sm" style={{ color: "oklch(60% .02 340)" }}>
+                    <p className="gc-subheading mt-1 text-sm">
                       {selectedOccasion.description}
                     </p>
                   ) : null}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Typed from "typed.js";
 import Fuse from "fuse.js";
 import { API } from "../api";
@@ -24,6 +24,7 @@ export default function SearchBar({
   onSearch,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState(initialValue);
   const [allProducts, setAllProducts] = useState([]);
   const [searchSuggestions, setSearchSuggestions] = useState([]);
@@ -41,31 +42,38 @@ export default function SearchBar({
     setSearchQuery(initialValue);
   }, [initialValue]);
 
-  // Fetch all products once for fuzzy suggestions
+  // Fetch all products once for fuzzy suggestions (stable order, cacheable)
   useEffect(() => {
-    fetch(`${API}/products`)
+    let cancelled = false;
+    fetch(`${API}/products?shuffle=false`)
       .then((r) => r.json())
-      .then((data) => setAllProducts(Array.isArray(data) ? data : []))
+      .then((data) => {
+        if (!cancelled) setAllProducts(Array.isArray(data) ? data : []);
+      })
       .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Fuse.js suggestions
+  // Fuse.js suggestions (light debounce)
   useEffect(() => {
     if (fuseTimeoutRef.current) clearTimeout(fuseTimeoutRef.current);
 
-    if (searchQuery.trim().length > 0 && allProducts.length > 0) {
+    const q = searchQuery.trim();
+    if (q.length > 0 && allProducts.length > 0) {
       const fuse = new Fuse(allProducts, {
         keys: ["name", "description", "keywords"],
         threshold: 0.4,
         includeScore: true,
-        minMatchCharLength: 2,
+        minMatchCharLength: 1,
       });
-      const results = fuse.search(searchQuery).slice(0, 5).map((r) => r.item);
+      const results = fuse.search(q).slice(0, 5).map((r) => r.item);
       fuseTimeoutRef.current = setTimeout(() => {
         if (suppressSuggestionsRef.current) return;
         setSearchSuggestions(results);
         setShowSuggestions(results.length > 0);
-      }, 0);
+      }, 120);
     } else {
       fuseTimeoutRef.current = setTimeout(() => {
         setSearchSuggestions([]);
@@ -124,18 +132,34 @@ export default function SearchBar({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleSubmit = (e) => {
-    e?.preventDefault?.();
-    const q = searchQuery.trim();
+  const runSearch = (rawQuery) => {
+    const q = (rawQuery ?? searchQuery).trim();
     if (!q) return;
     suppressSuggestionsRef.current = true;
     setShowSuggestions(false);
     inputRef.current?.blur();
     if (onSearch) {
       onSearch(q);
-    } else {
-      navigate(`/search?q=${encodeURIComponent(q)}`);
+      return;
     }
+    // Preserve category/occasion filters when already on the search page
+    const params = new URLSearchParams(
+      location.pathname === "/search" ? location.search : ""
+    );
+    params.set("q", q);
+    navigate(`/search?${params.toString()}`, {
+      state: { searchAt: Date.now() },
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e?.preventDefault?.();
+    runSearch(searchQuery);
+  };
+
+  // Prevent input blur from racing the click; navigation happens on click while item is still mounted
+  const keepSuggestionsForClick = (e) => {
+    e.preventDefault();
   };
 
   return (
@@ -238,8 +262,10 @@ export default function SearchBar({
                 <Link
                   key={product.id}
                   to={`/product/${product.id}`}
-                  onMouseDown={(e) => {
+                  onMouseDown={keepSuggestionsForClick}
+                  onClick={(e) => {
                     e.preventDefault();
+                    suppressSuggestionsRef.current = true;
                     setShowSuggestions(false);
                     setSearchQuery("");
                     navigate(`/product/${product.id}`);
@@ -284,22 +310,18 @@ export default function SearchBar({
               );
             })}
 
-            {/* View all results */}
-            <Link
-              to={`/search?q=${encodeURIComponent(searchQuery.trim())}`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                suppressSuggestionsRef.current = true;
-                setShowSuggestions(false);
-                inputRef.current?.blur();
-              }}
-              className="block px-3 py-2 rounded-lg text-sm font-semibold text-center transition-colors mt-1"
+            {/* View all results — navigate on click while still mounted; respect onSearch */}
+            <button
+              type="button"
+              onMouseDown={keepSuggestionsForClick}
+              onClick={() => runSearch(searchQuery)}
+              className="block w-full px-3 py-2 rounded-lg text-sm font-semibold text-center transition-colors mt-1"
               style={{ color: "oklch(20% .02 340)", backgroundColor: "oklch(92% .04 340)" }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "oklch(88% .06 340)")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "oklch(92% .04 340)")}
             >
               View all results for &ldquo;{searchQuery}&rdquo;
-            </Link>
+            </button>
           </div>
         </div>
       )}

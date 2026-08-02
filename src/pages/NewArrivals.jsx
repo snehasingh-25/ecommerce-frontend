@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
-import { shuffleWithCache } from "../utils/shuffle";
+import { shuffleArray } from "../utils/shuffle";
 
 const SK = "inline-block bg-gradient-to-r from-[oklch(93%_.03_340)] via-[oklch(96%_.02_340)] to-[oklch(93%_.03_340)] bg-[length:800px_100%] animate-[shimmer_1.5s_ease-in-out_infinite]";
 
@@ -12,7 +12,7 @@ export default function NewArrivals() {
   useEffect(() => {
     fetch(`${API}/products`)
       .then(res => res.json())
-      .then(data => { const filtered = data.filter(p => p.isNew); setProducts(shuffleWithCache(filtered, `${API}/products?isNew=true`)); setLoading(false); })
+      .then(data => { const filtered = data.filter(p => p.isNew); setProducts(shuffleArray(filtered)); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
@@ -22,7 +22,7 @@ export default function NewArrivals() {
         <style>{`@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}`}</style>
         <div className="px-1 sm:px-2 lg:px-4">
           <div className={`${SK} h-7 w-40 rounded mb-6`} />
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
             {[...Array(10)].map((_, i) => (
               <div key={i}>
                 <div className={`${SK} aspect-[4/5] w-full rounded`} />
@@ -43,9 +43,9 @@ export default function NewArrivals() {
     <div className="min-h-screen py-4 sm:py-6">
       <div className="px-1 sm:px-2 lg:px-4">
         <div className="text-left mb-4">
-          <h2 className="text-xl sm:text-2xl font-bold mb-1">New Arrivals</h2>
+          <h2 className="gc-heading text-xl sm:text-2xl font-bold mb-1">New Arrivals</h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
           {products.map(p => (
             <ProductCard key={p.id} product={p} />
           ))}

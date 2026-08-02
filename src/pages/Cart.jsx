@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { resolveAssetUrl } from "../utils/imageUrl";
+import { openWhatsApp, productShareUrl } from "../utils/whatsapp";
 
 export default function Cart() {
   const {
@@ -25,7 +26,7 @@ export default function Cart() {
     
     cartItems.forEach((item, index) => {
       message += `${index + 1}. ${item.productName}\n`;
-      message += `   Link: https://www.giftchoice.net/product/${item.productId}\n`;
+      message += `   Link: ${productShareUrl(item.productId)}\n`;
       message += `   Size: ${item.sizeLabel}\n`;
       message += `   Quantity: ${item.quantity}\n`;
       message += `   Price: ₹${item.price}\n`;
@@ -34,10 +35,7 @@ export default function Cart() {
 
     message += `Total: ₹${getCartTotal().toFixed(2)}`;
 
-    // Open WhatsApp
-    window.open(
-      `https://wa.me/917976948872?text=${encodeURIComponent(message)}`
-    );
+    openWhatsApp(message);
 
     // Optionally clear cart after checkout
     // clearCart();

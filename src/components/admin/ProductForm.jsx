@@ -499,11 +499,14 @@ export default function ProductForm({
   const buildOptimisticProduct = (tempId) => {
     const imageUrls = imageItems.map((i) => (i.type === "existing" ? i.url : i.objectURL || ""));
     const resolvedCategories = (categories || []).filter((c) => selectedCategories.includes(c.id)).map((c) => ({ id: c.id, name: c.name }));
+    const now = new Date().toISOString();
     return {
       id: tempId,
       name: formData.name || "Untitled",
       description: (formData.description || "").slice(0, 200),
       order: 0,
+      createdAt: now,
+      updatedAt: now,
       images: imageUrls.filter(Boolean),
       categories: resolvedCategories,
       isFestival: !!formData.isFestival,

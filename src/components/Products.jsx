@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API } from "../api";
 import { shuffleArray } from "../utils/shuffle";
+import { openWhatsApp, productShareUrl } from "../utils/whatsapp";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -21,14 +22,14 @@ export default function Products() {
 
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-1">
       {products.map(p => (
         <div key={p.id} className="bg-white rounded shadow p-4">
           <h3 className="text-lg font-semibold">{p.name}</h3>
           <p className="text-sm text-gray-600">{p.description}</p>
 
           {p.badge && (
-            <span className="inline-block mt-2 px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
+            <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded bg-green-100 text-green-700">
               {p.badge}
             </span>
           )}
@@ -45,10 +46,8 @@ export default function Products() {
           <button
             className="mt-4 w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700"
             onClick={() => {
-              const msg = `Product: ${p.name}`;
-              window.open(
-                `https://wa.me/917976948872?text=${encodeURIComponent(msg)}`
-              );
+              const msg = `Product: ${p.name}\nLink: ${productShareUrl(p.id)}`;
+              openWhatsApp(msg);
             }}
           >
             Order on WhatsApp

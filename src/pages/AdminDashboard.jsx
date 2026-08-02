@@ -16,8 +16,6 @@ import OccasionForm from "../components/admin/OccasionForm";
 import OccasionList from "../components/admin/OccasionList";
 import RelationForm from "../components/admin/RelationForm";
 import RelationList from "../components/admin/RelationList";
-import BannerForm from "../components/admin/BannerForm";
-import BannerList from "../components/admin/BannerList";
 import AdminSearchBar from "../components/admin/AdminSearchBar";
 import AdminSearchResults from "../components/admin/AdminSearchResults";
 import SameDayReadyManager from "../components/admin/SameDayReadyManager";
@@ -35,14 +33,12 @@ export default function AdminDashboard() {
   const [messages, setMessages] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [reels, setReels] = useState([]);
-  const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingOccasion, setEditingOccasion] = useState(null);
   const [editingRelation, setEditingRelation] = useState(null);
   const [editingReel, setEditingReel] = useState(null);
-  const [editingBanner, setEditingBanner] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(null);
 
@@ -66,7 +62,7 @@ export default function AdminDashboard() {
 
       if (activeTab === "products" || activeTab === "sameday") {
         const [productsRes, occasionsRes, categoriesRes, relationsRes] = await Promise.all([
-          fetch(`${API}/products`),
+          fetch(`${API}/products?shuffle=false`),
           fetch(`${API}/occasions/all`, { headers }),
           fetch(`${API}/categories`),
           fetch(`${API}/relations/all`, { headers }),
@@ -162,15 +158,6 @@ export default function AdminDashboard() {
           toast.error("Session expired. Please login again.");
           logout();
         }
-      } else if (activeTab === "banners") {
-        const res = await fetch(`${API}/banners/all`, { headers });
-        if (res.ok) {
-          const data = await res.json();
-          setBanners(data);
-        } else if (res.status === 401) {
-          toast.error("Session expired. Please login again.");
-          logout();
-        }
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -186,14 +173,19 @@ export default function AdminDashboard() {
   };
 
   const handleOptimisticAdd = (optimisticProduct) => {
-    setProducts((prev) => [...prev, optimisticProduct]);
+    // Prepend so the new product shows at top while sorted by updatedAt
+    setProducts((prev) => [optimisticProduct, ...prev]);
   };
 
   const handleOptimisticSuccess = (tempId, serverProduct) => {
     setProducts((prev) => {
-      const idx = prev.findIndex((p) => p.id === tempId);
-      if (idx === -1) return [...prev, serverProduct];
-      return prev.map((p) => (p.id === tempId ? { ...serverProduct, order: p.order ?? serverProduct.order } : p));
+      const merged = {
+        ...serverProduct,
+        updatedAt: serverProduct.updatedAt || new Date().toISOString(),
+      };
+      const withoutTemp = prev.filter((p) => p.id !== tempId);
+      // Put latest product first; ProductList also sorts by updatedAt
+      return [merged, ...withoutTemp.filter((p) => p.id !== merged.id)];
     });
     setEditingProduct(null);
   };
@@ -230,18 +222,12 @@ export default function AdminDashboard() {
     loadData();
   };
 
-  const handleBannerSave = () => {
-    setEditingBanner(null);
-    loadData();
-  };
-
   const tabs = [
     { id: "products", label: "Products", icon: null },
     { id: "sameday", label: "Same Day Ready", icon: null },
     { id: "categories", label: "Categories", icon: null },
     { id: "occasions", label: "Occasions", icon: null },
     { id: "relations", label: "Relations", icon: null },
-    { id: "banners", label: "Banners", icon: null },
     { id: "reels", label: "Reels", icon: null },
     { id: "orders", label: "Orders", icon: null },
     { id: "messages", label: "Messages", icon: null },
@@ -273,7 +259,6 @@ export default function AdminDashboard() {
                 setEditingOccasion(null);
                 setEditingRelation(null);
                 setEditingReel(null);
-                setEditingBanner(null);
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all text-left ${
                 activeTab === tab.id
@@ -406,7 +391,6 @@ export default function AdminDashboard() {
                       setEditingOccasion(null);
                       setEditingRelation(null);
                       setEditingReel(null);
-                      setEditingBanner(null);
                     }}
                     className={`shrink-0 px-4 py-2.5 rounded-full font-semibold transition-all ${
                       activeTab === tab.id
@@ -517,21 +501,6 @@ export default function AdminDashboard() {
                 <RelationList
                   relations={relations}
                   onEdit={setEditingRelation}
-                  onDelete={loadData}
-                />
-              </div>
-            )}
-
-            {activeTab === "banners" && (
-              <div>
-                <BannerForm
-                  banner={editingBanner}
-                  onSave={handleBannerSave}
-                  onCancel={() => setEditingBanner(null)}
-                />
-                <BannerList
-                  banners={banners}
-                  onEdit={setEditingBanner}
                   onDelete={loadData}
                 />
               </div>

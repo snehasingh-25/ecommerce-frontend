@@ -52,7 +52,7 @@ export default function Footer() {
   };
 
     return (
-    <footer className="text-white mt-20" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
+    <footer className="text-white mt-0" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
       <div className="max-w-7xl mx-auto p-4">
 
         {/* Brand Section - Left Side */}

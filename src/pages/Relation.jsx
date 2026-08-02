@@ -74,7 +74,7 @@ export default function Relation() {
             ))}
           </div>
           {/* Product grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
             {[...Array(10)].map((_, i) => (
               <div key={i}>
                 <div className="sk aspect-[4/5] w-full rounded" />
@@ -114,11 +114,11 @@ export default function Relation() {
         {slug ? (
           <div className="mt-12">
             <div className="mb-8">
-              <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
+              <h3 className="gc-heading text-xl sm:text-2xl font-bold mb-2 tracking-tight">
                 {selectedRelation?.name || "Relation"}
               </h3>
               {selectedRelation?.description ? (
-                <p className="text-lg mb-4" style={{ color: "oklch(60% .02 340)" }}>
+                <p className="gc-subheading text-lg mb-4">
                   {selectedRelation.description}
                 </p>
               ) : null}
@@ -136,7 +136,7 @@ export default function Relation() {
         {!slug ? (
           <div className="mt-12">
             <div className="mb-8">
-              <h3 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
+              <h3 className="gc-heading text-xl sm:text-2xl font-bold mb-2 tracking-tight">
                 All Products
               </h3>
             </div>

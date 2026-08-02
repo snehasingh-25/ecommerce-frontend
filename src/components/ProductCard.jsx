@@ -3,6 +3,8 @@ import { useCart } from "../context/CartContext";
 import { memo, useMemo } from "react";
 import { useToast } from "../context/ToastContext";
 import OptimizedProductImage from "./OptimizedProductImage";
+import ProductBadges, { SameDayReadyPill } from "./ProductBadges";
+import CompactReviewSummary from "./reviews/CompactReviewSummary";
 import { getProductImageList, IMAGE_SIZES } from "../utils/imageUrl";
 
 function ProductCard({ product, compact = false }) {
@@ -80,26 +82,7 @@ function ProductCard({ product, compact = false }) {
             </div>
           )}
           
-          {/* Badges - Top Left */}
-          {!compact && (
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5 scale-[0.7] origin-top-left">
-            {product.isFestival && (
-              <span className="px-2 py-0.5 text-xs rounded-full font-semibold shadow-sm" style={{ backgroundColor: 'oklch(92% .04 340)', color: 'oklch(20% .02 340)' }}>
-                Festival
-              </span>
-            )}
-            {product.isNew && (
-              <span className="px-2 py-0.5 text-xs rounded-full font-semibold shadow-sm" style={{ backgroundColor: 'oklch(92% .04 340)', color: 'oklch(20% .02 340)' }}>
-                New
-              </span>
-            )}
-            {product.badge && (
-              <span className="px-2 py-0.5 text-xs rounded-full font-semibold shadow-sm" style={{ backgroundColor: 'oklch(92% .04 340)', color: 'oklch(20% .02 340)' }}>
-                {product.badge}
-              </span>
-            )}
-          </div>
-          )}
+          {!compact && <ProductBadges product={product} placement="card" />}
         </div>
       </Link>
 
@@ -111,52 +94,48 @@ function ProductCard({ product, compact = false }) {
           </h3>
         </Link>
 
-        {/* Price - MRP struck through, selling price bold, optional discount % */}
-        {displayPrice != null && (
-          <div className={`flex items-baseline gap-1.5 overflow-hidden ${compact ? "mb-1.5" : "mb-1"}`}>
-            <span className={`shrink-0 ${compact ? "text-sm font-bold" : "text-lg font-bold"}`} style={{ color: 'oklch(20% .02 340)' }}>
-              ₹{Number(displayPrice).toLocaleString('en-IN')}
-            </span>
-            {displayMrp != null && displayMrp > displayPrice && (
-              <>
-                <span className="text-sm line-through truncate min-w-0" style={{ color: 'oklch(55% .02 340)' }}>
-                  ₹{Number(displayMrp).toLocaleString('en-IN')}
-                </span>
-                {discountPct != null && discountPct > 0 && (
-                  <span className="shrink-0 text-xs font-semibold text-green-600">
-                    {discountPct}% OFF
-                  </span>
-                )}
-              </>
-            )}
-          </div>
-        )}
+        <CompactReviewSummary productId={product.id} className={compact ? "mb-1" : "mb-1.5"} />
 
-        {!compact && (
-          <div className="mb-2 min-h-[22px] flex items-center">
-            {product.isReadySameDay && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full font-semibold shadow-sm bg-green-100 text-green-800">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
-                </span>
-                Same Day Ready
+        {/* Price row 1: selling price + Same Day badge; row 2: MRP + OFF + Add */}
+        <div className={compact ? "mb-0" : "mt-auto"}>
+          {displayPrice != null && (
+            <div className="flex items-center min-w-0">
+              <span className={`shrink-0 ${compact ? "text-sm font-bold" : "text-lg font-bold"}`} style={{ color: 'oklch(20% .02 340)' }}>
+                ₹{Number(displayPrice).toLocaleString('en-IN')}
               </span>
-            )}
-          </div>
-        )}
+              {product.isReadySameDay ? (
+                <SameDayReadyPill compact={compact} className="ml-1" />
+              ) : null}
+            </div>
+          )}
 
-        {/* Add Button */}
-        <button
-          onClick={handleAddToCart}
-          className={`rounded-lg font-medium transition-all duration-300 hover:opacity-90 active:scale-95 text-sm flex items-center justify-center gap-2 ${compact ? "px-3 py-1.5" : "w-full py-2.5 mt-auto"}`}
-          style={{ backgroundColor: 'oklch(92% .04 340)', color: 'oklch(20% .02 340)' }}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          Add
-        </button>
+          <div className={`flex items-center justify-between gap-2 min-w-0 ${displayPrice != null ? "mt-0.5" : ""}`}>
+            <div className="flex flex-wrap items-baseline gap-1.5 min-w-0">
+              {displayMrp != null && displayMrp > displayPrice && (
+                <>
+                  <span className={`line-through truncate min-w-0 ${compact ? "text-[11px]" : "text-xs sm:text-sm"}`} style={{ color: 'oklch(55% .02 340)' }}>
+                    ₹{Number(displayMrp).toLocaleString('en-IN')}
+                  </span>
+                  {discountPct != null && discountPct > 0 && (
+                    <span className="shrink-0 text-[10px] sm:text-xs font-semibold text-green-600">
+                      {discountPct}% OFF
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className={`gc-add-btn-glass rounded-xl font-semibold transition-all duration-300 hover:opacity-95 active:scale-95 flex items-center justify-center shrink-0 ${compact ? "gap-1.5 px-5 py-1 text-sm" : "gap-2 px-6 py-1.5 text-base"}`}
+            >
+              <svg className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Add
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

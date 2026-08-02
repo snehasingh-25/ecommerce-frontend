@@ -63,16 +63,21 @@ function getVideoEmbedInfo(url) {
 }
 
 export default function ReelCarousel({ reels }) {
+  const FEATURED_KEY = "featured";
   const scrollerRef = useRef(null);
   const featuredVideoRef = useRef(null);
   const rafRef = useRef(null);
-  const cardWidthRef = useRef(0);
   const activeIndexRef = useRef(0);
+  const audioUnlockedRef = useRef(false);
   const videoRefs = useRef(new Map()); // Map of reel.id -> video element
   const iframeRefs = useRef(new Map()); // Map of reel.id -> iframe element
   const [activeIndex, setActiveIndex] = useState(0); // index within base reels
   const [mutedById, setMutedById] = useState(() => new Map());
   const [featuredMuted, setFeaturedMuted] = useState(true); // Featured video starts muted
+  /** Which reel currently owns unmuted audio: reel id, FEATURED_KEY, or null */
+  const [audioOwnerId, setAudioOwnerId] = useState(null);
+  /** User explicitly muted — don't auto-unmute on swipe until they unmute again */
+  const [preferMuted, setPreferMuted] = useState(false);
   const [viewedIds, setViewedIds] = useState(() => new Set());
   const [videoReady, setVideoReady] = useState(() => new Set());
   const [videoError, setVideoError] = useState(() => new Set());
@@ -88,36 +93,195 @@ export default function ReelCarousel({ reels }) {
     activeIndexRef.current = activeIndex;
   }, [activeIndex]);
 
-  // Auto-play featured video
+  const unlockAudio = () => {
+    audioUnlockedRef.current = true;
+  };
+
+  const pauseAllVideosExcept = (exceptId) => {
+    videoRefs.current.forEach((video, id) => {
+      if (String(id) === String(exceptId)) return;
+      try {
+        video.pause();
+      } catch {
+        // ignore
+      }
+      video.muted = true;
+    });
+    if (exceptId !== FEATURED_KEY) {
+      const fv = featuredVideoRef.current;
+      if (fv) {
+        try {
+          fv.pause();
+        } catch {
+          // ignore
+        }
+        fv.muted = true;
+      }
+    }
+  };
+
+  const muteYouTubeExcept = (exceptId) => {
+    iframeRefs.current.forEach((iframe, id) => {
+      if (!iframe?.src) return;
+      try {
+        const url = new URL(iframe.src);
+        if (!url.hostname.includes("youtube")) return;
+        if (exceptId != null && String(id) === String(exceptId)) {
+          url.searchParams.set("mute", "0");
+          url.searchParams.set("autoplay", "1");
+        } else {
+          url.searchParams.set("mute", "1");
+          url.searchParams.set("autoplay", String(id) === String(exceptId) ? "1" : "0");
+        }
+        const next = url.toString();
+        if (iframe.src !== next) iframe.src = next;
+      } catch {
+        // ignore
+      }
+    });
+  };
+
+  const setMutedFor = (id, nextMuted) => {
+    setMutedById((prev) => {
+      const m = new Map(prev);
+      m.set(id, nextMuted);
+      return m;
+    });
+  };
+
+  const muteAllCarouselInState = (exceptId = null) => {
+    setMutedById(() => {
+      const m = new Map();
+      base.forEach((r) => {
+        m.set(r.id, exceptId == null || String(r.id) !== String(exceptId));
+      });
+      return m;
+    });
+  };
+
+  /** Unmute one owner; mute+pause everyone else. */
+  const claimAudio = (ownerId) => {
+    setAudioOwnerId(ownerId);
+    if (ownerId === FEATURED_KEY) {
+      setFeaturedMuted(false);
+      muteAllCarouselInState(null);
+      pauseAllVideosExcept(FEATURED_KEY);
+      muteYouTubeExcept(null);
+      const fv = featuredVideoRef.current;
+      if (fv) {
+        fv.muted = false;
+        fv.play().catch(() => {});
+      }
+      return;
+    }
+    setFeaturedMuted(true);
+    muteAllCarouselInState(ownerId);
+    pauseAllVideosExcept(ownerId);
+    muteYouTubeExcept(ownerId);
+    const video = videoRefs.current.get(ownerId);
+    if (video) {
+      video.muted = false;
+      video.play().catch(() => {});
+    }
+  };
+
+  const releaseAudio = (ownerId) => {
+    setAudioOwnerId((prev) => (prev === ownerId || ownerId == null ? null : prev));
+    if (ownerId === FEATURED_KEY || ownerId == null) {
+      setFeaturedMuted(true);
+      const fv = featuredVideoRef.current;
+      if (fv) fv.muted = true;
+    }
+    if (ownerId && ownerId !== FEATURED_KEY) {
+      setMutedFor(ownerId, true);
+      const video = videoRefs.current.get(ownerId);
+      if (video) video.muted = true;
+    }
+    if (ownerId == null) {
+      muteAllCarouselInState(null);
+      muteYouTubeExcept(null);
+    } else {
+      muteYouTubeExcept(null);
+    }
+  };
+
+  const findClosestCardIndex = (scroller) => {
+    if (!scroller) return 0;
+    const cards = scroller.querySelectorAll("[data-reel-card='1']");
+    if (!cards.length) return 0;
+    const rootRect = scroller.getBoundingClientRect();
+    const rootCenter = rootRect.left + rootRect.width / 2;
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    cards.forEach((card, i) => {
+      const rect = card.getBoundingClientRect();
+      const mid = rect.left + rect.width / 2;
+      const dist = Math.abs(mid - rootCenter);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = i;
+      }
+    });
+    return Math.max(0, Math.min(bestIdx, baseCount - 1));
+  };
+
+  const selectCarouselIndex = (i) => {
+    const idx = Math.max(0, Math.min(i, baseCount - 1));
+    unlockAudio();
+    const el = scrollerRef.current;
+    const cards = el?.querySelectorAll("[data-reel-card='1']");
+    const card = cards?.[idx];
+    if (card) {
+      card.scrollIntoView({ inline: "center", behavior: "smooth", block: "nearest" });
+    }
+    activeIndexRef.current = idx;
+    setActiveIndex(idx);
+    if (!preferMuted) {
+      const reel = base[idx];
+      if (reel) claimAudio(reel.id);
+    }
+  };
+
+  // Featured: muted autoplay unless a carousel reel owns audio (then pause)
   useEffect(() => {
     if (!featuredReel || !featuredVideoRef.current) return;
-    
+
     const video = featuredVideoRef.current;
     const videoUrl = featuredReel.videoUrl || featuredReel.url;
     const embedInfo = getVideoEmbedInfo(videoUrl);
-    
-    // Only handle direct video files for featured
-    if (embedInfo.type === "direct" && embedInfo.url) {
-      if (!video.src || video.src !== embedInfo.url) {
-        video.src = embedInfo.url;
-        video.load();
-      }
-      
-      const tryPlay = () => {
-        video.muted = featuredMuted;
-        video.play().catch((err) => {
-          console.warn(`Featured reel autoplay blocked:`, err);
-        });
-      };
-      
-      if (video.readyState >= 2) {
-        tryPlay();
-      } else {
-        video.addEventListener("canplay", tryPlay, { once: true });
-        video.addEventListener("loadeddata", tryPlay, { once: true });
-      }
+
+    if (embedInfo.type !== "direct" || !embedInfo.url) return;
+
+    if (!video.src || video.src !== embedInfo.url) {
+      video.src = embedInfo.url;
+      video.load();
     }
-  }, [featuredReel, featuredMuted]);
+
+    // Carousel owns sound → pause featured
+    if (audioOwnerId && audioOwnerId !== FEATURED_KEY) {
+      try {
+        video.pause();
+      } catch {
+        // ignore
+      }
+      video.muted = true;
+      return;
+    }
+
+    const tryPlay = () => {
+      video.muted = featuredMuted;
+      video.play().catch((err) => {
+        console.warn(`Featured reel autoplay blocked:`, err);
+      });
+    };
+
+    if (video.readyState >= 2) {
+      tryPlay();
+    } else {
+      video.addEventListener("canplay", tryPlay, { once: true });
+      video.addEventListener("loadeddata", tryPlay, { once: true });
+    }
+  }, [featuredReel, featuredMuted, audioOwnerId]);
 
   const markReady = (id) => {
     setVideoReady((prev) => {
@@ -143,130 +307,163 @@ export default function ReelCarousel({ reels }) {
     });
   };
 
-  // Auto-play videos when they become active (only for direct video files)
+  // When active reel changes: play it; auto-claim audio if unlocked and not preferMuted
   useEffect(() => {
     if (baseCount === 0) return;
-    
-    const playActiveVideos = () => {
+
+    const activeReel = base[activeIndex];
+    const activeId = activeReel?.id;
+    if (activeId == null) return;
+
+    const shouldHaveSound = audioUnlockedRef.current && !preferMuted;
+
+    // Move or clear audio ownership when the centered reel changes
+    if (shouldHaveSound) {
+      if (String(audioOwnerId) !== String(activeId)) {
+        claimAudio(activeId);
+        return; // claimAudio + subsequent owner update will re-enter for playback
+      }
+    } else if (
+      audioOwnerId &&
+      audioOwnerId !== FEATURED_KEY &&
+      String(audioOwnerId) !== String(activeId)
+    ) {
+      releaseAudio(audioOwnerId);
+      return;
+    }
+
+    const ownerForMute = shouldHaveSound ? activeId : audioOwnerId;
+
+    const playActiveOnly = () => {
       base.forEach((reel, idx) => {
         const isActive = idx === activeIndex;
-        const shouldPlay =
-          baseCount <= 2 ||
-          isActive ||
-          idx === ((activeIndex + 1) % baseCount) ||
-          idx === ((activeIndex - 1 + baseCount) % baseCount);
-
         const video = videoRefs.current.get(reel.id);
         const videoUrl = reel.videoUrl || reel.url;
         const embedInfo = getVideoEmbedInfo(videoUrl);
-        
-        // Only handle direct video files, not embeds
-        if (video && shouldPlay && embedInfo.type === "direct" && embedInfo.url) {
-          // Set src if not already set or different
-          if (!video.src || video.src !== embedInfo.url) {
-            video.src = embedInfo.url;
-            video.load();
-          }
-          
-          // Try to play if video is ready
-          if (video.readyState >= 2) {
+
+        if (video && embedInfo.type === "direct" && embedInfo.url) {
+          if (isActive) {
+            if (!video.src || video.src !== embedInfo.url) {
+              video.src = embedInfo.url;
+              video.load();
+            }
+            const muted =
+              ownerForMute == null
+                ? true
+                : String(ownerForMute) !== String(reel.id);
+            video.muted = muted;
             const playPromise = video.play();
             if (playPromise !== undefined) {
               playPromise
-                .then(() => {
-                  markReady(reel.id);
-                })
+                .then(() => markReady(reel.id))
                 .catch((err) => {
                   console.warn(`Reel ${reel.id} autoplay blocked:`, err);
                 });
             }
-          } else if (video.readyState >= 1) {
-            // Video is loading, wait for it
-            const tryPlay = () => {
-              video.play().catch(() => {});
-            };
-            video.addEventListener("canplay", tryPlay, { once: true });
-            video.addEventListener("loadeddata", tryPlay, { once: true });
+          } else {
+            try {
+              video.pause();
+            } catch {
+              // ignore
+            }
+            video.muted = true;
           }
-        } else if (video && !shouldPlay) {
-          // Pause videos that shouldn't play
-          video.pause();
-        } else if (embedInfo.type === "instagram" || embedInfo.type === "youtube") {
-          // For embeds, mark as ready when they become active (iframe handles loading)
-          if (shouldPlay) {
-            markReady(reel.id);
+        } else if (embedInfo.type === "youtube") {
+          const iframe = iframeRefs.current.get(reel.id);
+          if (iframe && embedInfo.embedUrl) {
+            const shouldMute =
+              !isActive ||
+              ownerForMute == null ||
+              String(ownerForMute) !== String(reel.id);
+            const nextSrc = `${embedInfo.embedUrl}?autoplay=${isActive ? 1 : 0}&mute=${shouldMute ? 1 : 0}&loop=1&playlist=${embedInfo.videoId}&controls=0`;
+            if (iframe.src !== nextSrc) iframe.src = nextSrc;
           }
+          if (isActive) markReady(reel.id);
+        } else if (embedInfo.type === "instagram" && isActive) {
+          markReady(reel.id);
         }
       });
     };
 
-    // Small delay to ensure DOM is updated
-    const timeoutId = setTimeout(playActiveVideos, 100);
+    const timeoutId = setTimeout(playActiveOnly, 80);
     return () => clearTimeout(timeoutId);
-  }, [activeIndex, baseCount, base]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- claimAudio/releaseAudio close over latest base
+  }, [activeIndex, baseCount, preferMuted, audioOwnerId]);
 
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-
-    const measure = () => {
-      const firstCard = el.querySelector("[data-reel-card='1']");
-      if (!firstCard) return;
-      const w = firstCard.getBoundingClientRect().width;
-      if (w > 0) cardWidthRef.current = w;
-    };
-
-    measure();
-
-    const ro = new ResizeObserver(() => measure());
-    ro.observe(el);
-    window.addEventListener("resize", measure, { passive: true });
-
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, []);
-
-  // No need to jump to middle - just start at the beginning
-
+  // Closest-to-center active detection (+ unlock audio on interaction)
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el || baseCount === 0) return;
 
+    const updateActiveFromCenter = () => {
+      const normalized = findClosestCardIndex(el);
+      if (normalized !== activeIndexRef.current) {
+        activeIndexRef.current = normalized;
+        setActiveIndex(normalized);
+      }
+    };
+
     const onScroll = () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(() => {
-        const cardWidth = cardWidthRef.current || el.querySelector("[data-reel-card='1']")?.getBoundingClientRect().width || 0;
-        if (!cardWidth) return;
-        const center = el.scrollLeft + el.clientWidth / 2;
-        const rawIndex = Math.round(center / cardWidth - 0.5);
+      rafRef.current = requestAnimationFrame(updateActiveFromCenter);
+    };
 
-        // Clamp to valid range (no infinite loop)
-        const normalized = Math.max(0, Math.min(rawIndex, baseCount - 1));
-        if (normalized !== activeIndexRef.current) {
-          activeIndexRef.current = normalized;
-          setActiveIndex(normalized);
-        }
-      });
+    const onInteract = () => {
+      unlockAudio();
     };
 
     el.addEventListener("scroll", onScroll, { passive: true });
+    el.addEventListener("pointerdown", onInteract, { passive: true });
+    el.addEventListener("touchstart", onInteract, { passive: true });
+    el.addEventListener("wheel", onInteract, { passive: true });
+    // Initial measure
+    updateActiveFromCenter();
+
     return () => {
       el.removeEventListener("scroll", onScroll);
+      el.removeEventListener("pointerdown", onInteract);
+      el.removeEventListener("touchstart", onInteract);
+      el.removeEventListener("wheel", onInteract);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [baseCount]);
 
-  const setMutedFor = (id, nextMuted) => {
-    setMutedById((prev) => {
-      const m = new Map(prev);
-      m.set(id, nextMuted);
-      return m;
-    });
-  };
-
   const isMuted = (id) => (mutedById.has(id) ? mutedById.get(id) : true);
+
+  const toggleMute = (reel, isFeatured, embedInfo) => {
+    unlockAudio();
+    if (isFeatured) {
+      if (featuredMuted) {
+        setPreferMuted(false);
+        claimAudio(FEATURED_KEY);
+      } else {
+        setPreferMuted(true);
+        releaseAudio(FEATURED_KEY);
+      }
+      return;
+    }
+
+    const currentlyMuted = isMuted(reel.id);
+    if (currentlyMuted) {
+      setPreferMuted(false);
+      claimAudio(reel.id);
+      if (embedInfo?.type === "youtube" && embedInfo.embedUrl) {
+        const iframe = iframeRefs.current.get(reel.id);
+        if (iframe) {
+          iframe.src = `${embedInfo.embedUrl}?autoplay=1&mute=0&loop=1&playlist=${embedInfo.videoId}&controls=0`;
+        }
+      }
+    } else {
+      setPreferMuted(true);
+      releaseAudio(reel.id);
+      if (embedInfo?.type === "youtube" && embedInfo.embedUrl) {
+        const iframe = iframeRefs.current.get(reel.id);
+        if (iframe) {
+          iframe.src = `${embedInfo.embedUrl}?autoplay=1&mute=1&loop=1&playlist=${embedInfo.videoId}&controls=0`;
+        }
+      }
+    }
+  };
 
   const markViewed = async (id) => {
     if (viewedIds.has(id)) return;
@@ -281,12 +478,8 @@ export default function ReelCarousel({ reels }) {
   // Render function for a single reel card
   const renderReelCard = (reel, i, isFeatured = false) => {
     const isActive = !isFeatured && i === activeIndex;
-    const shouldPlay =
-      isFeatured ||
-      baseCount <= 2 ||
-      isActive ||
-      i === activeIndex + 1 ||
-      i === activeIndex - 1;
+    // Only featured or the centered carousel reel may play
+    const shouldPlay = isFeatured || isActive;
     const product = reel.product || null;
     const productImg =
       (product?.images && Array.isArray(product.images) && product.images[0]) ||
@@ -314,11 +507,27 @@ export default function ReelCarousel({ reels }) {
       <div
         key={reel.id}
         data-reel-card={isFeatured ? "featured" : "1"}
+        data-reel-index={isFeatured ? undefined : i}
+        role={!isFeatured ? "button" : undefined}
+        tabIndex={!isFeatured ? 0 : undefined}
+        onClick={(e) => {
+          if (isFeatured) return;
+          // Mute button handles its own clicks
+          if (e.target.closest("button")) return;
+          selectCarouselIndex(i);
+        }}
+        onKeyDown={(e) => {
+          if (isFeatured) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            selectCarouselIndex(i);
+          }
+        }}
         className={[
           "shrink-0 snap-center",
           isFeatured 
             ? "basis-[85%] sm:basis-[60%] md:basis-[45%] lg:basis-[25%] xl:basis-[20%] max-w-[400px] mb-4 lg:mb-0" 
-            : "basis-[55%] sm:basis-[32%] md:basis-[28%] lg:basis-[18%] xl:basis-[14%]",
+            : "basis-[55%] sm:basis-[32%] md:basis-[28%] lg:basis-[18%] xl:basis-[14%] cursor-pointer",
           "transition-opacity duration-300",
           isFeatured 
             ? "opacity-100" 
@@ -360,8 +569,6 @@ export default function ReelCarousel({ reels }) {
                         frameBorder="0"
                         scrolling="no"
                         allow="encrypted-media"
-                        //sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-                        //referrerPolicy="strict-origin-when-cross-origin"
                         loading="lazy"
                         onLoad={() => markReady(reel.id)}
                         onError={() => {
@@ -413,22 +620,7 @@ export default function ReelCarousel({ reels }) {
                       }}
                     />
                     <button
-                      onClick={() => {
-                        if (isFeatured) {
-                          setFeaturedMuted(!featuredMuted);
-                          const video = featuredVideoRef.current;
-                          if (video) {
-                            video.muted = !featuredMuted;
-                          }
-                        } else {
-                          const newMuteState = !isMuted(reel.id);
-                          setMutedFor(reel.id, newMuteState);
-                          const iframe = iframeRefs.current.get(reel.id);
-                          if (iframe) {
-                            iframe.src = `${embedInfo.embedUrl}?autoplay=1&mute=${newMuteState ? 1 : 0}&loop=1&playlist=${embedInfo.videoId}&controls=0`;
-                          }
-                        }
-                      }}
+                      onClick={() => toggleMute(reel, isFeatured, embedInfo)}
                       className="absolute top-3 right-12 z-20 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all duration-200 active:scale-95"
                       aria-label={isMutedState ? "Unmute" : "Mute"}
                       title={isMutedState ? "Click to unmute" : "Click to mute"}
@@ -475,8 +667,8 @@ export default function ReelCarousel({ reels }) {
                       playsInline
                       loop
                       muted={isMutedState}
-                      autoPlay
-                      preload="auto"
+                      autoPlay={shouldPlay}
+                      preload={shouldPlay ? "auto" : "metadata"}
                       onLoadedData={(e) => {
                         const video = e.target;
                         markReady(reel.id);
@@ -486,6 +678,12 @@ export default function ReelCarousel({ reels }) {
                               console.warn(`Reel ${reel.id} autoplay blocked:`, err);
                             });
                           });
+                        } else {
+                          try {
+                            video.pause();
+                          } catch {
+                            // ignore
+                          }
                         }
                       }}
                       onCanPlay={(e) => {
@@ -498,6 +696,12 @@ export default function ReelCarousel({ reels }) {
                               console.warn(`Reel ${reel.id} play failed:`, err);
                             });
                           });
+                        } else {
+                          try {
+                            video.pause();
+                          } catch {
+                            // ignore
+                          }
                         }
                       }}
                       onLoadedMetadata={(e) => {
@@ -527,21 +731,7 @@ export default function ReelCarousel({ reels }) {
                       onPlay={() => markViewed(reel.id)}
                     />
                     <button
-                      onClick={() => {
-                        if (isFeatured) {
-                          setFeaturedMuted(!featuredMuted);
-                          const video = featuredVideoRef.current;
-                          if (video) {
-                            video.muted = !featuredMuted;
-                          }
-                        } else {
-                          const video = videoRefs.current.get(reel.id);
-                          if (video) {
-                            video.muted = !isMuted(reel.id);
-                            setMutedFor(reel.id, !isMuted(reel.id));
-                          }
-                        }
-                      }}
+                      onClick={() => toggleMute(reel, isFeatured, embedInfo)}
                       className="absolute top-3 right-2 z-20 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all duration-200 active:scale-95"
                       aria-label={isMutedState ? "Unmute" : "Mute"}
                       title={isMutedState ? "Click to unmute" : "Click to mute"}

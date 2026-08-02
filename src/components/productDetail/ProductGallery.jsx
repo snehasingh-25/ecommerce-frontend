@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import InstagramThumbnail from "../InstagramThumbnail";
 import OptimizedProductImage from "../OptimizedProductImage";
+import ProductBadges from "../ProductBadges";
 import { getVariantUrl, IMAGE_SIZES } from "../../utils/imageUrl";
 
 function getInstagramEmbedUrl(url) {
@@ -294,33 +295,7 @@ export default function ProductGallery({
               )}
             </div>
 
-            {/* Product badges */}
-            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10 pointer-events-none">
-              {badges?.isReadySameDay && (
-                <span className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-full bg-green-100 text-green-800 shadow-sm">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
-                  </span>
-                  Same Day Ready
-                </span>
-              )}
-              {badges?.isFestival && (
-                <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-white/95 shadow-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  Festival
-                </span>
-              )}
-              {badges?.isNew && (
-                <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-white/95 shadow-sm" style={{ color: "oklch(20% .02 340)" }}>
-                  New
-                </span>
-              )}
-              {badges?.badge && (
-                <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-pink-500 text-white shadow-sm">
-                  {badges.badge}
-                </span>
-              )}
-            </div>
+            <ProductBadges badges={badges} placement="gallery" />
 
             {/* Carousel prev / next arrows */}
             {media.length > 1 && (

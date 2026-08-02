@@ -1,16 +1,21 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
 import { useCart } from "../context/CartContext";
 import SearchBar from "./SearchBar";
 
 export default function Navbar() {
   const { getCartCount } = useCart();
-  const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const isActive = (path) => location.pathname === path;
+
+  // Keep desktop search input in sync with /search?q=…
+  const searchInitialValue = useMemo(() => {
+    if (location.pathname !== "/search") return "";
+    return new URLSearchParams(location.search).get("q") || "";
+  }, [location.pathname, location.search]);
 
   const navItems = [
     { path: "/", label: "Home" },
@@ -96,7 +101,10 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
 
             {/* Desktop search bar */}
-            <SearchBar className="hidden lg:block w-60" />
+            <SearchBar
+              className="hidden lg:block w-60"
+              initialValue={searchInitialValue}
+            />
 
             {/* Mobile/Tablet Search Icon (replaces search bar) */}
             <Link to="/search" className="relative lg:hidden group">

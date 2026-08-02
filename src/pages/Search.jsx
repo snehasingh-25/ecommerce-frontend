@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import Fuse from "fuse.js";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
@@ -23,16 +23,22 @@ function filterProductsClientSide(products, { query, categoryFilter, occasionFil
     keys: ["name", "description", "keywords"],
     threshold: 0.4,
     includeScore: true,
-    minMatchCharLength: 2,
+    minMatchCharLength: 1,
   });
+  // Keep Fuse relevance order (do not shuffle search hits)
   return fuse.search(query).map((r) => r.item);
 }
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const query = searchParams.get("q") || "";
   const categoryFilter = searchParams.get("category") || "";
   const occasionFilter = searchParams.get("occasion") || "";
+  // Forces re-fetch when submitting the same query again (from navbar state or local submit)
+  const navSearchAt = location.state?.searchAt ?? 0;
+  const [localSearchAt, setLocalSearchAt] = useState(0);
+
   const [products, setProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [suggestedProducts, setSuggestedProducts] = useState([]);
@@ -41,63 +47,82 @@ export default function Search() {
   const [loading, setLoading] = useState(true);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Fetch categories, occasions, and all products for suggestions
+  // Fetch categories, occasions, and all products for client-side fallback
   useEffect(() => {
+    const ac = new AbortController();
     Promise.all([
-      fetch(`${API}/categories`).then(res => res.json()),
-      fetch(`${API}/occasions`).then(res => res.json()),
-      fetch(`${API}/products`).then(res => res.json())
+      fetch(`${API}/categories`, { signal: ac.signal }).then((res) => res.json()),
+      fetch(`${API}/occasions`, { signal: ac.signal }).then((res) => res.json()),
+      fetch(`${API}/products?shuffle=false`, { signal: ac.signal }).then((res) => res.json()),
     ])
       .then(([categoriesData, occasionsData, productsData]) => {
-        setCategories(categoriesData);
-        setOccasions(occasionsData);
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        setOccasions(Array.isArray(occasionsData) ? occasionsData : []);
         setAllProducts(Array.isArray(productsData) ? productsData : []);
       })
-      .catch(error => {
+      .catch((error) => {
+        if (error?.name === "AbortError") return;
         console.error("Error fetching data:", error);
       });
+    return () => ac.abort();
   }, []);
 
   useEffect(() => {
+    const ac = new AbortController();
+    let cancelled = false;
+
     const performSearch = async () => {
       setLoading(true);
       const params = new URLSearchParams();
-      if (query) params.append("search", query);
+      if (query) {
+        params.append("search", query);
+        // Preserve relevance order for search results
+        params.append("shuffle", "false");
+      }
       if (categoryFilter) params.append("category", categoryFilter);
       if (occasionFilter) params.append("occasion", occasionFilter);
 
       const url = `${API}/products?${params.toString()}`;
-      
+
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: ac.signal });
         const data = await res.json();
-        const apiProducts = Array.isArray(data) ? data : [];
-        let safeData = shuffleArray(apiProducts);
+        if (cancelled) return;
+
+        let safeData = Array.isArray(data) ? data : [];
 
         if (safeData.length === 0 && query && Array.isArray(allProducts) && allProducts.length > 0) {
-          const fuseResults = filterProductsClientSide(allProducts, { query, categoryFilter, occasionFilter });
-          safeData = shuffleArray(fuseResults);
+          safeData = filterProductsClientSide(allProducts, {
+            query,
+            categoryFilter,
+            occasionFilter,
+          });
         }
 
+        if (cancelled) return;
         setProducts(safeData);
-        
-        // If no results and we have a query, fall back to all products in selected category (and other active filters).
+
+        // If no results and we have a query, fall back to filtered catalog
         if (safeData.length === 0 && query) {
-          // Prefer fetching from API so it's always accurate.
           const fallbackParams = new URLSearchParams();
           if (categoryFilter) fallbackParams.append("category", categoryFilter);
           if (occasionFilter) fallbackParams.append("occasion", occasionFilter);
+          fallbackParams.append("shuffle", "false");
           const fallbackUrl = `${API}/products?${fallbackParams.toString()}`;
 
           let fallbackProducts = [];
           if (categoryFilter || occasionFilter) {
-            const fallbackRes = await fetch(fallbackUrl);
+            const fallbackRes = await fetch(fallbackUrl, { signal: ac.signal });
             const fallbackJson = await fallbackRes.json();
-            fallbackProducts = shuffleArray(Array.isArray(fallbackJson) ? fallbackJson : []);
+            if (cancelled) return;
+            fallbackProducts = Array.isArray(fallbackJson) ? fallbackJson : [];
           } else {
-            fallbackProducts = shuffleArray(Array.isArray(allProducts) ? allProducts : []);
+            fallbackProducts = Array.isArray(allProducts) ? allProducts : [];
           }
 
+          // Light shuffle only for "no match" discovery suggestions
+          fallbackProducts = shuffleArray(fallbackProducts);
+          if (cancelled) return;
           setSuggestedProducts(fallbackProducts);
           setShowSuggestions(fallbackProducts.length > 0);
         } else {
@@ -105,14 +130,28 @@ export default function Search() {
           setShowSuggestions(false);
         }
       } catch (error) {
+        if (error?.name === "AbortError") return;
         console.error("Error searching products:", error);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     performSearch();
-  }, [query, categoryFilter, occasionFilter, allProducts]);
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, [query, categoryFilter, occasionFilter, allProducts, navSearchAt, localSearchAt]);
+
+  const applySearchQuery = (q) => {
+    const params = new URLSearchParams(searchParams);
+    if (q) params.set("q", q);
+    else params.delete("q");
+    setSearchParams(params);
+    // Re-run even when q is unchanged
+    setLocalSearchAt(Date.now());
+  };
 
   const handleCategoryChange = (e) => {
     const newCategory = e.target.value;
@@ -151,17 +190,12 @@ export default function Search() {
           <SearchBar
             initialValue={query}
             showTyped={false}
-            onSearch={(q) => {
-              const params = new URLSearchParams(searchParams);
-              if (q) params.set("q", q);
-              else params.delete("q");
-              setSearchParams(params);
-            }}
+            onSearch={applySearchQuery}
           />
         </div>
 
         <div className="mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight" style={{ color: 'oklch(20% .02 340)' }}>
+          <h2 className="gc-heading text-2xl sm:text-3xl font-bold mb-2 tracking-tight">
             Search Results
           </h2>
           
@@ -235,7 +269,9 @@ export default function Search() {
 
           {(query || categoryFilter || occasionFilter) && (
             <p className="text-lg mb-4" style={{ color: 'oklch(60% .02 340)' }}>
-              {products.length > 0 
+              {loading
+                ? "Searching…"
+                : products.length > 0 
                 ? `Found ${products.length} product${products.length !== 1 ? 's' : ''}${query ? ` for "${query}"` : ''}${categoryFilter ? ` in ${categories.find(c => c.slug === categoryFilter)?.name || categoryFilter}` : ''}${occasionFilter ? ` for ${occasions.find(o => o.slug === occasionFilter)?.name || occasionFilter}` : ''}`
                 : `No products found${query ? ` for "${query}"` : ''}${categoryFilter ? ` in ${categories.find(c => c.slug === categoryFilter)?.name || categoryFilter}` : ''}${occasionFilter ? ` for ${occasions.find(o => o.slug === occasionFilter)?.name || occasionFilter}` : ''}`
               }
@@ -252,8 +288,14 @@ export default function Search() {
               Enter a search term or select filters to find products
             </p>
           </div>
+        ) : loading ? (
+          <div className="text-center py-16">
+            <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
+              Searching…
+            </p>
+          </div>
         ) : products.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-1">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -268,7 +310,7 @@ export default function Search() {
                 Showing {categoryFilter ? "all products in this category" : "all products"}:
               </p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-1">
               {suggestedProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

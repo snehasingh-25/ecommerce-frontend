@@ -88,7 +88,7 @@ export default function OccasionProductsSection({
     <section className={["py-2", className].join(" ").trim()}>
       {title ? (
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: "oklch(20% .02 340)" }}>
+          <h2 className="gc-heading text-xl sm:text-2xl font-bold tracking-tight">
             {title}
           </h2>
           <Link
@@ -149,11 +149,11 @@ export default function OccasionProductsSection({
           <>
             {selectedOccasion ? (
               <div className="mb-4">
-                <h3 className="text-lg sm:text-xl font-bold" style={{ color: "oklch(20% .02 340)" }}>
+                <h3 className="gc-subheading text-lg sm:text-xl font-bold">
                   {selectedOccasion.name}
                 </h3>
                 {selectedOccasion.description ? (
-                  <p className="mt-1 text-sm" style={{ color: "oklch(60% .02 340)" }}>
+                  <p className="gc-subheading mt-1 text-sm">
                     {selectedOccasion.description}
                   </p>
                 ) : null}
@@ -161,7 +161,7 @@ export default function OccasionProductsSection({
             ) : null}
 
             {loading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
                 {[...Array(10)].map((_, i) => (
                   <div key={i} className="bg-white rounded-2xl shadow-sm overflow-hidden">
                     <div className="aspect-[4/5] w-full bg-black/5 animate-pulse" />
@@ -173,7 +173,7 @@ export default function OccasionProductsSection({
                 ))}
               </div>
             ) : products.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
                 {products.map((p) => (
                   <ProductCard key={p.id} product={{ ...p, badge: badgeText || p.badge }} />
                 ))}

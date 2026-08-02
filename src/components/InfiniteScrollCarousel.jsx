@@ -163,7 +163,7 @@ export default function InfiniteScrollCarousel({
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xl sm:text-2xl font-bold" style={{ color: "oklch(20% .02 340)" }}>
+        <h2 className="gc-heading text-xl sm:text-2xl font-bold">
           {title}
         </h2>
         {showViewAll && (

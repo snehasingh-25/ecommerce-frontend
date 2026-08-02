@@ -12,8 +12,11 @@ import QuantitySelector from "../components/productDetail/QuantitySelector";
 import StickyPurchaseBar from "../components/productDetail/StickyPurchaseBar";
 import ProductAccordion from "../components/productDetail/ProductAccordion";
 import ProductReviews from "../components/productDetail/ProductReviews";
+import ProductReviewSummary from "../components/reviews/ProductReviewSummary";
+import { ProductReviewsProvider } from "../components/reviews/ProductReviewsProvider";
 import PriceDisplay, { getPriceInfo } from "../components/productDetail/PriceDisplay";
 import WhatsAppButton from "../components/productDetail/WhatsAppButton";
+import { openWhatsApp, productShareUrl } from "../utils/whatsapp";
 import { getProductImageList, getVariantUrl } from "../utils/imageUrl";
 
 export default function ProductDetail() {
@@ -210,6 +213,14 @@ export default function ProductDetail() {
     return () => ac.abort();
   }, [id]);
 
+  useEffect(() => {
+    if (!product || window.location.hash !== "#product-reviews") return;
+    const timer = window.setTimeout(() => {
+      document.getElementById("product-reviews")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [product?.id]);
+
   const handleAddToCart = () => {
     if (!canPurchase) {
       toast.error("Please select a size");
@@ -241,8 +252,8 @@ export default function ProductDetail() {
     }
     const sizeLabel = product.hasSinglePrice ? "Standard" : selectedSize.label;
     const price = product.hasSinglePrice ? product.singlePrice : selectedSize.price;
-    const message = `Hi! I'm interested in:\n\nProduct: ${product.name}\nLink: https://www.giftchoice.net/product/${id}\n${product.hasSinglePrice ? "" : `Size: ${sizeLabel}\n`}Quantity: ${quantity}\nPrice: ₹${price}\nTotal: ₹${(Number(price) * quantity).toFixed(2)}`;
-    window.open(`https://wa.me/917976948872?text=${encodeURIComponent(message)}`);
+    const message = `Hi! I'm interested in:\n\nProduct: ${product.name}\nLink: ${productShareUrl(id)}\n${product.hasSinglePrice ? "" : `Size: ${sizeLabel}\n`}Quantity: ${quantity}\nPrice: ₹${price}\nTotal: ₹${(Number(price) * quantity).toFixed(2)}`;
+    openWhatsApp(message);
   };
 
   if (loading) {
@@ -477,6 +488,7 @@ export default function ProductDetail() {
                   isReadySameDay: product.isReadySameDay,
                   isFestival: product.isFestival,
                   isNew: product.isNew,
+                  isTrending: product.isTrending,
                   badge: product.badge,
                 }}
                 activeIndex={activeImageIndex}
@@ -486,6 +498,7 @@ export default function ProductDetail() {
 
             {/* Right: Sticky buy box */}
             <aside className="lg:col-span-5">
+              <ProductReviewsProvider productId={product.id}>
               <div className="lg:sticky lg:top-6 space-y-4">
                 <TrustBadges />
 
@@ -496,6 +509,8 @@ export default function ProductDetail() {
                   >
                     {product.name}
                   </h1>
+
+                  <ProductReviewSummary />
 
                   <div className="mt-3">
                     <PriceDisplay selectedSize={selectedSize} product={product} />
@@ -610,8 +625,9 @@ export default function ProductDetail() {
                   {product.description || "No description available."}
                 </ProductAccordion>
 
-                <ProductReviews productId={product.id} />
+                <ProductReviews />
               </div>
+              </ProductReviewsProvider>
             </aside>
           </div>
 

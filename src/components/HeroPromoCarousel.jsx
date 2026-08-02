@@ -2,6 +2,9 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import CarouselArrow from "./CarouselArrow";
 
+/** Matches banner design size 1600×700 */
+const BANNER_ASPECT = "1600 / 700";
+
 function usePerView() {
   const get = () => {
     if (typeof window === "undefined") return 3;
@@ -76,14 +79,13 @@ export default function HeroPromoCarousel({ banners }) {
   return (
     <section className="bg-white">
       <div className="px-1 sm:px-2 lg:px-4 pt-5 sm:pt-6 lg:pt-8">
-        <div 
+        <div
           className="relative"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onTouchStart={() => setIsHovered(true)}
           onTouchEnd={() => setIsHovered(false)}
         >
-          {/* Scroll viewport */}
           <div
             ref={viewportRef}
             onScroll={onScroll}
@@ -91,12 +93,11 @@ export default function HeroPromoCarousel({ banners }) {
             style={{ WebkitOverflowScrolling: "touch" }}
             aria-label="Promotional carousel"
           >
-            <div className="flex gap-4 w-full">
+            <div className="flex w-full gap-4">
               {list.map((b, idx) => {
-                const title    = (b?.title    || "").toString();
-                const subtitle = (b?.subtitle || "").toString();
-                const ctaText  = (b?.ctaText  || "Shop Now").toString();
-                const ctaLink  = (b?.ctaLink  || "/categories").toString();
+                const title = (b?.title || "").toString();
+                const ctaText = (b?.ctaText || "Shop Now").toString();
+                const ctaLink = (b?.ctaLink || "/categories").toString();
                 const background = (b?.imageUrl || "").toString();
 
                 return (
@@ -105,63 +106,39 @@ export default function HeroPromoCarousel({ banners }) {
                     className="snap-start shrink-0"
                     style={{ flex: `0 0 calc((100% - (16px * ${perView - 1})) / ${perView})` }}
                   >
-                    <div className="relative overflow-hidden rounded-2xl shadow-[0_18px_45px_rgba(15,23,42,0.10)] ring-1 ring-black/5">
-                      {/* Background */}
-                      <div className="absolute inset-0">
-                        {background ? (
-                          <img
-                            src={background}
-                            alt=""
-                            className="w-full h-full object-cover object-center"
-                            decoding="async"
-                            loading={idx < perView ? "eager" : "lazy"}
-                            fetchPriority={idx < perView ? "high" : "auto"}
-                          />
-                        ) : (
-                          <div
-                            className="w-full h-full"
-                            style={{ background: "linear-gradient(135deg, oklch(75% .20 330), oklch(78% .16 250), oklch(92% .04 340))" }}
-                          />
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-black/10" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-                      </div>
-
-                      {/* Content */}
-                      <div className="relative flex items-center min-h-[200px] sm:min-h-[240px] lg:min-h-[280px]">
-                        {/* Text */}
-                        <div className="flex-1 p-3">
-                          {title && (
-                            <p className="text-white font-semibold tracking-tight text-xl sm:text-2xl leading-tight drop-shadow-sm line-clamp-3">
-                              {title}
-                            </p>
-                          )}
-                          {subtitle && (
-                            <p className="mt-2 text-white/85 text-sm sm:text-[15px] leading-relaxed line-clamp-2 max-w-[40ch]">
-                              {subtitle}
-                            </p>
-                          )}
-                          <Link
-                            to={ctaLink}
-                            className="mt-4 sm:mt-5 inline-flex items-center justify-center rounded-xl font-semibold shadow-sm transition-transform active:scale-[0.98] bg-white text-slate-900 hover:bg-white/95 px-4 py-2.5 text-sm sm:text-[15px]"
-                            aria-label={ctaText}
-                          >
-                            {ctaText}
-                          </Link>
-                        </div>
-
-
-                      </div>
-                    </div>
+                    <Link
+                      to={ctaLink}
+                      className="relative block overflow-hidden rounded-2xl bg-[oklch(97%_0.015_340)] shadow-[0_18px_45px_rgba(15,23,42,0.10)] ring-1 ring-black/5"
+                      style={{ aspectRatio: BANNER_ASPECT }}
+                      aria-label={title ? `${title} — ${ctaText}` : ctaText}
+                    >
+                      {background ? (
+                        <img
+                          src={background}
+                          alt={title || "Promotional banner"}
+                          className="absolute inset-0 h-full w-full object-contain object-center"
+                          decoding="async"
+                          loading={idx < perView ? "eager" : "lazy"}
+                          fetchPriority={idx < perView ? "high" : "auto"}
+                        />
+                      ) : (
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, oklch(75% .20 330), oklch(78% .16 250), oklch(92% .04 340))",
+                          }}
+                        />
+                      )}
+                    </Link>
                   </article>
                 );
               })}
             </div>
           </div>
 
-          {/* Dot indicators */}
           {pages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-4">
+            <div className="mt-4 flex items-center justify-center gap-2">
               {Array.from({ length: pages }).map((_, i) => (
                 <button
                   key={i}
@@ -178,7 +155,6 @@ export default function HeroPromoCarousel({ banners }) {
             </div>
           )}
 
-          {/* Desktop prev / next arrows */}
           {pages > 1 && (
             <>
               <CarouselArrow
@@ -186,14 +162,14 @@ export default function HeroPromoCarousel({ banners }) {
                 onClick={() => scrollToPage(page - 1)}
                 ariaLabel="Previous"
                 size="md"
-                className="hidden lg:grid absolute -left-3 top-1/2 -translate-y-1/2"
+                className="absolute -left-3 top-1/2 hidden -translate-y-1/2 lg:grid"
               />
               <CarouselArrow
                 direction="right"
                 onClick={() => scrollToPage(page + 1)}
                 ariaLabel="Next"
                 size="md"
-                className="hidden lg:grid absolute -right-3 top-1/2 -translate-y-1/2"
+                className="absolute -right-3 top-1/2 hidden -translate-y-1/2 lg:grid"
               />
             </>
           )}
