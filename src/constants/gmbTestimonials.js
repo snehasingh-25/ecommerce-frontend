@@ -1,6 +1,6 @@
 /** Gift Choice — Google Business Profile reviews (Bhilwara). */
 export const GMB_PROFILE_URL =
-  "https://www.google.com/maps/place/Gift+Choice/@25.3461,74.6396,17z/data=!4m8!3m7!1s0x3968c36f441ad415:0x69f62d52129e7901!8m2!3d25.3461!4d74.6396!9m1!1b1";
+  "https://www.google.com/search?q=gift+choice+bhilwara&newwindow=1&sca_esv=8200b06ee80a8a5f&rlz=1C5MACD_enIN1064IN1064&biw=1440&bih=812&sxsrf=APpeQnuMynSOhGWvS2dUzyzEoV9j0plagA%3A1785676457992&ei=qUJvasyOPNWgg8UP89nNwQc&oq=giftchoicebhl&gs_lp=Egxnd3Mtd2l6LXNlcnAiDWdpZnRjaG9pY2ViaGwqAggAMggQABiABBiiBDIFEAAY7wUyBRAAGO8FMggQABiABBiiBDIFEAAY7wVIvhRQ5gVY5gVwAXgBkAEAmAF6oAF6qgEDMC4xuAEByAEA-AEBmAICoAKCAcICChAAGEcY1gQYsAOYAwCIBgGQBgOSBwMxLjGgB54DsgcDMC4xuAd9wgcFMC4xLjHIBwWACAE&sclient=gws-wiz-serp#lrd=0x3968c36f441ad415:0x69f62d52129e7901,1,,,,";
 
 export const GMB_RATING = 4.8;
 export const GMB_REVIEW_COUNT = 331;
