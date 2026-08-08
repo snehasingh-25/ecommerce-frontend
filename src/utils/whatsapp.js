@@ -18,24 +18,14 @@ function apiOrigin() {
   return fromEnv || PUBLIC_API_FALLBACK;
 }
 
-/**
- * Absolute OG HTML URL for WhatsApp / Facebook crawlers.
- * Prefer same-origin `/og/...` (proxied to API) so the link is always public HTTPS.
- */
-export function productShareUrl(productId) {
-  if (typeof window !== "undefined" && window.location?.origin) {
-    const host = window.location.hostname;
-    // Production storefront: use same-origin path (Vercel rewrite → API)
-    if (host === "giftchoice.net" || host === "www.giftchoice.net") {
-      return `${window.location.origin}/og/product/${productId}`;
-    }
-  }
-  return `${apiOrigin()}/og/product/${productId}`;
-}
-
 /** Human storefront product page URL. */
 export function productPageUrl(productId) {
   return `${STOREFRONT_ORIGIN}/product/${productId}`;
+}
+
+/** Product URL for WhatsApp / sharing. */
+export function productShareUrl(productId) {
+  return productPageUrl(productId);
 }
 
 export function openWhatsApp(message) {

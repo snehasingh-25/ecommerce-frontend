@@ -937,3 +937,37 @@ body::-webkit-scrollbar {
     transform: none;
   }
 }
+
+/* ── Footer Qyverra jump ──────────────────────────────────────────── */
+@keyframes gc-qyverra-jump {
+  0%,
+  82%,
+  100% {
+    transform: translateY(0);
+  }
+  86% {
+    transform: translateY(-6px);
+  }
+  90% {
+    transform: translateY(0);
+  }
+  93% {
+    transform: translateY(-3px);
+  }
+  96% {
+    transform: translateY(0);
+  }
+}
+
+.gc-qyverra-jump {
+  display: inline-block;
+  animation: gc-qyverra-jump 3.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gc-qyverra-jump {
+    animation: none;
+    will-change: auto;
+  }
+}

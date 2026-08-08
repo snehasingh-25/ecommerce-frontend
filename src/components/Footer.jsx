@@ -157,10 +157,10 @@ export default function Footer() {
               href="https://www.instagram.com/qyverra.it?igsh=MTV5a2pzdGNxNjIzdg=="
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold transition-all duration-300 hover:underline"
+              className="gc-qyverra-jump font-semibold transition-colors duration-300 hover:underline"
               style={{ color: 'oklch(20% .02 340)' }}
-              onMouseEnter={(e) => e.target.style.color = 'white'}
-              onMouseLeave={(e) => e.target.style.color = 'oklch(20% .02 340)'}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'white'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'oklch(20% .02 340)'}
             >
               Qyverra
             </a>
