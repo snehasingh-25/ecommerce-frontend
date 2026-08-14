@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import CarouselArrow from "../CarouselArrow";
+import { resolveAssetUrl } from "../../utils/imageUrl";
 
 function OccasionTile({ occasion, isActive, onSelect, asLink = false, linkPrefix = "/occasion" }) {
   const imageUrl = occasion.imageUrl || null;
@@ -31,7 +32,7 @@ function OccasionTile({ occasion, isActive, onSelect, asLink = false, linkPrefix
           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden flex items-center justify-center bg-white/60">
             {imageUrl ? (
               <img
-                src={imageUrl}
+                src={resolveAssetUrl(imageUrl, { width: 120 })}
                 alt={occasion.name}
                 className="w-full h-full object-contain"
                 loading="lazy"

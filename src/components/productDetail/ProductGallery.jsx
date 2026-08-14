@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import InstagramThumbnail from "../InstagramThumbnail";
 import OptimizedProductImage from "../OptimizedProductImage";
 import ProductBadges from "../ProductBadges";
-import { getVariantUrl, IMAGE_SIZES } from "../../utils/imageUrl";
+import { getVariantUrl, resolveVideoUrl, getVideoThumbnailUrl, IMAGE_SIZES } from "../../utils/imageUrl";
 
 function getInstagramEmbedUrl(url) {
   if (!url || typeof url !== "string") return null;
@@ -33,7 +33,12 @@ function MediaThumbnail({ item, productName, idx, active, onSelect }) {
         {item.type === "instagram" ? (
           <InstagramThumbnail url={item.url} onClick={() => onSelect(idx)} />
         ) : item.type === "video" ? (
-          <video src={item.url} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+          <img
+            src={getVideoThumbnailUrl(item.url, { width: 80, height: 80 })}
+            alt={`${productName} video thumbnail ${idx + 1}`}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
         ) : item.meta ? (
           <OptimizedProductImage
             meta={item.meta}
@@ -273,7 +278,8 @@ export default function ProductGallery({
                 </div>
               ) : activeMedia?.type === "video" ? (
                 <video
-                  src={activeMedia.url}
+                  src={resolveVideoUrl(activeMedia.url)}
+                  poster={getVideoThumbnailUrl(activeMedia.url, { width: 800, height: 800 })}
                   className="absolute inset-0 w-full h-full object-contain bg-black"
                   controls
                   playsInline

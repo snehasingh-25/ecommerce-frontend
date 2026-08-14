@@ -1,5 +1,7 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { API } from "../api";
+import { resolveAssetUrl, resolveVideoUrl } from "../utils/imageUrl";
+
 
 function getLowestAndHighestPrice(product) {
   const sizes = product?.sizes || [];
@@ -88,6 +90,20 @@ export default function ReelCarousel({ reels }) {
   const featuredReel = allReels.find(r => r.isFeatured) || null;
   const base = allReels.filter(r => !r.isFeatured);
   const baseCount = base.length;
+
+  const preloadIndices = useMemo(() => {
+    if (baseCount === 0) return new Set();
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+    // Mobile: keep 3 downloaded (1 left, 1 active, 1 right)
+    // Tablet/Laptop: keep 5 downloaded (2 left, 1 active, 2 right)
+    const range = isMobile ? 1 : 2;
+    const set = new Set();
+    for (let offset = -range; offset <= range; offset++) {
+      const idx = (activeIndex + offset + baseCount) % baseCount;
+      set.add(idx);
+    }
+    return set;
+  }, [activeIndex, baseCount]);
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
@@ -252,8 +268,9 @@ export default function ReelCarousel({ reels }) {
 
     if (embedInfo.type !== "direct" || !embedInfo.url) return;
 
-    if (!video.src || video.src !== embedInfo.url) {
-      video.src = embedInfo.url;
+    const optimizedVideoUrl = resolveVideoUrl(embedInfo.url, { width: 480 });
+    if (!video.src || video.src !== optimizedVideoUrl) {
+      video.src = optimizedVideoUrl;
       video.load();
     }
 
@@ -342,29 +359,48 @@ export default function ReelCarousel({ reels }) {
         const embedInfo = getVideoEmbedInfo(videoUrl);
 
         if (video && embedInfo.type === "direct" && embedInfo.url) {
-          if (isActive) {
-            if (!video.src || video.src !== embedInfo.url) {
-              video.src = embedInfo.url;
-              video.load();
-            }
-            const muted =
-              ownerForMute == null
-                ? true
-                : String(ownerForMute) !== String(reel.id);
-            video.muted = muted;
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => markReady(reel.id))
-                .catch((err) => {
-                  console.warn(`Reel ${reel.id} autoplay blocked:`, err);
-                });
+          const shouldDownload = preloadIndices.has(idx);
+          if (shouldDownload) {
+            const optimizedVideoUrl = resolveVideoUrl(embedInfo.url, { width: 480 });
+            if (isActive) {
+              if (!video.src || video.src !== optimizedVideoUrl) {
+                video.src = optimizedVideoUrl;
+                video.load();
+              }
+              const muted =
+                ownerForMute == null
+                  ? true
+                  : String(ownerForMute) !== String(reel.id);
+              video.muted = muted;
+              const playPromise = video.play();
+              if (playPromise !== undefined) {
+                playPromise
+                  .then(() => markReady(reel.id))
+                  .catch((err) => {
+                    console.warn(`Reel ${reel.id} autoplay blocked:`, err);
+                  });
+              }
+            } else {
+              if (!video.src || video.src !== optimizedVideoUrl) {
+                video.src = optimizedVideoUrl;
+                video.load();
+              }
+              try {
+                video.pause();
+              } catch {
+                // ignore
+              }
+              video.muted = true;
             }
           } else {
             try {
               video.pause();
             } catch {
               // ignore
+            }
+            if (video.src) {
+              video.src = "";
+              try { video.load(); } catch {}
             }
             video.muted = true;
           }
@@ -387,8 +423,7 @@ export default function ReelCarousel({ reels }) {
 
     const timeoutId = setTimeout(playActiveOnly, 80);
     return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- claimAudio/releaseAudio close over latest base
-  }, [activeIndex, baseCount, preferMuted, audioOwnerId]);
+  }, [activeIndex, baseCount, preferMuted, audioOwnerId, preloadIndices]);
 
   // Closest-to-center active detection (+ unlock audio on interaction)
   useEffect(() => {
@@ -480,6 +515,7 @@ export default function ReelCarousel({ reels }) {
     const isActive = !isFeatured && i === activeIndex;
     // Only featured or the centered carousel reel may play
     const shouldPlay = isFeatured || isActive;
+    const shouldDownload = isFeatured || preloadIndices.has(i);
     const product = reel.product || null;
     const productImg =
       (product?.images && Array.isArray(product.images) && product.images[0]) ||
@@ -493,6 +529,9 @@ export default function ReelCarousel({ reels }) {
       })() : null) ||
       reel.thumbnail ||
       null;
+
+    const resolvedProductImg = productImg ? resolveAssetUrl(productImg, { width: 480 }) : null;
+    const tinyProductImg = productImg ? resolveAssetUrl(productImg, { width: 96 }) : null;
 
     const { low, high } = getLowestAndHighestPrice(product);
     const discountPct = Number.isFinite(Number(reel.discountPct)) ? Number(reel.discountPct) : null;
@@ -543,9 +582,9 @@ export default function ReelCarousel({ reels }) {
               <>
                 {(!videoIsReady || videoHasError) && embedInfo.type !== "instagram" && embedInfo.type !== "youtube" && (
                   <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center">
-                    {productImg ? (
+                    {resolvedProductImg ? (
                       <img
-                        src={productImg}
+                        src={resolvedProductImg}
                         alt={product?.name || reel.title || "Reel"}
                         className="absolute inset-0 w-full h-full object-cover opacity-50"
                         loading="lazy"
@@ -648,9 +687,14 @@ export default function ReelCarousel({ reels }) {
                         } else {
                           if (el) {
                             videoRefs.current.set(reel.id, el);
-                            if (shouldPlay && embedInfo.url && el.src !== embedInfo.url) {
-                              el.src = embedInfo.url;
+                            const shouldDownload = preloadIndices.has(i);
+                            const optimizedVideoUrl = resolveVideoUrl(embedInfo.url, { width: 480 });
+                            if (shouldDownload && el.src !== optimizedVideoUrl) {
+                              el.src = optimizedVideoUrl;
                               el.load();
+                            } else if (!shouldDownload && el.src) {
+                              el.src = "";
+                              try { el.load(); } catch {}
                             }
                           } else {
                             videoRefs.current.delete(reel.id);
@@ -662,8 +706,8 @@ export default function ReelCarousel({ reels }) {
                         videoIsReady && !videoHasError ? "opacity-100" : "opacity-0",
                         "transition-opacity duration-500",
                       ].join(" ")}
-                      src={shouldPlay && embedInfo.url ? embedInfo.url : undefined}
-                      poster={productImg || undefined}
+                      src={shouldDownload && embedInfo.type === "direct" && embedInfo.url ? resolveVideoUrl(embedInfo.url, { width: 480 }) : undefined}
+                      poster={resolvedProductImg || undefined}
                       playsInline
                       loop
                       muted={isMutedState}
@@ -782,9 +826,9 @@ export default function ReelCarousel({ reels }) {
             {/* Bottom overlays */}
             <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/20 to-transparent">
               <div className="flex items-end gap-3">
-                {productImg && (
+                {tinyProductImg && (
                   <img
-                    src={productImg}
+                    src={tinyProductImg}
                     alt={product?.name || reel.title || "Product"}
                     className="w-12 h-12 rounded-xl object-cover shadow bg-white"
                     loading="lazy"

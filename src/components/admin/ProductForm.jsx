@@ -4,6 +4,7 @@ import ImageUpload from "./ImageUpload";
 import VideoUpload from "./VideoUpload";
 import InstagramEmbedInput from "./InstagramEmbedInput";
 import { useToast } from "../../context/ToastContext";
+import { resolveAssetUrl } from "../../utils/imageUrl";
 import {
   DndContext,
   closestCenter,
@@ -1150,7 +1151,7 @@ export default function ProductForm({
               {linkedReels.map((reel) => (
                 <div key={reel.id} className="rounded-lg overflow-hidden border border-gray-200 bg-white">
                   {reel.thumbnail ? (
-                    <img src={reel.thumbnail} alt={reel.title || `Reel ${reel.id}`} className="w-full aspect-video object-cover" />
+                    <img src={resolveAssetUrl(reel.thumbnail, { width: 160 })} alt={reel.title || `Reel ${reel.id}`} className="w-full aspect-video object-cover" />
                   ) : (
                     <div className="w-full aspect-video bg-gray-100 flex items-center justify-center text-xs text-gray-500">
                       No thumbnail

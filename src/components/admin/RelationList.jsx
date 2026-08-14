@@ -1,6 +1,7 @@
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import OrderableList from "./OrderableList";
+import { resolveAssetUrl } from "../../utils/imageUrl";
 
 export default function RelationList({ relations, onEdit, onDelete }) {
   const toast = useToast();
@@ -50,7 +51,7 @@ export default function RelationList({ relations, onEdit, onDelete }) {
       <div className="flex-shrink-0">
         {relation.imageUrl ? (
           <img
-            src={relation.imageUrl}
+            src={resolveAssetUrl(relation.imageUrl, { width: 120 })}
             alt={relation.name}
             className="w-14 h-14 object-cover rounded-lg"
           />

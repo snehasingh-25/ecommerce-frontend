@@ -1,6 +1,7 @@
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import OrderableList from "./OrderableList";
+import { resolveAssetUrl } from "../../utils/imageUrl";
 
 export default function BannerList({ banners, onEdit, onDelete }) {
   const toast = useToast();
@@ -56,7 +57,7 @@ export default function BannerList({ banners, onEdit, onDelete }) {
       <div className="flex-shrink-0">
         {banner.imageUrl ? (
           <img
-            src={banner.imageUrl}
+            src={resolveAssetUrl(banner.imageUrl, { width: 120 })}
             alt={banner.title}
             className="w-20 h-12 object-cover rounded-lg"
           />

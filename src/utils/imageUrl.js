@@ -46,6 +46,91 @@ export function injectCloudinaryTransforms(url, width = 600) {
 }
 
 /**
+ * Inject Cloudinary video delivery transforms: f_auto, q_auto, vc_auto, w_*, c_limit
+ */
+export function injectCloudinaryVideoTransforms(url, { width, height } = {}) {
+  if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com")) {
+    return url;
+  }
+
+  const marker = "/video/upload/";
+  const markerIndex = url.indexOf(marker);
+  if (markerIndex === -1) return url;
+
+  const prefix = url.slice(0, markerIndex + marker.length);
+  const rest = url.slice(markerIndex + marker.length);
+  const slashIndex = rest.indexOf("/");
+  const firstSegment = slashIndex === -1 ? rest : rest.slice(0, slashIndex);
+  const afterFirstSegment = slashIndex === -1 ? "" : rest.slice(slashIndex + 1);
+
+  if (firstSegment.includes("f_auto")) return url;
+
+  let transforms = ["f_auto", "q_auto", "vc_auto"];
+  if (width) {
+    transforms.push(`w_${width}`);
+  }
+  if (height) {
+    transforms.push(`h_${height}`);
+  }
+  if (width || height) {
+    transforms.push("c_limit");
+  }
+
+  const transform = transforms.join(",");
+
+  if (firstSegment.includes(",")) {
+    return `${prefix}${transform}${afterFirstSegment ? `/${afterFirstSegment}` : ""}`;
+  }
+
+  return `${prefix}${transform}/${rest}`;
+}
+
+/**
+ * Resolve a stored path or absolute URL to a full optimized video URL.
+ */
+export function resolveVideoUrl(url, { width, height } = {}) {
+  if (!url) return "";
+
+  let resolved = url;
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    resolved = url;
+  } else if (url.startsWith("/uploads/")) {
+    resolved = `${API}${url}`;
+  }
+
+  if (resolved.includes("res.cloudinary.com")) {
+    return injectCloudinaryVideoTransforms(resolved, { width, height });
+  }
+
+  return resolved;
+}
+
+/**
+ * Generate a static image thumbnail URL from a Cloudinary video.
+ */
+export function getVideoThumbnailUrl(url, { width = 320, height = 320 } = {}) {
+  if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com")) {
+    return "/logo.png"; // Fallback to logo if not Cloudinary
+  }
+
+  const marker = "/video/upload/";
+  const markerIndex = url.indexOf(marker);
+  if (markerIndex === -1) return url;
+
+  const prefix = url.slice(0, markerIndex + marker.length);
+  const rest = url.slice(markerIndex + marker.length);
+
+  // Replace video extension with .jpg
+  const lastDotIndex = rest.lastIndexOf(".");
+  const nameWithoutExtension = lastDotIndex === -1 ? rest : rest.slice(0, lastDotIndex);
+
+  const transform = `f_auto,q_auto,w_${width},h_${height},c_fill,so_auto`;
+
+  return `${prefix}${transform}/${nameWithoutExtension}.jpg`;
+}
+
+
+/**
  * Resolve a stored path or absolute URL to a full fetchable URL.
  */
 export function resolveAssetUrl(url, { width } = {}) {
@@ -54,7 +139,7 @@ export function resolveAssetUrl(url, { width } = {}) {
   let resolved = url;
   if (url.startsWith("http://") || url.startsWith("https://")) {
     resolved = url;
-  } else if (url.startsWith("/")) {
+  } else if (url.startsWith("/uploads/")) {
     resolved = `${API}${url}`;
   }
 

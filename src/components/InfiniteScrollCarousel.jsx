@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { INFINITE_SCROLL_CAROUSEL_UI } from "./infiniteScrollCarouselPresets";
 import CarouselArrow from "./CarouselArrow";
+import { resolveAssetUrl } from "../utils/imageUrl";
 
 /**
  * Infinite scroll carousel for Categories / Relations.
@@ -226,7 +227,12 @@ export default function InfiniteScrollCarousel({
                 }}
               >
                 {item?.imageUrl ? (
-                  <img src={item.imageUrl} alt={item?.name ?? ""} className={`w-full h-full object-cover ${mediaInnerRounding}`} />
+                  <img
+                    src={resolveAssetUrl(item.imageUrl, { width: variant === "relation" ? 160 : 320 })}
+                    alt={item?.name ?? ""}
+                    className={`w-full h-full object-cover ${mediaInnerRounding}`}
+                    loading="lazy"
+                  />
                 ) : (
                   <div className={`w-full h-full ${mediaInnerRounding} flex items-center justify-center overflow-hidden`} style={{ backgroundColor: "oklch(92% .04 340)" }}>
                     <img src="/logo.png" alt="Gift Choice Logo" className="w-3/4 h-3/4 object-contain" />

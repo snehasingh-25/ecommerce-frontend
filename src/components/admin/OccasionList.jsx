@@ -1,6 +1,7 @@
 import { API } from "../../api";
 import { useToast } from "../../context/ToastContext";
 import OrderableList from "./OrderableList";
+import { resolveAssetUrl } from "../../utils/imageUrl";
 
 export default function OccasionList({ occasions, onEdit, onDelete }) {
   const toast = useToast();
@@ -56,7 +57,7 @@ export default function OccasionList({ occasions, onEdit, onDelete }) {
       <div className="flex-shrink-0">
         {occasion.imageUrl ? (
           <img
-            src={occasion.imageUrl}
+            src={resolveAssetUrl(occasion.imageUrl, { width: 120 })}
             alt={occasion.name}
             className="w-14 h-14 object-cover rounded-lg"
           />

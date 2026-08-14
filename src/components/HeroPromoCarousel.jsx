@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import CarouselArrow from "./CarouselArrow";
+import { resolveAssetUrl } from "../utils/imageUrl";
 
 /** Matches banner design size 1600×700 */
 const BANNER_ASPECT = "1600 / 700";
@@ -114,7 +115,7 @@ export default function HeroPromoCarousel({ banners }) {
                     >
                       {background ? (
                         <img
-                          src={background}
+                          src={resolveAssetUrl(background, { width: 800 })}
                           alt={title || "Promotional banner"}
                           className="absolute inset-0 h-full w-full object-contain object-center"
                           decoding="async"
