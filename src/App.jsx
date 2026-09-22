@@ -10,7 +10,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ChatBot from "./components/ChatBot";
 import ScrollToTop from "./components/ScrollToTop";
 import ToastViewport from "./components/ToastViewport";
-import RakhiSeason from "./components/RakhiTheme";
 
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -40,7 +39,6 @@ function RouteFallback() {
 function PublicLayout() {
   return (
     <>
-      <RakhiSeason />
       <Navbar />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
